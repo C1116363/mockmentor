@@ -47,7 +47,9 @@ Everything is under `src/`:
 | `components/RequestCard.jsx` | the card used in the request list |
 | `components/StatusBadge.jsx` | the coloured status pill |
 | `App.jsx` | decides: loading / logged out / logged in |
-| `App.css` | all the styling |
+| `App.css` | all component styling |
+| `index.css` | **design tokens** — colours, shadows, radii, dark mode |
+| `components/ThemeToggle.jsx` | light / dark switch |
 
 ### Common edits
 
@@ -58,7 +60,7 @@ Everything is under `src/`:
 | Change the experience dropdown options | `pages/StudentDashboard.jsx` → `EXPERIENCE_LEVELS` |
 | Change the slot grid layout | `components/SlotPicker.jsx` + `.slots` / `.slot` in `App.css` |
 | Change the bookable hours or slot length | backend: `service/SlotService.java` and `InterviewRequest.SLOT_MINUTES` |
-| Change colours | `src/index.css` → the `:root { }` block |
+| Change colours | `src/index.css` → the `:root { }` block, and `[data-theme="dark"]` for dark mode |
 | Change what shows on a request card | `components/RequestCard.jsx` |
 | Point at a different API URL | `api/client.js` → `BASE_URL` |
 

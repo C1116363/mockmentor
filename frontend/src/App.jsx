@@ -3,6 +3,7 @@ import AuthPage from "./pages/AuthPage";
 import StudentDashboard from "./pages/StudentDashboard";
 import MentorGate from "./pages/MentorGate";
 import AdminDashboard from "./pages/AdminDashboard";
+import ThemeToggle from "./components/ThemeToggle";
 import "./App.css";
 
 const DASHBOARDS = {
@@ -17,6 +18,17 @@ const SUBTITLES = {
   ADMIN: "Verify mentors and oversee the platform",
 };
 
+/** "Rahul Sharma" -> "RS" */
+function initials(name) {
+  return (name || "?")
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0])
+    .join("")
+    .toUpperCase();
+}
+
 function Shell() {
   const { user, loading, logout } = useAuth();
 
@@ -28,8 +40,11 @@ function Shell() {
   return (
     <div className="app">
       <header className="topbar">
-        <div>
-          <h1>MockMentor</h1>
+        <div className="topbar__brand">
+          <div className="brand">
+            <span className="brand__mark">🎯</span>
+            <span className="brand__name">MockMentor</span>
+          </div>
           <p>{SUBTITLES[user.role]}</p>
         </div>
 
@@ -37,7 +52,9 @@ function Shell() {
           <div className="topbar__who">
             <strong>{user.fullName}</strong>
             <span className={`role role--${user.role.toLowerCase()}`}>{user.role}</span>
+            <span className="avatar">{initials(user.fullName)}</span>
           </div>
+          <ThemeToggle />
           <button className="btn btn--ghost btn--sm" onClick={logout}>
             Log out
           </button>
@@ -48,7 +65,7 @@ function Shell() {
         {Dashboard ? <Dashboard /> : <p className="empty">Unknown role: {user.role}</p>}
       </main>
 
-      <footer className="footer">MockMentor</footer>
+      <footer className="footer">MockMentor · practise before it counts</footer>
     </div>
   );
 }

@@ -179,7 +179,9 @@ requires before storing Aadhaar at all. Don't deploy this as-is with real data.
 
 ### Demo logins
 
-Every seeded account uses the password `password123`:
+These are **not** shown on the login page any more — it's a real login screen.
+They're listed here for you, the developer. Every seeded account uses the
+password `password123`:
 
 | Role | Email | What you'll see |
 | --- | --- | --- |
