@@ -659,24 +659,21 @@
   const MENTORS = [
     {
       name: "Chetan Raut",
-      title: "Software Developer",
-      company: "Cognizant",
+      role: "Software Developer at Cognizant",
       expertise: "SQL, Python",
       topics: ["data"],
       bio: "Software developer. Ask me about SQL and Python — the questions that come up in almost every round.",
     },
     {
       name: "Rutuja Khose",
-      title: "Co-founder · Assistant Professor",
-      company: "Deogiri College",
+      role: "Co-founder at PreHire · Assistant Professor at Deogiri College",
       expertise: "AI, ML, Python, SQL",
       topics: ["aiml", "data"],
       bio: "Teaches AI and machine learning. Knows exactly which fundamentals interviewers dig into.",
     },
     {
       name: "Abhijeet Dhumal",
-      title: "Software Engineer",
-      company: "Electropneumatics",
+      role: "Software Engineer at Electropneumatics",
       expertise: "C, C++, Embedded C, IoT",
       topics: ["embedded"],
       bio: "Embedded systems engineer. Pointers, memory and the low-level questions people dread.",
@@ -714,7 +711,7 @@
             <div class="mentor__avatar" style="background:${GRADIENTS[i % GRADIENTS.length]}">${initials(m.name)}</div>
             <div>
               <div class="mentor__name">${m.name}</div>
-              <div class="mentor__role">${m.title}${m.company ? " · " + m.company : ""}</div>
+              <div class="mentor__role">${m.role}</div>
             </div>
           </div>
 
