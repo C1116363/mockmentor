@@ -421,10 +421,9 @@
 
       <div class="chips" id="chips">
         <button class="chip" aria-pressed="true" data-topic="all">All</button>
-        <button class="chip" aria-pressed="false" data-topic="backend">Backend &amp; Java</button>
+        <button class="chip" aria-pressed="false" data-topic="data">Python &amp; SQL</button>
         <button class="chip" aria-pressed="false" data-topic="aiml">AI &amp; ML</button>
         <button class="chip" aria-pressed="false" data-topic="embedded">Embedded &amp; IoT</button>
-        <button class="chip" aria-pressed="false" data-topic="data">Databases</button>
       </div>
 
       <div class="mentors" id="mentorGrid"></div>
@@ -509,7 +508,7 @@
         </div>
         <div class="qa">
           <button class="qa__q">What can I be interviewed on? <span class="qa__sign">+</span></button>
-          <div class="qa__a"><p>Backend, frontend, DSA and system design are the most requested. When you book you describe the round you're preparing for, and a mentor who works in that area picks it up.</p></div>
+          <div class="qa__a"><p>Python, SQL, AI and ML, and embedded systems are what this team covers. When you book you describe the round you're preparing for, and an interviewer who works in that area picks it up.</p></div>
         </div>
         <div class="qa">
           <button class="qa__q">I'm a fresher — is this for me? <span class="qa__sign">+</span></button>
@@ -634,7 +633,7 @@
   onScroll();
 
   /* ---------------- headline rotator ---------------- */
-  const WORDS = ["backend", "frontend", "system design", "DSA", "SDE-1"];
+  const WORDS = ["Python", "SQL", "AI / ML", "embedded", "SDE-1"];
   const rotator = document.getElementById("rotator");
   let w = 0, c = 0, del = false;
   (function type() {
@@ -659,13 +658,12 @@
    */
   const MENTORS = [
     {
-      name: "Chetan Dhumal",
-      title: "Co-founder",
-      company: "Leegality",
-      years: 1.6,
-      expertise: "Java, Advanced Java, SQL, Spring Boot, Hibernate",
-      topics: ["backend"],
-      bio: "Backend engineer. Ask me about Spring Boot, JPA and how a real Java round actually runs.",
+      name: "Chetan Raut",
+      title: "Software Developer",
+      company: "Cognizant",
+      expertise: "SQL, Python",
+      topics: ["data"],
+      bio: "Software developer. Ask me about SQL and Python — the questions that come up in almost every round.",
     },
     {
       name: "Rutuja Khose",
