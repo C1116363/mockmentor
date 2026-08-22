@@ -32,7 +32,6 @@ export default function AuthPage() {
   const [fieldErrors, setFieldErrors] = useState({});
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
-  const [wrongPortalFor, setWrongPortalFor] = useState(null);
 
   const current = PORTALS.find((p) => p.key === portal);
   const isSignup = mode === "signup" && current.canSignup;
@@ -45,7 +44,6 @@ export default function AuthPage() {
   function reset() {
     setError(null);
     setFieldErrors({});
-    setWrongPortalFor(null);
   }
 
   function choosePortal(key) {
@@ -71,8 +69,6 @@ export default function AuthPage() {
     } catch (err) {
       setError(err.message);
       setFieldErrors(err.fieldErrors ?? {});
-      // Point them at the right tab rather than making them work it out.
-      if (err.actualRole) setWrongPortalFor(err.actualRole);
     } finally {
       setBusy(false);
     }
@@ -207,25 +203,14 @@ export default function AuthPage() {
               : "Log in"}
           </button>
 
-          {error && (
-            <p className="notice notice--error">
-              {error}
-              {wrongPortalFor && (
-                <>
-                  {" "}
-                  <button
-                    type="button"
-                    className="notice__action"
-                    onClick={() => {
-                      choosePortal(wrongPortalFor);
-                      setError(null);
-                      setWrongPortalFor(null);
-                    }}
-                  >
-                    Switch for me
-                  </button>
-                </>
-              )}
+          {error && <p className="notice notice--error">{error}</p>}
+
+          {!isSignup && (
+            // Always shown, never conditional on what went wrong - a hint that
+            // only appeared in one case would leak which case it was.
+            <p className="auth__footnote">
+              Sure your password is right? Check you&apos;ve picked the correct
+              option at the top.
             </p>
           )}
         </form>

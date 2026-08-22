@@ -1,31 +1,21 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { api, tokenStore } from "../api/client";
 
-const PORTAL_NAME = {
-  STUDENT: "Take interviews",
-  MENTOR: "Give interviews",
-  ADMIN: "Admin",
-};
-
 /**
- * Thrown when someone logs in from the wrong portal - e.g. mentor credentials
- * entered under the Admin tab.
+ * Wrong portal is reported exactly like a wrong password.
  *
- * This is a usability guard, not a security control. The account owner could
- * always log in from the correct tab; what it prevents is the confusing
- * situation where you pick "Admin", it accepts your details, and you land on a
- * mentor dashboard wondering what happened.
+ * Saying "that's a mentor account" would confirm the email exists AND reveal
+ * what role it has - free reconnaissance for anyone probing addresses. The
+ * generic wording keeps the two cases indistinguishable; the trailing hint is
+ * true for everyone and gives nothing away.
+ *
+ * This string must match the server's bad-credentials message EXACTLY. If the
+ * wrong-portal case said anything extra - even a helpful hint - the longer
+ * message would itself tell you the password was right, leaking precisely what
+ * the check was meant to hide. The hint lives in static text under the form
+ * instead, where it is shown to everyone and reveals nothing.
  */
-class WrongPortalError extends Error {
-  constructor(actualRole, expectedRole) {
-    super(
-      `That's a ${actualRole.toLowerCase()} account, not ${
-        expectedRole === "ADMIN" ? "an admin" : "a " + expectedRole.toLowerCase()
-      } account. Choose "${PORTAL_NAME[actualRole]}" and log in again.`
-    );
-    this.actualRole = actualRole;
-  }
-}
+const GENERIC_LOGIN_ERROR = "Invalid email or password";
 
 /**
  * Holds "who is logged in" for the whole app.
@@ -72,7 +62,7 @@ export function AuthProvider({ children }) {
       login: (payload, expectedRole) =>
         api.login(payload).then((response) => {
           if (expectedRole && response.user.role !== expectedRole) {
-            throw new WrongPortalError(response.user.role, expectedRole);
+            throw new Error(GENERIC_LOGIN_ERROR);
           }
           return acceptAuth(response);
         }),
