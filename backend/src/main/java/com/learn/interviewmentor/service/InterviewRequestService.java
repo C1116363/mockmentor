@@ -39,17 +39,20 @@ public class InterviewRequestService {
     private final MentorProfileService mentorProfileService;
     private final UserRepository userRepository;
     private final MeetingLinkGenerator meetingLinkGenerator;
+    private final PaymentService paymentService;
 
     public InterviewRequestService(InterviewRequestRepository requestRepository,
                                    SlotService slotService,
                                    MentorProfileService mentorProfileService,
                                    UserRepository userRepository,
-                                   MeetingLinkGenerator meetingLinkGenerator) {
+                                   MeetingLinkGenerator meetingLinkGenerator,
+                                   PaymentService paymentService) {
         this.requestRepository = requestRepository;
         this.slotService = slotService;
         this.mentorProfileService = mentorProfileService;
         this.userRepository = userRepository;
         this.meetingLinkGenerator = meetingLinkGenerator;
+        this.paymentService = paymentService;
     }
 
     /**
@@ -81,7 +84,13 @@ public class InterviewRequestService {
                 dto.preferredSlot(),
                 dto.notes()
         );
-        return InterviewRequestDto.from(requestRepository.save(request));
+        InterviewRequest saved = requestRepository.save(request);
+
+        // The booking and its payment are created together, in one transaction,
+        // so a request can never exist with nothing to pay against.
+        paymentService.createFor(saved);
+
+        return InterviewRequestDto.from(saved);
     }
 
     /** No email parameter any more - you can only ever see your own. */

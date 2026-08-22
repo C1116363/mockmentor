@@ -23,11 +23,14 @@ export class ApiError extends Error {
 
 async function request(path, options = {}) {
   const token = tokenStore.get();
+  const isFormData = options.body instanceof FormData;
 
   const response = await fetch(`${BASE_URL}${path}`, {
     ...options,
     headers: {
-      "Content-Type": "application/json",
+      // Let the browser set Content-Type for multipart - it has to append the
+      // boundary, and setting it ourselves silently breaks the upload.
+      ...(isFormData ? {} : { "Content-Type": "application/json" }),
       // This header is the whole authentication mechanism on the client side.
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
@@ -44,6 +47,18 @@ async function request(path, options = {}) {
     throw new ApiError(body, response.status);
   }
   return body;
+}
+
+/**
+ * The screenshot endpoint needs the Authorization header, so it can't just go
+ * in an <img src>. Fetch it as a blob and hand back an object URL.
+ */
+export async function fetchScreenshotUrl(paymentId) {
+  const response = await fetch(`${BASE_URL}/payments/${paymentId}/screenshot`, {
+    headers: { Authorization: `Bearer ${tokenStore.get()}` },
+  });
+  if (!response.ok) throw new ApiError(null, response.status);
+  return URL.createObjectURL(await response.blob());
 }
 
 export const api = {
@@ -64,6 +79,17 @@ export const api = {
   slots: (date) => request(`/slots?date=${encodeURIComponent(date)}`),
 
   cancelRequest: (id) => request(`/requests/${id}/cancel`, { method: "PATCH" }),
+
+  // ---- payment ----
+  paymentInstructions: () => request("/payments/instructions"),
+  paymentForRequest: (requestId) => request(`/payments/by-request/${requestId}`),
+  submitPaymentProof: (requestId, upiReference, screenshot) => {
+    const body = new FormData();
+    body.append("upiReference", upiReference);
+    body.append("screenshot", screenshot);
+    return request(`/payments/by-request/${requestId}/proof`, { method: "POST", body });
+  },
+  screenshotUrl: (paymentId) => `${BASE_URL}/payments/${paymentId}/screenshot`,
 
   // ---- mentor ----
   myMentorProfile: () => request("/mentor/profile"),
@@ -92,6 +118,13 @@ export const api = {
   approveMentor: (id) => request(`/admin/mentor-profiles/${id}/approve`, { method: "PATCH" }),
   rejectMentor: (id, reason) =>
     request(`/admin/mentor-profiles/${id}/reject`, {
+      method: "PATCH",
+      body: JSON.stringify({ reason }),
+    }),
+  pendingPayments: () => request("/admin/payments/pending"),
+  verifyPayment: (id) => request(`/admin/payments/${id}/verify`, { method: "PATCH" }),
+  rejectPayment: (id, reason) =>
+    request(`/admin/payments/${id}/reject`, {
       method: "PATCH",
       body: JSON.stringify({ reason }),
     }),

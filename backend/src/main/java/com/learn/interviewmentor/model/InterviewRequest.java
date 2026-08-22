@@ -89,12 +89,21 @@ public class InterviewRequest {
         this.experienceLevel = experienceLevel;
         this.preferredSlot = preferredSlot;
         this.notes = notes;
-        this.status = RequestStatus.PENDING;
+        // Nothing is visible to mentors until the money is confirmed.
+        this.status = RequestStatus.AWAITING_PAYMENT;
     }
 
     @PrePersist
     void onCreate() {
         this.createdAt = LocalDateTime.now();
+    }
+
+    /**
+     * Payment confirmed - the request becomes visible to mentors.
+     * Called only from PaymentService when an admin verifies the transfer.
+     */
+    public void markPaid() {
+        this.status = RequestStatus.PENDING;
     }
 
     /** A mentor picks up this request. */

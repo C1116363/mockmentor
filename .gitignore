@@ -1,6 +1,9 @@
 # secrets
 backend/.env
 
+# uploaded payment screenshots (user data)
+backend/uploads/
+
 # java
 backend/target/
 

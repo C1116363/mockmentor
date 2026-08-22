@@ -5,11 +5,14 @@ import com.learn.interviewmentor.dto.InterviewRequestDto;
 import com.learn.interviewmentor.dto.auth.UserDto;
 import com.learn.interviewmentor.dto.mentor.MentorProfileDto;
 import com.learn.interviewmentor.dto.mentor.RejectProfileRequest;
+import com.learn.interviewmentor.dto.payment.PaymentDto;
+import com.learn.interviewmentor.dto.payment.RejectPaymentRequest;
 import com.learn.interviewmentor.model.User;
 import com.learn.interviewmentor.security.CurrentUser;
 import com.learn.interviewmentor.service.AdminService;
 import com.learn.interviewmentor.service.InterviewRequestService;
 import com.learn.interviewmentor.service.MentorProfileService;
+import com.learn.interviewmentor.service.PaymentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -42,13 +45,16 @@ public class AdminController {
     private final AdminService adminService;
     private final InterviewRequestService requestService;
     private final MentorProfileService profileService;
+    private final PaymentService paymentService;
 
     public AdminController(AdminService adminService,
                            InterviewRequestService requestService,
-                           MentorProfileService profileService) {
+                           MentorProfileService profileService,
+                           PaymentService paymentService) {
         this.adminService = adminService;
         this.requestService = requestService;
         this.profileService = profileService;
+        this.paymentService = paymentService;
     }
 
     // ---------------- mentor verification ----------------
@@ -146,6 +152,59 @@ public class AdminController {
     })
     public List<UserDto> allUsers() {
         return adminService.findAllUsers();
+    }
+
+    // ---------------- payments ----------------
+
+    @GetMapping("/payments/pending")
+    @Operation(
+            summary = "Payments waiting to be checked",
+            description = "Students who have sent a UPI reference and screenshot. Check the "
+                    + "screenshot and the UTR against your bank, then verify or reject.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Payments awaiting review"),
+            @ApiResponse(responseCode = "403", description = "You are not an ADMIN",
+                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class)))
+    })
+    public List<PaymentDto> pendingPayments() {
+        return paymentService.awaitingReview();
+    }
+
+    @PatchMapping("/payments/{id}/verify")
+    @Operation(
+            summary = "Confirm the money arrived",
+            description = "This is what releases the booking: the request moves from "
+                    + "AWAITING_PAYMENT to PENDING and becomes visible to mentors. Until you "
+                    + "verify, no mentor can see it.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Verified, booking released"),
+            @ApiResponse(responseCode = "400", description = "The payment is not SUBMITTED",
+                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class))),
+            @ApiResponse(responseCode = "404", description = "No payment with that id",
+                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class)))
+    })
+    public PaymentDto verifyPayment(
+            @Parameter(description = "Payment id", example = "1") @PathVariable Long id,
+            @CurrentUser User admin) {
+        return paymentService.verify(id, admin);
+    }
+
+    @PatchMapping("/payments/{id}/reject")
+    @Operation(
+            summary = "Reject a payment",
+            description = "The reason is shown to the student so they can send correct proof.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Rejected"),
+            @ApiResponse(responseCode = "400", description = "Not SUBMITTED, or no reason given",
+                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class))),
+            @ApiResponse(responseCode = "404", description = "No payment with that id",
+                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class)))
+    })
+    public PaymentDto rejectPayment(
+            @Parameter(description = "Payment id", example = "1") @PathVariable Long id,
+            @Valid @RequestBody RejectPaymentRequest dto,
+            @CurrentUser User admin) {
+        return paymentService.reject(id, dto.reason(), admin);
     }
 
     // ---------------- interview requests ----------------

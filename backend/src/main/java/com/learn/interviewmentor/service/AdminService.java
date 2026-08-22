@@ -21,10 +21,14 @@ public class AdminService {
 
     private final UserRepository userRepository;
     private final InterviewRequestService requestService;
+    private final PaymentService paymentService;
 
-    public AdminService(UserRepository userRepository, InterviewRequestService requestService) {
+    public AdminService(UserRepository userRepository,
+                        InterviewRequestService requestService,
+                        PaymentService paymentService) {
         this.userRepository = userRepository;
         this.requestService = requestService;
+        this.paymentService = paymentService;
     }
 
     public List<UserDto> findAllUsers() {
@@ -40,6 +44,8 @@ public class AdminService {
         stats.put("mentors", userRepository.countByRole(Role.MENTOR));
         stats.put("admins", userRepository.countByRole(Role.ADMIN));
         stats.put("totalRequests", requestService.countAll());
+        stats.put("awaitingPayment", requestService.countByStatus(RequestStatus.AWAITING_PAYMENT));
+        stats.put("paymentsToCheck", paymentService.countAwaitingReview());
         stats.put("pending", requestService.countByStatus(RequestStatus.PENDING));
         stats.put("scheduled", requestService.countByStatus(RequestStatus.SCHEDULED));
         stats.put("completed", requestService.countByStatus(RequestStatus.COMPLETED));

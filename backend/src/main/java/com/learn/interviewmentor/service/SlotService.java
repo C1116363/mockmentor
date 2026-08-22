@@ -40,8 +40,13 @@ public class SlotService {
             DateTimeFormatter.ofPattern("h:mm a", Locale.ENGLISH);
 
     /** Statuses that still occupy a slot. Cancelled ones free it up again. */
-    private static final List<RequestStatus> ACTIVE =
-            List.of(RequestStatus.PENDING, RequestStatus.SCHEDULED, RequestStatus.COMPLETED);
+    private static final List<RequestStatus> ACTIVE = List.of(
+            // An unpaid booking still holds its slot. Without this a student
+            // could pay and then find somebody else had taken the time.
+            RequestStatus.AWAITING_PAYMENT,
+            RequestStatus.PENDING,
+            RequestStatus.SCHEDULED,
+            RequestStatus.COMPLETED);
 
     private final InterviewRequestRepository requestRepository;
     private final MentorProfileRepository mentorProfileRepository;

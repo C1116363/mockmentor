@@ -77,13 +77,14 @@ public class DataSeeder implements CommandLineRunner {
         User rahul = userRepository.save(user("Rahul Sharma", "rahul@example.com", Role.STUDENT));
         userRepository.save(user("Priya Menon", "priya@example.com", Role.STUDENT));
 
-        requestRepository.save(new InterviewRequest(
+        InterviewRequest seeded = new InterviewRequest(
                 rahul,
                 "Spring Boot backend round",
                 "Fresher",
                 LocalDateTime.of(LocalDate.now().plusDays(3), java.time.LocalTime.of(15, 0)),
-                "Final year student. Want to practise JPA and REST API questions."
-        ));
+                "Final year student. Want to practise JPA and REST API questions.");
+        seeded.markPaid(); // demo data: treat it as already paid for
+        requestRepository.save(seeded);
 
         log.info("Seeded demo accounts. Every account uses the password: {}", DEMO_PASSWORD);
         log.info("arjun@example.com is a MENTOR with an INCOMPLETE profile - use it to try onboarding.");

@@ -4,8 +4,11 @@ import StatusBadge from "../components/StatusBadge";
 import RequestCard from "../components/RequestCard";
 import AssignMentorForm from "../components/AssignMentorForm";
 import MentorProfileCard from "../components/MentorProfileCard";
+import PaymentReviewCard from "../components/PaymentReviewCard";
 
 const STAT_LABELS = {
+  awaitingPayment: "Unpaid",
+  paymentsToCheck: "To verify",
   students: "Candidates",
   mentors: "Mentors",
   admins: "Admins",
@@ -18,9 +21,10 @@ const STAT_LABELS = {
 
 /** Everything an admin does: verify mentors, and match students to mentors. */
 export default function AdminDashboard() {
-  const [tab, setTab] = useState("requests");
+  const [tab, setTab] = useState("payments");
   const [stats, setStats] = useState({});
   const [profiles, setProfiles] = useState([]);  // every mentor profile, all statuses
+  const [payments, setPayments] = useState([]);  // payments awaiting verification
   const [mentorFilter, setMentorFilter] = useState("PENDING");
   const [unassigned, setUnassigned] = useState([]); // student requests with no mentor
   const [mentors, setMentors] = useState([]);    // verified mentors, for the dropdown
@@ -31,13 +35,14 @@ export default function AdminDashboard() {
   const [assigning, setAssigning] = useState(null);
 
   const reload = useCallback(async () => {
-    const [s, q, p, m, u, r] = await Promise.all([
+    const [s, q, p, m, u, r, pay] = await Promise.all([
       api.adminStats(),
       api.allMentorProfiles(),
       api.adminPendingRequests(),
       api.listMentors(),
       api.adminUsers(),
       api.adminRequests(),
+      api.pendingPayments(),
     ]);
     setStats(s);
     setProfiles(q);
@@ -45,6 +50,7 @@ export default function AdminDashboard() {
     setMentors(m);
     setUsers(u);
     setRequests(r);
+    setPayments(pay);
   }, []);
 
   useEffect(() => {
@@ -61,6 +67,31 @@ export default function AdminDashboard() {
         type: "success",
         text: `Assigned to ${updated.mentor.name}. The student can see it now.`,
       });
+      await reload();
+    } catch (error) {
+      setMessage({ type: "error", text: error.message });
+    }
+  }
+
+  async function verifyPayment(payment) {
+    try {
+      await api.verifyPayment(payment.id);
+      setMessage({
+        type: "success",
+        text: `Payment confirmed. ${payment.studentName}'s interview is now open to mentors.`,
+      });
+      await reload();
+    } catch (error) {
+      setMessage({ type: "error", text: error.message });
+    }
+  }
+
+  async function rejectPayment(payment) {
+    const reason = window.prompt(`Why are you rejecting this payment from ${payment.studentName}?`);
+    if (!reason) return;
+    try {
+      await api.rejectPayment(payment.id, reason);
+      setMessage({ type: "success", text: "Payment rejected. The student can send new proof." });
       await reload();
     } catch (error) {
       setMessage({ type: "error", text: error.message });
@@ -112,6 +143,7 @@ export default function AdminDashboard() {
   ];
 
   const TABS = [
+    { key: "payments", label: "Payments", count: payments.length },
     { key: "requests", label: "Interview requests", count: unassigned.length },
     { key: "verify", label: "Mentors", count: pendingCount },
     { key: "users", label: "Users", count: 0 },
@@ -143,6 +175,35 @@ export default function AdminDashboard() {
           </button>
         ))}
       </div>
+
+      {tab === "payments" && (
+        <section className="panel">
+          <header className="panel__head">
+            <span className="panel__tag">Money in</span>
+            <h2>
+              Payments to verify <span className="count">{payments.length}</span>
+            </h2>
+            <p>
+              Students who have sent a UPI reference and screenshot. Check the UTR
+              against your bank, then confirm — that is what releases the booking
+              to mentors.
+            </p>
+          </header>
+
+          {payments.length === 0 && <p className="empty">No payments waiting to be checked.</p>}
+
+          <div className="card-list">
+            {payments.map((p) => (
+              <PaymentReviewCard
+                key={p.id}
+                payment={p}
+                onVerify={verifyPayment}
+                onReject={rejectPayment}
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
       {tab === "requests" && (
         <section className="panel">

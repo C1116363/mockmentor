@@ -38,6 +38,8 @@ Everything is under `src/`:
 | `components/AssignMentorForm.jsx` | admin picking a mentor for one request |
 | `components/MentorProfileCard.jsx` | one mentor, in any verification state |
 | `components/UpcomingInterviews.jsx` | the Join banner, shared by student and mentor |
+| `components/PayModal.jsx` | the pay-to-book popup: UPI ID, UTR, screenshot |
+| `components/PaymentReviewCard.jsx` | admin checking one payment |
 | `components/SlotPicker.jsx` | date picker + the 1-hour slot grid |
 | `components/RequestCard.jsx` | the card used in the request list |
 | `components/StatusBadge.jsx` | the coloured status pill |

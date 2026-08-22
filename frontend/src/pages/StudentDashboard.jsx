@@ -3,6 +3,7 @@ import { api } from "../api/client";
 import RequestCard from "../components/RequestCard";
 import SlotPicker from "../components/SlotPicker";
 import UpcomingInterviews, { selectUpcoming } from "../components/UpcomingInterviews";
+import PayModal from "../components/PayModal";
 
 const EXPERIENCE_LEVELS = ["Fresher", "0-1 years", "1-3 years", "3-5 years", "5+ years"];
 
@@ -30,6 +31,8 @@ export default function StudentDashboard() {
 
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
+  // Which booking the pay popup is open for.
+  const [payingFor, setPayingFor] = useState(null);
 
   useEffect(() => {
     api
@@ -57,11 +60,12 @@ export default function StudentDashboard() {
     }
 
     try {
-      await api.createRequest(form);
+      const created = await api.createRequest(form);
       setForm(EMPTY_FORM);
       setDate("");
-      setMessage({ type: "success", text: "Request sent. We'll line up an interviewer for you." });
       setRequests(await api.myRequests());
+      // Slot is held; now collect the payment.
+      setPayingFor(created);
     } catch (error) {
       setFieldErrors(error.fieldErrors);
       setMessage({ type: "error", text: error.message });
@@ -82,8 +86,31 @@ export default function StudentDashboard() {
 
   const upcoming = selectUpcoming(requests);
 
+  async function afterPayment() {
+    setPayingFor(null);
+    setMessage({
+      type: "success",
+      text: "Thanks! We're checking your payment. Your slot is held in the meantime.",
+    });
+    setRequests(await api.myRequests());
+  }
+
   return (
     <>
+      {payingFor && (
+        <PayModal
+          request={payingFor}
+          onDone={afterPayment}
+          onClose={() => {
+            setPayingFor(null);
+            setMessage({
+              type: "error",
+              text: "Your slot is held but not confirmed. Use \u201cPay now\u201d on the booking to finish.",
+            });
+          }}
+        />
+      )}
+
       <UpcomingInterviews
         interviews={upcoming}
         otherPartyLabel="Interviewer"
@@ -170,7 +197,12 @@ export default function StudentDashboard() {
         <div className="card-list">
           {requests.map((request) => (
             <RequestCard key={request.id} request={request}>
-              {(request.status === "PENDING" || request.status === "SCHEDULED") && (
+              {request.status === "AWAITING_PAYMENT" && (
+                <button className="btn btn--primary" onClick={() => setPayingFor(request)}>
+                  Pay now
+                </button>
+              )}
+              {request.status !== "COMPLETED" && request.status !== "CANCELLED" && (
                 <button className="btn btn--ghost" onClick={() => cancelRequest(request.id)}>
                   Cancel request
                 </button>

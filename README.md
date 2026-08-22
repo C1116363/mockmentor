@@ -29,6 +29,60 @@ option, but it only ever shows a login form — a public "make me an admin"
 endpoint would let anyone grant themselves full access. The first admin comes
 from the seeder and would promote others.
 
+## Payment (v1: manual UPI)
+
+There is **no payment gateway**. A booking is confirmed by a human:
+
+```
+student picks a slot  →  AWAITING_PAYMENT   (slot is held, mentors can't see it)
+        │
+        ├─ pays your UPI ID from their own app
+        ├─ uploads the UTR + a screenshot     →  SUBMITTED
+        │
+   admin checks it against the bank
+        │
+        ├─ verifies  →  request becomes PENDING and enters the mentor queue
+        └─ rejects   →  reason shown; the student can send new proof
+```
+
+Set your UPI ID in `backend/.env`:
+
+```
+UPI_ID=yourname@okhdfcbank
+UPI_PAYEE=Your Name
+```
+
+The fee is `app.payment.amount` in `application.properties` (₹499 by default).
+
+**The amount is always read from server config, never from the request body.**
+A client that could name its own price is the most obvious hole in any payment
+flow, so the API simply doesn't accept one.
+
+An unpaid booking still **holds its slot** — otherwise a student could pay and
+find the time gone.
+
+### Screenshot uploads
+
+Uploads are the easiest place to open a hole, so `ScreenshotStorage` is strict:
+
+- **We generate the filename.** A crafted name like `../../application.properties`
+  would otherwise write outside the upload directory.
+- **The type is detected from the file's own bytes**, not the `Content-Type`
+  header, which the caller controls.
+- **SVG is rejected** even though it is an image — SVG can contain script, so
+  serving one back would be stored XSS.
+- 5 MB cap, and files are served as `attachment` with `nosniff`.
+- Only the student who uploaded it and admins can fetch it. A screenshot of
+  somebody's banking app is private.
+
+Files land in `backend/uploads/` which is gitignored.
+
+### What v1 does not do
+
+No refunds, no automatic reconciliation, and **no payouts to mentors** — you'd
+pay them manually. Real payouts mean Razorpay Route or Stripe Connect plus
+mentor KYC, which is a much bigger job.
+
 ## Meeting links
 
 **A meeting room is created automatically when a mentor is assigned.** Both the
@@ -295,7 +349,7 @@ throw away a stale token.
 | Method | Path | Who |
 | --- | --- | --- |
 | `GET` | `/api/slots?date=2026-09-20` | any logged-in user — the 1-hour slot grid for that day |
-| `POST` | `/api/requests` | STUDENT — book a slot |
+| `POST` | `/api/requests` | STUDENT — book a slot (starts AWAITING_PAYMENT) |
 | `GET` | `/api/requests/mine` | STUDENT — your own requests |
 | `GET` | `/api/requests/pending` | MENTOR — the open queue |
 | `GET` | `/api/requests/assigned` | MENTOR — what you accepted |
@@ -312,6 +366,18 @@ throw away a stale token.
 The website has no login, so this is the only data it can read. It returns
 **aggregate numbers only, never names or emails** — anything `permitAll()` is
 readable by the whole internet.
+
+### Payments — `/api/payments`
+
+| Method | Path | Who |
+| --- | --- | --- |
+| `GET` | `/api/payments/instructions` | any logged-in user — UPI ID, amount, deep link |
+| `GET` | `/api/payments/by-request/{id}` | the student who booked, or an admin |
+| `POST` | `/api/payments/by-request/{id}/proof` | STUDENT — multipart: `upiReference` + `screenshot` |
+| `GET` | `/api/payments/{id}/screenshot` | owner or ADMIN only |
+| `GET` | `/api/admin/payments/pending` | ADMIN — the verification queue |
+| `PATCH` | `/api/admin/payments/{id}/verify` | ADMIN — releases the booking |
+| `PATCH` | `/api/admin/payments/{id}/reject` | ADMIN — `{ reason }` |
 
 ### Mentor onboarding — `/api/mentor/profile`
 
