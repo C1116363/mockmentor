@@ -5,7 +5,7 @@ import RequestCard from "../components/RequestCard";
 import AssignMentorForm from "../components/AssignMentorForm";
 import MentorProfileCard from "../components/MentorProfileCard";
 import PaymentReviewCard from "../components/PaymentReviewCard";
-import TabBar from "../components/TabBar";
+import { useSectionNav } from "../nav/SectionNav";
 
 const STAT_LABELS = {
   awaitingPayment: "Unpaid",
@@ -22,7 +22,7 @@ const STAT_LABELS = {
 
 /** Everything an admin does: verify mentors, and match students to mentors. */
 export default function AdminDashboard() {
-  const [tab, setTab] = useState("payments");
+  const { active: tab, register, go: setTab } = useSectionNav();
   const [stats, setStats] = useState({});
   const [profiles, setProfiles] = useState([]);  // every mentor profile, all statuses
   const [payments, setPayments] = useState([]);  // payments awaiting verification
@@ -131,9 +131,25 @@ export default function AdminDashboard() {
     }
   }
 
+  const pendingCount = profiles.filter((p) => p.verificationStatus === "PENDING").length;
+
+  // Registered before the early return below - a hook after a conditional
+  // return would change hook order between renders and React would throw.
+  useEffect(() => {
+    register(
+      [
+        { key: "payments", label: "Payments", icon: "💳", count: payments.length, alert: true },
+        { key: "requests", label: "Assign", icon: "🔗", count: unassigned.length, alert: true },
+        { key: "verify", label: "Mentors", icon: "🧭", count: pendingCount, alert: true },
+        { key: "users", label: "Users", icon: "👥" },
+        { key: "all", label: "All requests", icon: "🗂" },
+      ],
+      "payments"
+    );
+  }, [register, payments.length, unassigned.length, pendingCount]);
+
   if (loading) return <p className="empty">Loading admin data...</p>;
 
-  const pendingCount = profiles.filter((p) => p.verificationStatus === "PENDING").length;
   const shown = profiles.filter((p) => p.verificationStatus === mentorFilter);
 
   const MENTOR_FILTERS = [
@@ -141,14 +157,6 @@ export default function AdminDashboard() {
     { key: "APPROVED", label: "Verified" },
     { key: "REJECTED", label: "Rejected" },
     { key: "INCOMPLETE", label: "Not submitted" },
-  ];
-
-  const TABS = [
-    { key: "payments", label: "Payments", icon: "💳", count: payments.length, alert: true },
-    { key: "requests", label: "Assign", icon: "🔗", count: unassigned.length, alert: true },
-    { key: "verify", label: "Mentors", icon: "🧭", count: pendingCount, alert: true },
-    { key: "users", label: "Users", icon: "👥" },
-    { key: "all", label: "All requests", icon: "🗂" },
   ];
 
   return (
@@ -164,7 +172,6 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      <TabBar tabs={TABS} active={tab} onChange={setTab} />
 
       {tab === "payments" && (
         <section className="panel">

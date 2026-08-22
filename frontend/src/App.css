@@ -1118,55 +1118,116 @@
 
 .topbar__brand p { margin-top: 4px; }
 
+/* empty states can now hold an action button */
+.empty { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+
 /* ============================================================
-   Tab bar (all three dashboards)
+   Header navigation: toggle + the second line it opens
    ============================================================ */
 
-.tabbar {
+.topbar__left { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+
+.topbar__subtitle {
+  color: var(--muted);
+  font-size: .86rem;
+  margin: 0 0 20px;
+}
+
+.navtoggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 7px 14px 7px 12px;
+  font-size: .86rem;
+  font-weight: 650;
+  color: var(--text);
+  cursor: pointer;
+  transition: all .18s var(--ease);
+}
+
+.navtoggle:hover { border-color: var(--border-strong); box-shadow: var(--shadow-xs); }
+
+.navtoggle--open {
+  border-color: var(--student);
+  background: var(--student-soft);
+  color: var(--student);
+}
+
+.navtoggle__icon { font-size: .95rem; line-height: 1; }
+.navtoggle__label { line-height: 1.2; }
+
+.navtoggle__chevron {
+  font-size: .7rem;
+  color: var(--muted);
+  transition: transform .2s var(--ease);
+}
+
+.navtoggle--open .navtoggle__chevron { transform: rotate(180deg); color: inherit; }
+
+/* work waiting in a section you're not looking at */
+.navtoggle__dot {
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--error);
+  color: #fff;
+  font-size: .68rem;
+  font-weight: 800;
+  line-height: 18px;
+  text-align: center;
+}
+
+.navline {
   display: flex;
-  gap: 4px;
+  gap: 5px;
+  flex-wrap: wrap;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 5px;
+  padding: 6px;
   margin-bottom: 18px;
-  overflow-x: auto;
-  /* the strip scrolls on narrow screens rather than wrapping into a block */
-  scrollbar-width: none;
+  box-shadow: var(--shadow-sm);
+  animation: dropdown .22s var(--ease) both;
 }
 
-.tabbar::-webkit-scrollbar { display: none; }
+@keyframes dropdown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: none; }
+}
 
-.tabbar__tab {
+.navline__item {
   flex: 1 1 auto;
   min-width: max-content;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
+  gap: 8px;
   border: none;
   background: none;
-  padding: 10px 15px;
+  padding: 10px 16px;
   border-radius: 9px;
   font-size: .87rem;
   font-weight: 650;
   color: var(--muted);
   cursor: pointer;
   white-space: nowrap;
-  transition: all .18s var(--ease);
+  transition: all .16s var(--ease);
 }
 
-.tabbar__tab:hover:not(.tabbar__tab--on) { color: var(--text); background: var(--surface-2); }
+.navline__item:hover:not(.navline__item--on) { color: var(--text); background: var(--surface-2); }
 
-.tabbar__tab--on {
+.navline__item--on {
   background: linear-gradient(135deg, var(--student), var(--mentor));
   color: #fff;
   box-shadow: 0 2px 10px color-mix(in srgb, var(--student) 30%, transparent);
 }
 
-.tabbar__icon { font-size: .95rem; line-height: 1; }
+.navline__icon { font-size: .95rem; line-height: 1; }
 
-.tabbar__count {
+.navline__count {
   min-width: 19px;
   padding: 0 6px;
   border-radius: 999px;
@@ -1177,14 +1238,16 @@
   line-height: 19px;
 }
 
-.tabbar__count--alert { background: var(--error); color: #fff; }
+.navline__count--alert { background: var(--error); color: #fff; }
 
-/* on the active tab the pill has to sit on a gradient, so invert it */
-.tabbar__tab--on .tabbar__count,
-.tabbar__tab--on .tabbar__count--alert {
+/* on the active item the pill sits on a gradient, so invert it */
+.navline__item--on .navline__count,
+.navline__item--on .navline__count--alert {
   background: rgba(255, 255, 255, .25);
   color: #fff;
 }
 
-/* empty states can now hold an action button */
-.empty { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+@media (max-width: 620px) {
+  .navtoggle__label { display: none; }
+  .navline__item { flex: 1 1 100%; justify-content: flex-start; }
+}

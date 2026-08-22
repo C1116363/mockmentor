@@ -8,6 +8,10 @@ React 19 + Vite. Three roles, three experiences:
 - **Admins** log in with a seeded account (the Admin option on the login page
   offers no signup), verify mentors, and assign mentors to student requests.
 
+Navigation lives in the header: a toggle showing where you are, which opens a
+second line listing every section. Each dashboard **registers its own sections**
+with `SectionNav` on mount, so the header knows nothing about roles.
+
 `MentorGate.jsx` is the interesting bit — it reads `verificationStatus` and
 picks the form, the waiting screen, or the dashboard.
 
@@ -29,12 +33,12 @@ Everything is under `src/`:
 | `api/client.js` | **every** call to the backend, in one place |
 | `auth/AuthContext.jsx` | who is logged in; login, signup, logout |
 | `pages/AuthPage.jsx` | the login + signup screen |
-| `pages/StudentDashboard.jsx` | candidate: **Book / My interviews / History** tabs |
+| `pages/StudentDashboard.jsx` | candidate: Book / My interviews / History |
 | `pages/MentorGate.jsx` | picks the mentor screen from verification status |
 | `pages/MentorProfileForm.jsx` | the profile a mentor submits |
 | `pages/MentorPending.jsx` | the "under verification" screen |
-| `pages/MentorDashboard.jsx` | mentor: **Open queue / My interviews / History** tabs |
-| `pages/AdminDashboard.jsx` | admin: **Payments / Assign / Mentors / Users / All requests** tabs |
+| `pages/MentorDashboard.jsx` | mentor: Open queue / My interviews / History |
+| `pages/AdminDashboard.jsx` | admin: Payments / Assign / Mentors / Users / All requests |
 | `components/AssignMentorForm.jsx` | admin picking a mentor for one request |
 | `components/MentorProfileCard.jsx` | one mentor, in any verification state |
 | `components/UpcomingInterviews.jsx` | the Join banner, shared by student and mentor |
@@ -50,7 +54,7 @@ Everything is under `src/`:
 | `App.css` | all component styling |
 | `index.css` | **design tokens** — colours, shadows, radii, dark mode |
 | `components/ThemeToggle.jsx` | light / dark switch |
-| `components/TabBar.jsx` | the tab strip all three dashboards share |
+| `nav/SectionNav.jsx` | header nav: the toggle, the second line, and the shared state |
 
 ### Common edits
 

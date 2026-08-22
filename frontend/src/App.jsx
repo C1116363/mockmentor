@@ -1,4 +1,5 @@
 import { AuthProvider, useAuth } from "./auth/AuthContext";
+import { SectionNavProvider, SectionToggle, SectionLine } from "./nav/SectionNav";
 import AuthPage from "./pages/AuthPage";
 import StudentDashboard from "./pages/StudentDashboard";
 import MentorGate from "./pages/MentorGate";
@@ -40,12 +41,13 @@ function Shell() {
   return (
     <div className="app">
       <header className="topbar">
-        <div className="topbar__brand">
+        <div className="topbar__left">
           <div className="brand">
             <span className="brand__mark">🎯</span>
             <span className="brand__name">AbhiMentor</span>
           </div>
-          <p>{SUBTITLES[user.role]}</p>
+          {/* the toggle that opens the second line */}
+          <SectionToggle />
         </div>
 
         <div className="topbar__user">
@@ -61,6 +63,10 @@ function Shell() {
         </div>
       </header>
 
+      <SectionLine />
+
+      <p className="topbar__subtitle">{SUBTITLES[user.role]}</p>
+
       <main>
         {Dashboard ? <Dashboard /> : <p className="empty">Unknown role: {user.role}</p>}
       </main>
@@ -73,7 +79,9 @@ function Shell() {
 export default function App() {
   return (
     <AuthProvider>
-      <Shell />
+      <SectionNavProvider>
+        <Shell />
+      </SectionNavProvider>
     </AuthProvider>
   );
 }

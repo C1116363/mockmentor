@@ -3,14 +3,14 @@ import { api } from "../api/client";
 import RequestCard from "../components/RequestCard";
 import UpcomingInterviews, { selectUpcoming } from "../components/UpcomingInterviews";
 import FeedbackModal from "../components/FeedbackModal";
-import TabBar from "../components/TabBar";
+import { useSectionNav } from "../nav/SectionNav";
 
 function defaultSlotFrom(preferred) {
   return preferred ? preferred.slice(0, 16) : "";
 }
 
 export default function MentorDashboard() {
-  const [tab, setTab] = useState("queue");
+  const { active: tab, register, go: setTab } = useSectionNav();
 
   const [pending, setPending] = useState([]);
   const [assigned, setAssigned] = useState([]);
@@ -61,6 +61,17 @@ export default function MentorDashboard() {
   const scheduled = assigned.filter((r) => r.status === "SCHEDULED");
   const past = assigned.filter((r) => r.status === "COMPLETED" || r.status === "CANCELLED");
 
+  useEffect(() => {
+    register(
+      [
+        { key: "queue", label: "Open queue", icon: "📥", count: pending.length, alert: pending.length > 0 },
+        { key: "mine", label: "My interviews", icon: "📅", count: scheduled.length },
+        { key: "history", label: "History", icon: "🗂", count: past.length },
+      ],
+      "queue"
+    );
+  }, [register, pending.length, scheduled.length, past.length]);
+
   return (
     <>
       {reviewing && (
@@ -75,16 +86,6 @@ export default function MentorDashboard() {
         interviews={upcoming}
         otherPartyLabel="Candidate"
         otherParty={(r) => r.student?.fullName ?? "—"}
-      />
-
-      <TabBar
-        active={tab}
-        onChange={setTab}
-        tabs={[
-          { key: "queue", label: "Open queue", icon: "📥", count: pending.length, alert: pending.length > 0 },
-          { key: "mine", label: "My interviews", icon: "📅", count: scheduled.length },
-          { key: "history", label: "History", icon: "🗂", count: past.length },
-        ]}
       />
 
       {message && <p className={`notice notice--${message.type}`}>{message.text}</p>}

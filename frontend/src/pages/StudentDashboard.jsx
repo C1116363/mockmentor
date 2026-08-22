@@ -4,7 +4,7 @@ import RequestCard from "../components/RequestCard";
 import SlotPicker from "../components/SlotPicker";
 import UpcomingInterviews, { selectUpcoming } from "../components/UpcomingInterviews";
 import PayModal from "../components/PayModal";
-import TabBar from "../components/TabBar";
+import { useSectionNav } from "../nav/SectionNav";
 
 const EXPERIENCE_LEVELS = ["Fresher", "0-1 years", "1-3 years", "3-5 years", "5+ years"];
 
@@ -20,7 +20,7 @@ const LIVE = ["AWAITING_PAYMENT", "PENDING", "SCHEDULED"];
 const DONE = ["COMPLETED", "CANCELLED"];
 
 export default function StudentDashboard() {
-  const [tab, setTab] = useState("book");
+  const { active: tab, register, go: setTab } = useSectionNav();
 
   const [form, setForm] = useState(EMPTY_FORM);
   const [date, setDate] = useState("");
@@ -94,6 +94,19 @@ export default function StudentDashboard() {
   const done = requests.filter((r) => DONE.includes(r.status));
   const unpaid = requests.filter((r) => r.status === "AWAITING_PAYMENT").length;
 
+  // Re-registering with the same values is a no-op, so this is safe to run
+  // whenever the counts change.
+  useEffect(() => {
+    register(
+      [
+        { key: "book", label: "Book an interview", icon: "＋" },
+        { key: "active", label: "My interviews", icon: "📅", count: live.length, alert: unpaid > 0 },
+        { key: "history", label: "History", icon: "🗂", count: done.length },
+      ],
+      "book"
+    );
+  }, [register, live.length, done.length, unpaid]);
+
   const actions = (request) => (
     <>
       {request.status === "AWAITING_PAYMENT" && (
@@ -130,16 +143,6 @@ export default function StudentDashboard() {
         interviews={upcoming}
         otherPartyLabel="Interviewer"
         otherParty={(r) => r.mentor?.name ?? "—"}
-      />
-
-      <TabBar
-        active={tab}
-        onChange={setTab}
-        tabs={[
-          { key: "book", label: "Book an interview", icon: "＋" },
-          { key: "active", label: "My interviews", icon: "📅", count: live.length, alert: unpaid > 0 },
-          { key: "history", label: "History", icon: "🗂", count: done.length },
-        ]}
       />
 
       {message && <p className={`notice notice--${message.type}`}>{message.text}</p>}
