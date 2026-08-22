@@ -8,6 +8,7 @@ import com.learn.interviewmentor.dto.InterviewRequestDto;
 import com.learn.interviewmentor.exception.BadRequestException;
 import com.learn.interviewmentor.exception.ForbiddenException;
 import com.learn.interviewmentor.exception.NotFoundException;
+import com.learn.interviewmentor.meeting.MeetingLinkGenerator;
 import com.learn.interviewmentor.model.InterviewRequest;
 import com.learn.interviewmentor.model.RequestStatus;
 import com.learn.interviewmentor.model.Role;
@@ -37,15 +38,31 @@ public class InterviewRequestService {
     private final SlotService slotService;
     private final MentorProfileService mentorProfileService;
     private final UserRepository userRepository;
+    private final MeetingLinkGenerator meetingLinkGenerator;
 
     public InterviewRequestService(InterviewRequestRepository requestRepository,
                                    SlotService slotService,
                                    MentorProfileService mentorProfileService,
-                                   UserRepository userRepository) {
+                                   UserRepository userRepository,
+                                   MeetingLinkGenerator meetingLinkGenerator) {
         this.requestRepository = requestRepository;
         this.slotService = slotService;
         this.mentorProfileService = mentorProfileService;
         this.userRepository = userRepository;
+        this.meetingLinkGenerator = meetingLinkGenerator;
+    }
+
+    /**
+     * Use the link that was supplied, or create one.
+     *
+     * The room is made at assignment time, so by the time either person opens
+     * their dashboard the Join button already works.
+     */
+    private String resolveMeetingLink(String supplied, InterviewRequest request) {
+        if (supplied != null && !supplied.isBlank()) {
+            return supplied.trim();
+        }
+        return meetingLinkGenerator.generateFor(request);
     }
 
     // ---------- student side ----------
@@ -101,7 +118,7 @@ public class InterviewRequestService {
                     "Request " + requestId + " is already " + request.getStatus() + ", it cannot be accepted again");
         }
 
-        request.assignTo(mentor, dto.scheduledAt(), dto.meetingLink());
+        request.assignTo(mentor, dto.scheduledAt(), resolveMeetingLink(dto.meetingLink(), request));
         return InterviewRequestDto.from(request); // dirty checking flushes on commit
     }
 
@@ -181,7 +198,7 @@ public class InterviewRequestService {
         // Default to the slot the student actually asked for.
         LocalDateTime when = dto.scheduledAt() != null ? dto.scheduledAt() : request.getPreferredSlot();
 
-        request.assignTo(mentor, when, dto.meetingLink());
+        request.assignTo(mentor, when, resolveMeetingLink(dto.meetingLink(), request));
         return InterviewRequestDto.from(request);
     }
 

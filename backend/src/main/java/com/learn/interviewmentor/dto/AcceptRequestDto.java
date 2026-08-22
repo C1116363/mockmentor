@@ -2,7 +2,6 @@ package com.learn.interviewmentor.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Future;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDateTime;
@@ -24,9 +23,8 @@ public record AcceptRequestDto(
         @Future(message = "Schedule the interview in the future")
         LocalDateTime scheduledAt,
 
-        @Schema(description = "Zoom / Meet / Teams link the student will join",
+        @Schema(description = "Optional. Leave blank and a meeting room is created for you.",
                 example = "https://meet.google.com/abc-defg-hij")
-        @NotBlank(message = "Share a meeting link (Zoom / Meet / Teams)")
         String meetingLink
 ) {
 }

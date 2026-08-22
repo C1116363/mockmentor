@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { api } from "../api/client";
 import RequestCard from "../components/RequestCard";
 import SlotPicker from "../components/SlotPicker";
+import UpcomingInterviews, { selectUpcoming } from "../components/UpcomingInterviews";
 
 const EXPERIENCE_LEVELS = ["Fresher", "0-1 years", "1-3 years", "3-5 years", "5+ years"];
 
@@ -79,7 +80,16 @@ export default function StudentDashboard() {
     }
   }
 
+  const upcoming = selectUpcoming(requests);
+
   return (
+    <>
+      <UpcomingInterviews
+        interviews={upcoming}
+        otherPartyLabel="Interviewer"
+        otherParty={(r) => r.mentor?.name ?? "—"}
+      />
+
     <div className="sections">
       <section className="panel panel--student">
         <header className="panel__head">
@@ -170,5 +180,6 @@ export default function StudentDashboard() {
         </div>
       </section>
     </div>
+    </>
   );
 }

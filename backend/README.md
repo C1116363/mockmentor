@@ -39,6 +39,7 @@ Everything is under `src/main/java/com/learn/interviewmentor/`:
 | Change bookable hours (9 AM–9 PM) | `service/SlotService.java` → `DAY_START` / `DAY_END` |
 | Change slot length (1 hour) | `model/InterviewRequest.java` → `SLOT_MINUTES` |
 | Change how far ahead people can book | `service/SlotService.java` → `MAX_DAYS_AHEAD` |
+| Change the video provider | `application.properties` → `app.meeting.provider`, and `meeting/` |
 | Change the DB connection | `.env` |
 | Add a field to a request | `model/InterviewRequest.java` **and** the matching DTO |
 | Change a validation message | the DTO, e.g. `dto/CreateRequestDto.java` |

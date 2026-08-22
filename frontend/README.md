@@ -37,6 +37,7 @@ Everything is under `src/`:
 | `pages/AdminDashboard.jsx` | four tabs: assign requests, mentors, users, all requests |
 | `components/AssignMentorForm.jsx` | admin picking a mentor for one request |
 | `components/MentorProfileCard.jsx` | one mentor, in any verification state |
+| `components/UpcomingInterviews.jsx` | the Join banner, shared by student and mentor |
 | `components/SlotPicker.jsx` | date picker + the 1-hour slot grid |
 | `components/RequestCard.jsx` | the card used in the request list |
 | `components/StatusBadge.jsx` | the coloured status pill |

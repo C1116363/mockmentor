@@ -951,3 +951,101 @@
   background: #fdecea;
   color: var(--error);
 }
+
+/* ---------- upcoming interview banner ---------- */
+
+.upcoming {
+  background: linear-gradient(135deg, var(--student), var(--mentor));
+  border-radius: 16px;
+  padding: 22px 24px;
+  margin-bottom: 24px;
+  color: #fff;
+}
+
+.upcoming__head h3 {
+  font-size: 1.05rem;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 14px;
+}
+
+.upcoming__head .count {
+  background: rgba(255, 255, 255, 0.22);
+  border: none;
+  color: #fff;
+}
+
+.upcoming__list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.upcoming__item {
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  padding: 15px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.upcoming__info h4 {
+  font-size: 1rem;
+  margin-bottom: 3px;
+}
+
+.upcoming__meta,
+.upcoming__when {
+  font-size: 0.86rem;
+  opacity: 0.92;
+}
+
+.upcoming__when {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 2px;
+}
+
+.upcoming__countdown {
+  background: rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  padding: 1px 9px;
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.btn--join {
+  background: #fff;
+  color: var(--student);
+  text-decoration: none;
+  padding: 11px 24px;
+  font-weight: 700;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.btn--join:hover {
+  opacity: 0.9;
+}
+
+/* Before the window opens it still works, just visually calmer. */
+.btn--join-early {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+}
+
+.upcoming__nolink {
+  font-size: 0.84rem;
+  opacity: 0.8;
+}
+
+.field__hint {
+  font-size: 0.76rem;
+  color: var(--muted);
+}

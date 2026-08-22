@@ -1,7 +1,6 @@
 package com.learn.interviewmentor.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDateTime;
@@ -20,9 +19,10 @@ public record AssignMentorRequest(
                 example = "2026-09-20T15:00:00", type = "string", format = "date-time")
         LocalDateTime scheduledAt,
 
-        @Schema(description = "Zoom / Meet / Teams link the student will join",
+        @Schema(description = "Optional. **Leave this blank and a meeting room is created "
+                + "automatically** when the mentor is assigned. Only set it if you want to use "
+                + "a link you made yourself.",
                 example = "https://meet.google.com/abc-defg-hij")
-        @NotBlank(message = "Share a meeting link so the student can join")
         String meetingLink
 ) {
 }

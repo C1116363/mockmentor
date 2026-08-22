@@ -23,7 +23,8 @@ export default function AssignMentorForm({ request, mentors, onAssign, onCancel 
       await onAssign(request.id, {
         mentorId: Number(mentorId),
         scheduledAt: `${scheduledAt}:00`,
-        meetingLink,
+        // Blank means "create one for me" - the server generates the room.
+        meetingLink: meetingLink.trim() || null,
       });
     } finally {
       setBusy(false);
@@ -61,19 +62,23 @@ export default function AssignMentorForm({ request, mentors, onAssign, onCancel 
       </label>
 
       <label className="field">
-        <span>Meeting link</span>
+        <span>Meeting link (optional)</span>
         <input
           value={meetingLink}
           onChange={(e) => setMeetingLink(e.target.value)}
-          placeholder="https://meet.google.com/abc-defg-hij"
+          placeholder="Leave blank — a room is created automatically"
         />
+        <small className="field__hint">
+          A meeting room is created for you when you assign. Only fill this in if
+          you want to use a link you made yourself.
+        </small>
       </label>
 
       <div className="accept-form__actions">
         <button
           className="btn btn--primary"
           onClick={submit}
-          disabled={busy || !mentorId || !meetingLink.trim() || !scheduledAt}
+          disabled={busy || !mentorId || !scheduledAt}
         >
           {busy ? "Assigning..." : "Assign mentor"}
         </button>

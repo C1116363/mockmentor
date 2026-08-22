@@ -29,6 +29,35 @@ option, but it only ever shows a login form — a public "make me an admin"
 endpoint would let anyone grant themselves full access. The first admin comes
 from the seeder and would promote others.
 
+## Meeting links
+
+**A meeting room is created automatically when a mentor is assigned.** Both the
+student and the mentor then see the same link, and an **Upcoming interviews**
+banner with a **Join** button appears on both dashboards. Clicking Join from
+either side lands both people in the same call.
+
+Rooms are **Jitsi Meet** by default (`app.meeting.provider=jitsi`). That is a
+deliberate choice, not a shortcut:
+
+> You cannot create a real `meet.google.com` link without going through the
+> **Google Calendar API with OAuth credentials** — there is no public endpoint
+> that just hands you one. Generating a Google-Meet-shaped URL ourselves would
+> produce a string that *looks* right and fails the moment somebody clicks it.
+> A Jitsi room exists the instant the URL is opened: no account, no API key,
+> and both people genuinely land in the same call.
+
+To use real Google Meet, set `app.meeting.provider=google` and implement
+`GoogleMeetLinkGenerator` — the class comment spells out exactly what is needed
+(Calendar API, OAuth or a service account, and a `conferenceData` insert). Until
+then it throws loudly rather than handing anyone a dead link.
+
+Room names are long and random (`mockmentor-h5rye2-rzcuqq-ummniz`) because a
+Jitsi room is reachable by anyone who knows its name — a guessable one like
+`interview-7` would let strangers walk into somebody's interview.
+
+Whoever is scheduling can still paste their own link instead; leaving the field
+blank is what triggers generation.
+
 ## Two ways a request gets scheduled
 
 1. **A mentor claims it** — a verified mentor sees the open queue and accepts

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "../api/client";
 import RequestCard from "../components/RequestCard";
+import UpcomingInterviews, { selectUpcoming } from "../components/UpcomingInterviews";
 
 function defaultSlotFrom(preferred) {
   // Default the scheduling input to whatever the candidate asked for.
@@ -34,7 +35,10 @@ export default function MentorDashboard() {
   async function accept(id) {
     setMessage(null);
     try {
-      await api.acceptRequest(id, { scheduledAt: `${slot}:00`, meetingLink });
+      await api.acceptRequest(id, {
+        scheduledAt: `${slot}:00`,
+        meetingLink: meetingLink.trim() || null,
+      });
       setOpenId(null);
       setMeetingLink("");
       setMessage({ type: "success", text: "Scheduled. The candidate can see it now." });
@@ -56,7 +60,16 @@ export default function MentorDashboard() {
     }
   }
 
+  const upcoming = selectUpcoming(assigned);
+
   return (
+    <>
+      <UpcomingInterviews
+        interviews={upcoming}
+        otherPartyLabel="Candidate"
+        otherParty={(r) => r.student?.fullName ?? "—"}
+      />
+
     <div className="sections">
       <section className="panel panel--student">
         <header className="panel__head">
@@ -85,18 +98,18 @@ export default function MentorDashboard() {
                     />
                   </label>
                   <label className="field">
-                    <span>Meeting link</span>
+                    <span>Meeting link (optional)</span>
                     <input
                       value={meetingLink}
                       onChange={(e) => setMeetingLink(e.target.value)}
-                      placeholder="https://meet.google.com/abc-defg-hij"
+                      placeholder="Leave blank — a room is created for you"
                     />
                   </label>
                   <div className="accept-form__actions">
                     <button
                       className="btn btn--primary"
                       onClick={() => accept(r.id)}
-                      disabled={!meetingLink.trim() || !slot}
+                      disabled={!slot}
                     >
                       Confirm
                     </button>
@@ -144,5 +157,6 @@ export default function MentorDashboard() {
         </div>
       </section>
     </div>
+    </>
   );
 }
