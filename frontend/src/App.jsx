@@ -43,7 +43,7 @@ function Shell() {
         <div className="topbar__brand">
           <div className="brand">
             <span className="brand__mark">🎯</span>
-            <span className="brand__name">MockMentor</span>
+            <span className="brand__name">AbhiMentor</span>
           </div>
           <p>{SUBTITLES[user.role]}</p>
         </div>
@@ -65,7 +65,7 @@ function Shell() {
         {Dashboard ? <Dashboard /> : <p className="empty">Unknown role: {user.role}</p>}
       </main>
 
-      <footer className="footer">MockMentor · practise before it counts</footer>
+      <footer className="footer">AbhiMentor · practise before it counts</footer>
     </div>
   );
 }

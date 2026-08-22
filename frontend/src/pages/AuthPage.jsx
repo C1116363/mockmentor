@@ -89,7 +89,7 @@ export default function AuthPage() {
       <section className="auth__intro">
         <div className="brand">
           <span className="brand__mark">🎯</span>
-          <span className="brand__name">MockMentor</span>
+          <span className="brand__name">AbhiMentor</span>
         </div>
 
         <h1>

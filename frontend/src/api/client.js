@@ -1,7 +1,26 @@
 // All calls to the Spring Boot backend go through this one file.
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8080/api";
-const TOKEN_KEY = "mockmentor.token";
+const TOKEN_KEY = "abhimentor.token";
+const LEGACY_TOKEN_KEY = "mockmentor.token";
+
+/**
+ * The app was called MockMentor, so anyone already logged in has their token
+ * under the old key. Move it across once rather than silently logging everyone
+ * out on the rename.
+ */
+function migrateLegacyToken() {
+  try {
+    const old = localStorage.getItem(LEGACY_TOKEN_KEY);
+    if (old && !localStorage.getItem(TOKEN_KEY)) {
+      localStorage.setItem(TOKEN_KEY, old);
+    }
+    if (old) localStorage.removeItem(LEGACY_TOKEN_KEY);
+  } catch {
+    /* storage blocked - nothing to migrate */
+  }
+}
+migrateLegacyToken();
 
 // The token lives in localStorage so a page refresh doesn't log you out.
 // Note: localStorage is readable by any JS on the page, so it is vulnerable to

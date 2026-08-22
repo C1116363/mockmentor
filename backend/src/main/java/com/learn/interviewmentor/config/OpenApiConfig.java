@@ -32,10 +32,10 @@ public class OpenApiConfig {
     private static final String SCHEME_NAME = "bearerAuth";
 
     @Bean
-    public OpenAPI mockMentorOpenApi() {
+    public OpenAPI abhiMentorOpenApi() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("MockMentor API")
+                        .title("AbhiMentor API")
                         .version("1.0.0")
                         .description("""
                                 Students and working professionals request mock interviews;
@@ -56,7 +56,7 @@ public class OpenApiConfig {
                                 - **403 Forbidden** — you are logged in, but your role (or ownership)
                                   does not allow that action.
                                 """)
-                        .contact(new Contact().name("MockMentor").email("support@example.com"))
+                        .contact(new Contact().name("AbhiMentor").email("support@example.com"))
                         .license(new License().name("MIT")))
 
                 .servers(List.of(
