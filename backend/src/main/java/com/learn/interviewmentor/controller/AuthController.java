@@ -2,8 +2,7 @@ package com.learn.interviewmentor.controller;
 
 import com.learn.interviewmentor.dto.auth.AuthResponse;
 import com.learn.interviewmentor.dto.auth.LoginRequest;
-import com.learn.interviewmentor.dto.auth.MentorSignupRequest;
-import com.learn.interviewmentor.dto.auth.StudentSignupRequest;
+import com.learn.interviewmentor.dto.auth.SignupRequest;
 import com.learn.interviewmentor.dto.auth.UserDto;
 import com.learn.interviewmentor.model.User;
 import com.learn.interviewmentor.security.CurrentUser;
@@ -47,7 +46,7 @@ public class AuthController {
                     description = "Email already taken, or validation failed (see `fieldErrors`)",
                     content = @Content(schema = @Schema(implementation = ApiErrorSchema.class)))
     })
-    public ResponseEntity<AuthResponse> signupStudent(@Valid @RequestBody StudentSignupRequest dto) {
+    public ResponseEntity<AuthResponse> signupStudent(@Valid @RequestBody SignupRequest dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.signupStudent(dto));
     }
 
@@ -55,16 +54,18 @@ public class AuthController {
     @SecurityRequirements
     @Operation(
             summary = "Sign up as a senior mentor",
-            description = "Creates a MENTOR account **and** its mentor profile in a single "
-                    + "transaction, so you can never end up with a mentor that has no profile. "
-                    + "Requires at least 3 years of experience.")
+            description = "Creates a MENTOR account plus a blank profile, in a single "
+                    + "transaction, so you can never end up with a mentor that has no profile.\n\n"
+                    + "The account starts as `INCOMPLETE`. The mentor then fills in their details "
+                    + "via `PUT /api/mentor/profile` and an admin verifies them before they can "
+                    + "take any interviews.")
     @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Account + profile created, token issued"),
+            @ApiResponse(responseCode = "201", description = "Account created (status INCOMPLETE), token issued"),
             @ApiResponse(responseCode = "400",
                     description = "Email already taken, or validation failed",
                     content = @Content(schema = @Schema(implementation = ApiErrorSchema.class)))
     })
-    public ResponseEntity<AuthResponse> signupMentor(@Valid @RequestBody MentorSignupRequest dto) {
+    public ResponseEntity<AuthResponse> signupMentor(@Valid @RequestBody SignupRequest dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.signupMentor(dto));
     }
 

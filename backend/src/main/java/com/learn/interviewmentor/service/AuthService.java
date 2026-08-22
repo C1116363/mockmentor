@@ -2,8 +2,7 @@ package com.learn.interviewmentor.service;
 
 import com.learn.interviewmentor.dto.auth.AuthResponse;
 import com.learn.interviewmentor.dto.auth.LoginRequest;
-import com.learn.interviewmentor.dto.auth.MentorSignupRequest;
-import com.learn.interviewmentor.dto.auth.StudentSignupRequest;
+import com.learn.interviewmentor.dto.auth.SignupRequest;
 import com.learn.interviewmentor.dto.auth.UserDto;
 import com.learn.interviewmentor.exception.BadRequestException;
 import com.learn.interviewmentor.model.MentorProfile;
@@ -52,7 +51,7 @@ public class AuthService {
     }
 
     @Transactional
-    public AuthResponse signupStudent(StudentSignupRequest dto) {
+    public AuthResponse signupStudent(SignupRequest dto) {
         User user = createUser(dto.fullName(), dto.email(), dto.password(), Role.STUDENT);
         return buildResponse(user);
     }
@@ -63,7 +62,7 @@ public class AuthService {
      * up with a mentor account that has no profile.
      */
     @Transactional
-    public AuthResponse signupMentor(MentorSignupRequest dto) {
+    public AuthResponse signupMentor(SignupRequest dto) {
         User user = createUser(dto.fullName(), dto.email(), dto.password(), Role.MENTOR);
 
         // A blank profile with status INCOMPLETE. The mentor fills it in after

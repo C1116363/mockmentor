@@ -5,8 +5,17 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
-@Schema(description = "Create a STUDENT account.")
-public record StudentSignupRequest(
+/**
+ * Creating an account - identical for candidates and mentors.
+ *
+ * Mentors used to send their expertise and experience here. Those moved to
+ * PUT /api/mentor/profile when verification was introduced, so signup is the
+ * same three fields for everyone. Keeping one record means the two endpoints
+ * cannot drift apart again.
+ */
+@Schema(description = "Create an account. Same fields whether you are signing up "
+        + "as a candidate or as a mentor.")
+public record SignupRequest(
 
         @Schema(description = "Your full name", example = "Priya Menon", maxLength = 100)
         @NotBlank(message = "Name is required")
