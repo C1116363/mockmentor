@@ -381,7 +381,7 @@
           <span style="background:#7b3ff2">V</span>
           <span style="background:#12a150">N</span>
         </span>
-        <strong id="pillCount">Senior engineers</strong> from top product companies
+        <strong>Engineers and educators</strong> who have been through it recently
       </span>
 
       <h1>
@@ -391,8 +391,8 @@
       </h1>
 
       <p class="lede">
-        Practise with engineers who take real interviews for a living. One honest
-        hour, one written scorecard, and a clear list of what to fix.
+        Practise with working engineers and educators. One honest hour, one
+        written scorecard, and a clear list of what to fix.
       </p>
 
       <div class="hero__cta">
@@ -403,10 +403,10 @@
       <p class="microcopy">Free to start · Pick your own slot · Feedback within 24 hours</p>
 
       <div class="proof">
-        <div class="proof__item"><div class="proof__value" id="pMentors">—</div><div class="proof__label">Senior mentors</div></div>
-        <div class="proof__item"><div class="proof__value" id="pStudents">—</div><div class="proof__label">Candidates prepared</div></div>
-        <div class="proof__item"><div class="proof__value" id="pDone">—</div><div class="proof__label">Interviews taken</div></div>
-        <div class="proof__item"><div class="proof__value">4.8<span style="font-size:1rem">/5</span></div><div class="proof__label">Average rating</div></div>
+        <div class="proof__item"><div class="proof__value">1 hr</div><div class="proof__label">Per interview</div></div>
+        <div class="proof__item"><div class="proof__value">3</div><div class="proof__label">Interviewers</div></div>
+        <div class="proof__item"><div class="proof__value">24 hr</div><div class="proof__label">Feedback turnaround</div></div>
+        <div class="proof__item"><div class="proof__value">&#8377;0</div><div class="proof__label">To get started</div></div>
       </div>
     </div>
   </section>
@@ -416,15 +416,15 @@
       <div class="head">
         <div class="eyebrow">Your interviewers</div>
         <h2>Meet the people you'll practise with</h2>
-        <p>Every mentor is a working senior engineer who takes interviews at their own company. Filter by what you want to be tested on.</p>
+        <p>Working engineers and educators who know what these interviews actually ask. Filter by what you want to be tested on.</p>
       </div>
 
       <div class="chips" id="chips">
         <button class="chip" aria-pressed="true" data-topic="all">All</button>
-        <button class="chip" aria-pressed="false" data-topic="backend">Backend</button>
-        <button class="chip" aria-pressed="false" data-topic="frontend">Frontend</button>
-        <button class="chip" aria-pressed="false" data-topic="dsa">DSA</button>
-        <button class="chip" aria-pressed="false" data-topic="system">System Design</button>
+        <button class="chip" aria-pressed="false" data-topic="backend">Backend &amp; Java</button>
+        <button class="chip" aria-pressed="false" data-topic="aiml">AI &amp; ML</button>
+        <button class="chip" aria-pressed="false" data-topic="embedded">Embedded &amp; IoT</button>
+        <button class="chip" aria-pressed="false" data-topic="data">Databases</button>
       </div>
 
       <div class="mentors" id="mentorGrid"></div>
@@ -530,7 +530,7 @@
   <div class="wrap">
     <section class="final reveal">
       <h2>Your next interview is the real one</h2>
-      <p>Practise it first with someone who takes them for a living.</p>
+      <p>Practise it first with someone who has been on both sides of the table.</p>
       <a class="cta cta--lg app-link" href="#">Book a mock interview <span class="cta__arrow">→</span></a>
     </section>
   </div>
@@ -580,11 +580,19 @@
   const APP_URL = IS_LOCAL ? "http://localhost:5173" : null;
   const API_URL = IS_LOCAL ? "http://localhost:8080/api" : null;
 
-  if (APP_URL) {
-    document.querySelectorAll("a.app-link").forEach((a) => (a.href = APP_URL));
-  } else {
-    document.querySelectorAll("a.app-link").forEach((a) => {
-      a.href = "#waitlist";
+  /**
+   * Point a set of links at the app, or mark them "not live yet".
+   *
+   * Takes the nodes rather than querying globally, because the mentor cards
+   * are built after this runs and their buttons need the same treatment.
+   */
+  function wireAppLinks(nodes) {
+    nodes.forEach((a) => {
+      if (APP_URL) {
+        a.href = APP_URL;
+        return;
+      }
+      a.href = "#";
       a.classList.add("app-link--soon");
       a.title = "The app isn't live yet";
       a.addEventListener("click", (e) => {
@@ -593,6 +601,8 @@
       });
     });
   }
+
+  wireAppLinks(document.querySelectorAll("a.app-link"));
 
   /** A small note next to whichever button was clicked. */
   function showSoon(anchor) {
@@ -639,14 +649,40 @@
 
   /* ---------------- mentor cards ---------------- */
 
-  // Shown if the service can't be reached, so the page never looks broken.
-  const FALLBACK = [
-    { name: "Ananya Rao", expertise: "Java, Spring Boot, System Design", yearsOfExperience: 9,
-      currentCompany: "Flipkart", bio: "Backend engineer. Happy to go deep on API design and scaling." },
-    { name: "Neha Gupta", expertise: "DSA, Problem Solving, Interview Prep", yearsOfExperience: 11,
-      currentCompany: "Amazon", bio: "Has taken 200+ interviews. Expect real interview pressure." },
-    { name: "Vikram Shetty", expertise: "React, Frontend Architecture, JavaScript", yearsOfExperience: 7,
-      currentCompany: "Razorpay", bio: "Frontend lead. Ask me about hooks, state and performance." },
+  /**
+   * The team, as editorial content rather than a live feed.
+   *
+   * These are the founders and core interviewers, so the section should stay
+   * put as people sign up - it isn't "whoever is in the database today".
+   * When there are enough mentors to be worth browsing, swap this back to
+   * GET /api/public/mentors.
+   */
+  const MENTORS = [
+    {
+      name: "Chetan Dhumal",
+      title: "Co-founder",
+      company: "Leegality",
+      years: 1.6,
+      expertise: "Java, Advanced Java, SQL, Spring Boot, Hibernate",
+      topics: ["backend"],
+      bio: "Backend engineer. Ask me about Spring Boot, JPA and how a real Java round actually runs.",
+    },
+    {
+      name: "Rutuja Khose",
+      title: "Co-founder · Assistant Professor",
+      company: "Deogiri College",
+      expertise: "AI, ML, Python, SQL",
+      topics: ["aiml", "data"],
+      bio: "Teaches AI and machine learning. Knows exactly which fundamentals interviewers dig into.",
+    },
+    {
+      name: "Abhijeet Dhumal",
+      title: "Software Engineer",
+      company: "Electropneumatics",
+      expertise: "C, C++, Embedded C, IoT",
+      topics: ["embedded"],
+      bio: "Embedded systems engineer. Pointers, memory and the low-level questions people dread.",
+    },
   ];
 
   const GRADIENTS = [
@@ -657,79 +693,50 @@
   ];
 
   const grid = document.getElementById("mentorGrid");
-  let mentors = [];
   let activeTopic = "all";
 
   const initials = (name) =>
     name.split(" ").filter(Boolean).slice(0, 2).map((p) => p[0]).join("").toUpperCase();
 
-  // Map free-text expertise onto the filter chips.
-  function topicsOf(expertise) {
-    const e = (expertise || "").toLowerCase();
-    const t = [];
-    if (/java|spring|backend|node|api|sql|python/.test(e)) t.push("backend");
-    if (/react|frontend|javascript|css|angular|vue/.test(e)) t.push("frontend");
-    if (/dsa|algorithm|problem solving|data structure/.test(e)) t.push("dsa");
-    if (/system design|scal|architect|distributed/.test(e)) t.push("system");
-    return t;
-  }
-
-  function seniorityLabel(years) {
-    if (years >= 10) return "Principal Engineer";
-    if (years >= 7) return "Senior Engineer";
-    return "Engineer";
-  }
-
   function render() {
-    if (!mentors.length) {
-      grid.innerHTML = '<p class="empty-note">No mentors to show right now. Please check back shortly.</p>';
-      return;
-    }
+    grid.innerHTML = MENTORS.map((m, i) => {
+      const dim = activeTopic !== "all" && !m.topics.includes(activeTopic);
+      const tags = m.expertise
+        .split(",").map((s) => s.trim()).filter(Boolean).slice(0, 3)
+        .map((s) => `<span class="tag">${s}</span>`).join("");
 
-    grid.innerHTML = mentors
-      .map((m, i) => {
-        const topics = topicsOf(m.expertise);
-        const dim = activeTopic !== "all" && !topics.includes(activeTopic);
-        const tags = (m.expertise || "")
-          .split(",").map((s) => s.trim()).filter(Boolean).slice(0, 3)
-          .map((s) => `<span class="tag">${s}</span>`).join("");
+      // Only shown when we actually know it - no invented numbers.
+      const years = m.years
+        ? `<span><b>${m.years}</b> yrs experience</span>`
+        : "";
 
-        return `
-          <article class="mentor ${dim ? "dim" : ""}">
-            <div class="mentor__top">
-              <div class="mentor__avatar" style="background:${GRADIENTS[i % GRADIENTS.length]}">${initials(m.name)}</div>
-              <div>
-                <div class="mentor__name">${m.name}</div>
-                <div class="mentor__role">${seniorityLabel(m.yearsOfExperience)}${m.currentCompany ? " · " + m.currentCompany : ""}</div>
-              </div>
+      return `
+        <article class="mentor ${dim ? "dim" : ""}">
+          <div class="mentor__top">
+            <div class="mentor__avatar" style="background:${GRADIENTS[i % GRADIENTS.length]}">${initials(m.name)}</div>
+            <div>
+              <div class="mentor__name">${m.name}</div>
+              <div class="mentor__role">${m.title}${m.company ? " · " + m.company : ""}</div>
             </div>
+          </div>
 
-            <div class="mentor__meta">
-              <span><b>${m.yearsOfExperience}</b> yrs experience</span>
-              <span class="stars">★★★★★</span>
-            </div>
+          ${years ? `<div class="mentor__meta">${years}</div>` : ""}
 
-            <p class="mentor__bio">${m.bio || "Takes mock interviews and gives written feedback."}</p>
+          <p class="mentor__bio">${m.bio}</p>
 
-            <div class="tags">${tags}</div>
+          <div class="tags">${tags}</div>
 
-            <div class="slots"><span class="live-dot"></span> Taking bookings this week</div>
+          <div class="slots"><span class="live-dot"></span> Taking bookings this week</div>
 
-            <a class="mentor__cta app-link" href="${APP_URL}">Book with ${m.name.split(" ")[0]}</a>
-          </article>`;
-      })
-      .join("");
+          <a class="mentor__cta app-link" href="#">Book with ${m.name.split(" ")[0]}</a>
+        </article>`;
+    }).join("");
+
+    // the CTA rewrite runs once at load, so re-apply it to freshly built cards
+    wireAppLinks(grid.querySelectorAll("a.app-link"));
   }
 
-  if (API_URL) {
-    fetch(`${API_URL}/public/mentors?limit=3`)
-      .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
-      .then((list) => { mentors = list.length ? list : FALLBACK; render(); })
-      .catch(() => { mentors = FALLBACK; render(); });
-  } else {
-    mentors = FALLBACK;
-    render();
-  }
+  render();
 
   document.querySelectorAll("#chips .chip").forEach((chip) => {
     chip.addEventListener("click", () => {
@@ -742,37 +749,6 @@
   });
 
   /* ---------------- headline numbers ---------------- */
-  const statsCall = API_URL
-    ? fetch(`${API_URL}/public/stats`).then((r) => {
-        if (!r.ok) throw new Error(r.status);
-        return r.json();
-      })
-    : Promise.reject(new Error("no api"));
-
-  statsCall
-    .then((d) => {
-      // Nudge the demo numbers up so a fresh install doesn't read "0 interviews".
-      countUp(document.getElementById("pMentors"), d.mentors, "+");
-      countUp(document.getElementById("pStudents"), d.students * 40 + 120, "+");
-      countUp(document.getElementById("pDone"), d.interviewsDone * 30 + 90, "+");
-      document.getElementById("pillCount").textContent = `${d.mentors}+ senior engineers`;
-    })
-    .catch(() => {
-      document.getElementById("pMentors").textContent = "20+";
-      document.getElementById("pStudents").textContent = "1,200+";
-      document.getElementById("pDone").textContent = "3,400+";
-    });
-
-  function countUp(el, target, suffix = "") {
-    const dur = 900, start = performance.now();
-    (function frame(now) {
-      const p = Math.min((now - start) / dur, 1);
-      const v = Math.round(target * (1 - Math.pow(1 - p, 3)));
-      el.textContent = v.toLocaleString() + (p === 1 ? suffix : "");
-      if (p < 1) requestAnimationFrame(frame);
-    })(start);
-  }
-
   /* ---------------- testimonials ---------------- */
   const quotes = [...document.querySelectorAll(".quote")];
   const dots = document.getElementById("dots");
