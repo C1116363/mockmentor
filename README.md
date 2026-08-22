@@ -22,7 +22,7 @@ Start at <http://localhost:3000> and click the corner button.
 | --- | --- | --- |
 | **STUDENT** (candidate) | Yes | Book a 1-hour slot, track requests, read feedback |
 | **MENTOR** | Yes → then **verified by an admin** | Profile form → "under verification" → the interview queue |
-| **ADMIN** | No — seeded | Verification queue, **assigning mentors to requests**, users |
+| **ADMIN** | No — seeded | Assign mentors to requests, the full mentor directory (verified and pending), users |
 
 Admin accounts are **not** created through signup. The login page has an Admin
 option, but it only ever shows a login form — a public "make me an admin"

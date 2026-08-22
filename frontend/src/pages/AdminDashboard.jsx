@@ -3,6 +3,7 @@ import { api } from "../api/client";
 import StatusBadge from "../components/StatusBadge";
 import RequestCard from "../components/RequestCard";
 import AssignMentorForm from "../components/AssignMentorForm";
+import MentorProfileCard from "../components/MentorProfileCard";
 
 const STAT_LABELS = {
   students: "Candidates",
@@ -19,27 +20,27 @@ const STAT_LABELS = {
 export default function AdminDashboard() {
   const [tab, setTab] = useState("requests");
   const [stats, setStats] = useState({});
-  const [queue, setQueue] = useState([]);        // mentor profiles awaiting review
+  const [profiles, setProfiles] = useState([]);  // every mentor profile, all statuses
+  const [mentorFilter, setMentorFilter] = useState("PENDING");
   const [unassigned, setUnassigned] = useState([]); // student requests with no mentor
   const [mentors, setMentors] = useState([]);    // verified mentors, for the dropdown
   const [users, setUsers] = useState([]);
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState(null);
-  const [expanded, setExpanded] = useState(null);
   const [assigning, setAssigning] = useState(null);
 
   const reload = useCallback(async () => {
     const [s, q, p, m, u, r] = await Promise.all([
       api.adminStats(),
-      api.pendingMentorProfiles(),
+      api.allMentorProfiles(),
       api.adminPendingRequests(),
       api.listMentors(),
       api.adminUsers(),
       api.adminRequests(),
     ]);
     setStats(s);
-    setQueue(q);
+    setProfiles(q);
     setUnassigned(p);
     setMentors(m);
     setUsers(u);
@@ -100,9 +101,19 @@ export default function AdminDashboard() {
 
   if (loading) return <p className="empty">Loading admin data...</p>;
 
+  const pendingCount = profiles.filter((p) => p.verificationStatus === "PENDING").length;
+  const shown = profiles.filter((p) => p.verificationStatus === mentorFilter);
+
+  const MENTOR_FILTERS = [
+    { key: "PENDING", label: "Awaiting review" },
+    { key: "APPROVED", label: "Verified" },
+    { key: "REJECTED", label: "Rejected" },
+    { key: "INCOMPLETE", label: "Not submitted" },
+  ];
+
   const TABS = [
     { key: "requests", label: "Interview requests", count: unassigned.length },
-    { key: "verify", label: "Mentor verification", count: queue.length },
+    { key: "verify", label: "Mentors", count: pendingCount },
     { key: "users", label: "Users", count: 0 },
     { key: "all", label: "All requests", count: 0 },
   ];
@@ -174,70 +185,49 @@ export default function AdminDashboard() {
       {tab === "verify" && (
         <section className="panel">
           <header className="panel__head">
-            <span className="panel__tag">Awaiting review</span>
+            <span className="panel__tag">Mentor directory</span>
             <h2>
-              Mentor verification <span className="count">{queue.length}</span>
+              Mentors <span className="count">{profiles.length}</span>
             </h2>
             <p>
-              Check the details against their documents, then approve or reject.
-              Aadhaar and account numbers are masked to the last 4 digits.
+              Everyone who signed up to give interviews. Approve the ones waiting,
+              and check on the ones you already verified.
             </p>
           </header>
 
-          {queue.length === 0 && <p className="empty">Nothing waiting for review.</p>}
+          <div className="chips-row">
+            {MENTOR_FILTERS.map((f) => {
+              const n = profiles.filter((p) => p.verificationStatus === f.key).length;
+              return (
+                <button
+                  key={f.key}
+                  className={`chip-sm ${mentorFilter === f.key ? "chip-sm--on" : ""}`}
+                  onClick={() => setMentorFilter(f.key)}
+                >
+                  {f.label} <span className="chip-sm__n">{n}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {shown.length === 0 && (
+            <p className="empty">
+              {mentorFilter === "PENDING"
+                ? "Nothing waiting for review."
+                : "No mentors in this state."}
+            </p>
+          )}
 
           <div className="card-list">
-            {queue.map((p) => (
-              <article className="card" key={p.id}>
-                <header className="card__head">
-                  <div>
-                    <h4 className="card__title">{p.fullName}</h4>
-                    <p className="card__sub">
-                      {p.currentRoleTitle} at {p.currentCompany} · {p.yearsOfExperience} yrs
-                    </p>
+            {shown.map((p) => (
+              <MentorProfileCard key={p.id} profile={p}>
+                {p.verificationStatus === "PENDING" && (
+                  <div className="accept-form__actions">
+                    <button className="btn btn--primary" onClick={() => approve(p)}>Approve</button>
+                    <button className="btn btn--ghost" onClick={() => reject(p)}>Reject</button>
                   </div>
-                  <span className="badge badge--pending">PENDING</span>
-                </header>
-
-                <dl className="card__facts">
-                  <div><dt>Email</dt><dd>{p.email}</dd></div>
-                  <div><dt>Phone</dt><dd>{p.phoneNumber}</dd></div>
-                  <div><dt>Qualification</dt><dd>{p.highestQualification}</dd></div>
-                  <div><dt>University</dt><dd>{p.university} ({p.graduationYear})</dd></div>
-                </dl>
-
-                {expanded === p.id && (
-                  <dl className="card__facts card__facts--sensitive">
-                    <div><dt>Aadhaar</dt><dd>{p.aadhaarNumberMasked}</dd></div>
-                    <div><dt>PAN</dt><dd>{p.panNumber}</dd></div>
-                    <div><dt>Account holder</dt><dd>{p.bankAccountHolder}</dd></div>
-                    <div><dt>Account no.</dt><dd>{p.bankAccountNumberMasked}</dd></div>
-                    <div><dt>IFSC</dt><dd>{p.bankIfsc}</dd></div>
-                    <div><dt>Bank</dt><dd>{p.bankName}</dd></div>
-                  </dl>
                 )}
-
-                <button
-                  className="linkish"
-                  onClick={() => setExpanded(expanded === p.id ? null : p.id)}
-                >
-                  {expanded === p.id ? "Hide KYC & bank details" : "Show KYC & bank details"}
-                </button>
-
-                {p.expertise && <div className="tags-row">{p.expertise}</div>}
-                {p.bio && <p className="card__notes">{p.bio}</p>}
-
-                {p.linkedinUrl && (
-                  <a className="card__link" href={p.linkedinUrl} target="_blank" rel="noreferrer">
-                    Open LinkedIn &rarr;
-                  </a>
-                )}
-
-                <div className="accept-form__actions">
-                  <button className="btn btn--primary" onClick={() => approve(p)}>Approve</button>
-                  <button className="btn btn--ghost" onClick={() => reject(p)}>Reject</button>
-                </div>
-              </article>
+              </MentorProfileCard>
             ))}
           </div>
         </section>

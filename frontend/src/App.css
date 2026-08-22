@@ -910,3 +910,44 @@
   cursor: default;
   opacity: 1;
 }
+
+/* ---------- mentor status filter ---------- */
+
+.chips-row {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.chip-sm {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  font: inherit;
+  font-size: .82rem;
+  font-weight: 600;
+  padding: 7px 13px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all .15s ease;
+}
+
+.chip-sm:hover { color: var(--text); }
+
+.chip-sm--on {
+  background: var(--student);
+  border-color: var(--student);
+  color: #fff;
+}
+
+.chip-sm__n {
+  opacity: .7;
+  font-weight: 700;
+  margin-left: 3px;
+}
+
+.badge--rejected {
+  background: #fdecea;
+  color: var(--error);
+}
