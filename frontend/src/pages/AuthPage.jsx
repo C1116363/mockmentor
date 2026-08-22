@@ -32,6 +32,7 @@ export default function AuthPage() {
   const [fieldErrors, setFieldErrors] = useState({});
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [wrongPortalFor, setWrongPortalFor] = useState(null);
 
   const current = PORTALS.find((p) => p.key === portal);
   const isSignup = mode === "signup" && current.canSignup;
@@ -44,6 +45,7 @@ export default function AuthPage() {
   function reset() {
     setError(null);
     setFieldErrors({});
+    setWrongPortalFor(null);
   }
 
   function choosePortal(key) {
@@ -64,11 +66,13 @@ export default function AuthPage() {
       } else if (isSignup) {
         await signupStudent(form);
       } else {
-        await login({ email: form.email, password: form.password });
+        await login({ email: form.email, password: form.password }, portal);
       }
     } catch (err) {
       setError(err.message);
       setFieldErrors(err.fieldErrors ?? {});
+      // Point them at the right tab rather than making them work it out.
+      if (err.actualRole) setWrongPortalFor(err.actualRole);
     } finally {
       setBusy(false);
     }
@@ -203,7 +207,27 @@ export default function AuthPage() {
               : "Log in"}
           </button>
 
-          {error && <p className="notice notice--error">{error}</p>}
+          {error && (
+            <p className="notice notice--error">
+              {error}
+              {wrongPortalFor && (
+                <>
+                  {" "}
+                  <button
+                    type="button"
+                    className="notice__action"
+                    onClick={() => {
+                      choosePortal(wrongPortalFor);
+                      setError(null);
+                      setWrongPortalFor(null);
+                    }}
+                  >
+                    Switch for me
+                  </button>
+                </>
+              )}
+            </p>
+          )}
         </form>
       </div>
     </div>

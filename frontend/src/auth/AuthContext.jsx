@@ -1,6 +1,32 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { api, tokenStore } from "../api/client";
 
+const PORTAL_NAME = {
+  STUDENT: "Take interviews",
+  MENTOR: "Give interviews",
+  ADMIN: "Admin",
+};
+
+/**
+ * Thrown when someone logs in from the wrong portal - e.g. mentor credentials
+ * entered under the Admin tab.
+ *
+ * This is a usability guard, not a security control. The account owner could
+ * always log in from the correct tab; what it prevents is the confusing
+ * situation where you pick "Admin", it accepts your details, and you land on a
+ * mentor dashboard wondering what happened.
+ */
+class WrongPortalError extends Error {
+  constructor(actualRole, expectedRole) {
+    super(
+      `That's a ${actualRole.toLowerCase()} account, not ${
+        expectedRole === "ADMIN" ? "an admin" : "a " + expectedRole.toLowerCase()
+      } account. Choose "${PORTAL_NAME[actualRole]}" and log in again.`
+    );
+    this.actualRole = actualRole;
+  }
+}
+
 /**
  * Holds "who is logged in" for the whole app.
  *
@@ -38,7 +64,18 @@ export function AuthProvider({ children }) {
     () => ({
       user,
       loading,
-      login: (payload) => api.login(payload).then(acceptAuth),
+      /**
+       * `expectedRole` is the portal the user picked. The check happens before
+       * acceptAuth, so on a mismatch the token is never stored and the wrong
+       * dashboard never renders for even a frame.
+       */
+      login: (payload, expectedRole) =>
+        api.login(payload).then((response) => {
+          if (expectedRole && response.user.role !== expectedRole) {
+            throw new WrongPortalError(response.user.role, expectedRole);
+          }
+          return acceptAuth(response);
+        }),
       signupStudent: (payload) => api.signupStudent(payload).then(acceptAuth),
       signupMentor: (payload) => api.signupMentor(payload).then(acceptAuth),
       logout: () => {
