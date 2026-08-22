@@ -8,10 +8,10 @@ import java.math.BigDecimal;
 @Schema(description = "Where to send the money, and how much.")
 public record PaymentInstructionsDto(
 
-        @Schema(description = "UPI ID to pay", example = "abhimentor@okhdfcbank")
+        @Schema(description = "UPI ID to pay", example = "prehire@okhdfcbank")
         String upiId,
 
-        @Schema(description = "Name shown in the UPI app", example = "AbhiMentor")
+        @Schema(description = "Name shown in the UPI app", example = "PreHire")
         String payeeName,
 
         @Schema(description = "Fee for one interview", example = "499.00")
@@ -22,7 +22,7 @@ public record PaymentInstructionsDto(
 
         @Schema(description = "upi:// deep link. On a phone this opens GPay / PhonePe / Paytm "
                 + "with the amount already filled in.",
-                example = "upi://pay?pa=abhimentor@okhdfcbank&pn=AbhiMentor&am=499.00&cu=INR")
+                example = "upi://pay?pa=prehire@okhdfcbank&pn=PreHire&am=499.00&cu=INR")
         String upiDeepLink
 ) {
 }

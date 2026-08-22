@@ -1,4 +1,4 @@
-# AbhiMentor
+# PreHire
 
 A learning project: **students and working professionals request mock interviews, senior mentors pick them up and take the call.**
 
@@ -124,7 +124,7 @@ To use real Google Meet, set `app.meeting.provider=google` and implement
 (Calendar API, OAuth or a service account, and a `conferenceData` insert). Until
 then it throws loudly rather than handing anyone a dead link.
 
-Room names are long and random (`abhimentor-h5rye2-rzcuqq-ummniz`) because a
+Room names are long and random (`prehire-h5rye2-rzcuqq-ummniz`) because a
 Jitsi room is reachable by anyone who knows its name — a guessable one like
 `interview-7` would let strangers walk into somebody's interview.
 

@@ -1,21 +1,25 @@
 // All calls to the Spring Boot backend go through this one file.
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8080/api";
-const TOKEN_KEY = "abhimentor.token";
-const LEGACY_TOKEN_KEY = "mockmentor.token";
+const TOKEN_KEY = "prehire.token";
 
 /**
- * The app was called MockMentor, so anyone already logged in has their token
- * under the old key. Move it across once rather than silently logging everyone
- * out on the rename.
+ * The app has been renamed twice (MockMentor -> AbhiMentor -> PreHire) and the
+ * token is keyed by name, so anyone already logged in has it under an older
+ * key. Carry it across rather than silently logging everyone out on a rename.
+ *
+ * Ordered newest-first so the most recent token wins if several exist.
  */
+const LEGACY_TOKEN_KEYS = ["abhimentor.token", "mockmentor.token"];
+
 function migrateLegacyToken() {
   try {
-    const old = localStorage.getItem(LEGACY_TOKEN_KEY);
-    if (old && !localStorage.getItem(TOKEN_KEY)) {
-      localStorage.setItem(TOKEN_KEY, old);
+    for (const key of LEGACY_TOKEN_KEYS) {
+      const old = localStorage.getItem(key);
+      if (!old) continue;
+      if (!localStorage.getItem(TOKEN_KEY)) localStorage.setItem(TOKEN_KEY, old);
+      localStorage.removeItem(key);
     }
-    if (old) localStorage.removeItem(LEGACY_TOKEN_KEY);
   } catch {
     /* storage blocked - nothing to migrate */
   }

@@ -44,7 +44,7 @@ function Shell() {
         <div className="topbar__left">
           <div className="brand">
             <span className="brand__mark">🎯</span>
-            <span className="brand__name">AbhiMentor</span>
+            <span className="brand__name">PreHire</span>
           </div>
           {/* menu button - opens the section list */}
           <SectionMenu />
@@ -69,7 +69,7 @@ function Shell() {
         {Dashboard ? <Dashboard /> : <p className="empty">Unknown role: {user.role}</p>}
       </main>
 
-      <footer className="footer">AbhiMentor · practise before it counts</footer>
+      <footer className="footer">PreHire · practise before it counts</footer>
     </div>
   );
 }
