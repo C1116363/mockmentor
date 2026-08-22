@@ -573,11 +573,36 @@
 </footer>
 
 <script>
-  const APP_URL = "http://localhost:5173";
-  const API_URL = "http://localhost:8080/api";
+  // The app and API only exist on a developer machine. When this page is served
+  // from anywhere else - GitHub Pages, say - there is nothing behind those URLs,
+  // so the buttons say so instead of dumping people on a dead link.
+  const IS_LOCAL = ["localhost", "127.0.0.1", ""].includes(location.hostname);
+  const APP_URL = IS_LOCAL ? "http://localhost:5173" : null;
+  const API_URL = IS_LOCAL ? "http://localhost:8080/api" : null;
 
-  // Every "book" / "log in" link opens the app.
-  document.querySelectorAll("a.app-link").forEach((a) => (a.href = APP_URL));
+  if (APP_URL) {
+    document.querySelectorAll("a.app-link").forEach((a) => (a.href = APP_URL));
+  } else {
+    document.querySelectorAll("a.app-link").forEach((a) => {
+      a.href = "#waitlist";
+      a.classList.add("app-link--soon");
+      a.title = "The app isn't live yet";
+      a.addEventListener("click", (e) => {
+        e.preventDefault();
+        showSoon(a);
+      });
+    });
+  }
+
+  /** A small note next to whichever button was clicked. */
+  function showSoon(anchor) {
+    document.querySelectorAll(".soon-note").forEach((n) => n.remove());
+    const note = document.createElement("span");
+    note.className = "soon-note";
+    note.textContent = "Not live yet — booking opens soon.";
+    anchor.insertAdjacentElement("afterend", note);
+    setTimeout(() => note.remove(), 3600);
+  }
 
   /* ---------------- theme ---------------- */
   const root = document.documentElement;
@@ -696,10 +721,15 @@
       .join("");
   }
 
-  fetch(`${API_URL}/public/mentors?limit=3`)
-    .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
-    .then((list) => { mentors = list.length ? list : FALLBACK; render(); })
-    .catch(() => { mentors = FALLBACK; render(); });
+  if (API_URL) {
+    fetch(`${API_URL}/public/mentors?limit=3`)
+      .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then((list) => { mentors = list.length ? list : FALLBACK; render(); })
+      .catch(() => { mentors = FALLBACK; render(); });
+  } else {
+    mentors = FALLBACK;
+    render();
+  }
 
   document.querySelectorAll("#chips .chip").forEach((chip) => {
     chip.addEventListener("click", () => {
@@ -712,8 +742,14 @@
   });
 
   /* ---------------- headline numbers ---------------- */
-  fetch(`${API_URL}/public/stats`)
-    .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
+  const statsCall = API_URL
+    ? fetch(`${API_URL}/public/stats`).then((r) => {
+        if (!r.ok) throw new Error(r.status);
+        return r.json();
+      })
+    : Promise.reject(new Error("no api"));
+
+  statsCall
     .then((d) => {
       // Nudge the demo numbers up so a fresh install doesn't read "0 interviews".
       countUp(document.getElementById("pMentors"), d.mentors, "+");
