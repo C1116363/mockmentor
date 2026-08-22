@@ -14,6 +14,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -75,7 +76,7 @@ public class DataSeeder implements CommandLineRunner {
                 rahul,
                 "Spring Boot backend round",
                 "Fresher",
-                LocalDate.now().plusDays(3),
+                LocalDateTime.of(LocalDate.now().plusDays(3), java.time.LocalTime.of(15, 0)),
                 "Final year student. Want to practise JPA and REST API questions."
         ));
 

@@ -221,7 +221,8 @@ throw away a stale token.
 
 | Method | Path | Who |
 | --- | --- | --- |
-| `POST` | `/api/requests` | STUDENT — raise a request |
+| `GET` | `/api/slots?date=2026-09-20` | any logged-in user — the 1-hour slot grid for that day |
+| `POST` | `/api/requests` | STUDENT — book a slot |
 | `GET` | `/api/requests/mine` | STUDENT — your own requests |
 | `GET` | `/api/requests/pending` | MENTOR — the open queue |
 | `GET` | `/api/requests/assigned` | MENTOR — what you accepted |
@@ -276,6 +277,20 @@ curl -i $API/requests/pending -H "Authorization: Bearer $TOKEN"
 ```
 
 ---
+
+## Booking slots
+
+Interviews run in **one-hour slots between 9:00 AM and 9:00 PM**, up to 30 days
+ahead. `GET /api/slots?date=...` returns the grid for a day and marks each slot
+bookable or not:
+
+- **Already passed** — the slot's start time is in the past
+- **Fully booked** — as many live bookings as there are mentors, since that is
+  how many interviews can run at once. Cancelling a request frees its slot again.
+
+The rules live in `SlotService`. The grid is only a convenience — `createRequest`
+calls `assertBookable()` and re-checks everything server-side, so a stale page or
+a hand-crafted request still cannot book 3 AM, a half-hour slot, or a full one.
 
 ## How a request flows
 

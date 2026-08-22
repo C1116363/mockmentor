@@ -57,5 +57,9 @@ export const api = {
   createRequest: (payload) => request("/requests", { method: "POST", body: JSON.stringify(payload) }),
   myRequests: () => request("/requests/mine"),
 
+  // ---- slots ----
+  // date is "yyyy-MM-dd"; returns every 1-hour slot for that day with availability
+  slots: (date) => request(`/slots?date=${encodeURIComponent(date)}`),
+
   cancelRequest: (id) => request(`/requests/${id}/cancel`, { method: "PATCH" }),
 };

@@ -13,7 +13,6 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
@@ -27,6 +26,9 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "interview_requests")
 public class InterviewRequest {
+
+    /** Every interview is one hour. Change this in one place if that changes. */
+    public static final int SLOT_MINUTES = 60;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -45,8 +47,12 @@ public class InterviewRequest {
     @Column(name = "experience_level", nullable = false)
     private String experienceLevel;
 
-    @Column(name = "preferred_date", nullable = false)
-    private LocalDate preferredDate;
+    /**
+     * Start of the 1-hour slot the candidate picked, e.g. 2026-09-20T15:00.
+     * Slots always start on the hour and always run for SLOT_MINUTES.
+     */
+    @Column(name = "preferred_slot", nullable = false)
+    private LocalDateTime preferredSlot;
 
     @Column(length = 1000)
     private String notes;
@@ -77,11 +83,11 @@ public class InterviewRequest {
     }
 
     public InterviewRequest(User student, String topic, String experienceLevel,
-                            LocalDate preferredDate, String notes) {
+                            LocalDateTime preferredSlot, String notes) {
         this.student = student;
         this.topic = topic;
         this.experienceLevel = experienceLevel;
-        this.preferredDate = preferredDate;
+        this.preferredSlot = preferredSlot;
         this.notes = notes;
         this.status = RequestStatus.PENDING;
     }
@@ -133,8 +139,13 @@ public class InterviewRequest {
         return experienceLevel;
     }
 
-    public LocalDate getPreferredDate() {
-        return preferredDate;
+    public LocalDateTime getPreferredSlot() {
+        return preferredSlot;
+    }
+
+    /** When the slot finishes - derived, not stored. */
+    public LocalDateTime getPreferredSlotEnd() {
+        return preferredSlot == null ? null : preferredSlot.plusMinutes(SLOT_MINUTES);
     }
 
     public String getNotes() {

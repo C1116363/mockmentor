@@ -5,9 +5,15 @@ function formatDateTime(value) {
   return new Date(value).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
 }
 
-function formatDate(value) {
-  if (!value) return null;
-  return new Date(value).toLocaleDateString(undefined, { dateStyle: "medium" });
+/** "20 Sep 2026, 3:00–4:00 PM" */
+function formatSlot(start, end) {
+  if (!start) return null;
+  const s = new Date(start);
+  const day = s.toLocaleDateString(undefined, { dateStyle: "medium" });
+  const from = s.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  if (!end) return `${day}, ${from}`;
+  const to = new Date(end).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  return `${day}, ${from} – ${to}`;
 }
 
 /**
@@ -26,8 +32,8 @@ export default function RequestCard({ request, children }) {
 
       <dl className="card__facts">
         <div>
-          <dt>Preferred date</dt>
-          <dd>{formatDate(request.preferredDate)}</dd>
+          <dt>Requested slot</dt>
+          <dd>{formatSlot(request.preferredSlot, request.preferredSlotEnd)}</dd>
         </div>
         {request.mentor && (
           <div>

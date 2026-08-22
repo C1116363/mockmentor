@@ -5,6 +5,8 @@ import com.learn.interviewmentor.model.RequestStatus;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,4 +34,7 @@ public interface InterviewRequestRepository extends JpaRepository<InterviewReque
     Optional<InterviewRequest> findById(Long id);
 
     long countByStatus(RequestStatus status);
+
+    /** How many live bookings already sit on a given slot. Drives availability. */
+    long countByPreferredSlotAndStatusIn(LocalDateTime preferredSlot, Collection<RequestStatus> statuses);
 }

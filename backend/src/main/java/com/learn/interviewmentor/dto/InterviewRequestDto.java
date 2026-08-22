@@ -5,7 +5,6 @@ import com.learn.interviewmentor.dto.auth.UserDto;
 import com.learn.interviewmentor.model.InterviewRequest;
 import com.learn.interviewmentor.model.RequestStatus;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /** What we send back to the browser for an interview request. */
@@ -15,7 +14,11 @@ public record InterviewRequestDto(
         UserDto student,
         String topic,
         String experienceLevel,
-        LocalDate preferredDate,
+        @Schema(description = "Start of the booked one-hour slot", example = "2026-09-20T15:00:00")
+        LocalDateTime preferredSlot,
+
+        @Schema(description = "End of that slot", example = "2026-09-20T16:00:00")
+        LocalDateTime preferredSlotEnd,
         String notes,
         @Schema(description = "PENDING -> SCHEDULED -> COMPLETED, or CANCELLED", example = "PENDING")
         RequestStatus status,
@@ -34,7 +37,8 @@ public record InterviewRequestDto(
                 UserDto.from(request.getStudent()),
                 request.getTopic(),
                 request.getExperienceLevel(),
-                request.getPreferredDate(),
+                request.getPreferredSlot(),
+                request.getPreferredSlotEnd(),
                 request.getNotes(),
                 request.getStatus(),
                 request.getMentor() == null ? null : MentorDto.fromUserOnly(request.getMentor()),

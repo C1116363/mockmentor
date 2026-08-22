@@ -640,3 +640,56 @@
 .notice-panel .btn--primary {
   align-self: center;
 }
+
+/* ---------- slot picker ---------- */
+
+.slotpick {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.slots {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.slot {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 10px 6px;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.slot:hover:not(:disabled) {
+  border-color: var(--accent, var(--student));
+  color: var(--accent, var(--student));
+}
+
+.slot--on {
+  background: var(--accent, var(--student));
+  border-color: var(--accent, var(--student));
+  color: #fff;
+}
+
+.slot--on:hover {
+  color: #fff;
+}
+
+/* Taken or already passed - still visible so the day doesn't look empty,
+   but clearly not clickable. */
+.slot--off {
+  opacity: 0.4;
+  cursor: not-allowed;
+  text-decoration: line-through;
+  background: var(--bg);
+}

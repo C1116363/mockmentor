@@ -31,20 +31,27 @@ import java.util.List;
 public class InterviewRequestService {
 
     private final InterviewRequestRepository requestRepository;
+    private final SlotService slotService;
 
-    public InterviewRequestService(InterviewRequestRepository requestRepository) {
+    public InterviewRequestService(InterviewRequestRepository requestRepository, SlotService slotService) {
         this.requestRepository = requestRepository;
+        this.slotService = slotService;
     }
 
     // ---------- student side ----------
 
     @Transactional
     public InterviewRequestDto create(CreateRequestDto dto, User student) {
+        // Never trust the slot the browser sent - re-check it here. The grid the
+        // candidate saw may be stale, or the request may not have come from our
+        // frontend at all.
+        slotService.assertBookable(dto.preferredSlot());
+
         InterviewRequest request = new InterviewRequest(
                 student,
                 dto.topic(),
                 dto.experienceLevel(),
-                dto.preferredDate(),
+                dto.preferredSlot(),
                 dto.notes()
         );
         return InterviewRequestDto.from(requestRepository.save(request));

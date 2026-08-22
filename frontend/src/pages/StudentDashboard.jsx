@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
 import RequestCard from "../components/RequestCard";
+import SlotPicker from "../components/SlotPicker";
 
 const EXPERIENCE_LEVELS = ["Fresher", "0-1 years", "1-3 years", "3-5 years", "5+ years"];
 
 const EMPTY_FORM = {
   topic: "",
   experienceLevel: "Fresher",
-  preferredDate: "",
+  preferredSlot: "",
   notes: "",
 };
 
@@ -19,6 +20,9 @@ const EMPTY_FORM = {
  */
 export default function StudentDashboard() {
   const [form, setForm] = useState(EMPTY_FORM);
+  // The date lives outside the form because it only drives the slot grid -
+  // what actually gets submitted is the chosen slot.
+  const [date, setDate] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const [message, setMessage] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -45,9 +49,16 @@ export default function StudentDashboard() {
     setMessage(null);
     setFieldErrors({});
 
+    if (!form.preferredSlot) {
+      setSubmitting(false);
+      setFieldErrors({ preferredSlot: "Pick a slot" });
+      return;
+    }
+
     try {
       await api.createRequest(form);
       setForm(EMPTY_FORM);
+      setDate("");
       setMessage({ type: "success", text: "Request sent. We'll line up an interviewer for you." });
       setRequests(await api.myRequests());
     } catch (error) {
@@ -90,33 +101,24 @@ export default function StudentDashboard() {
             {fieldErrors.topic && <small className="field__error">{fieldErrors.topic}</small>}
           </label>
 
-          <div className="form__row">
-            <label className="field">
-              <span>Your experience</span>
-              <select name="experienceLevel" value={form.experienceLevel} onChange={updateField}>
-                {EXPERIENCE_LEVELS.map((level) => (
-                  <option key={level} value={level}>
-                    {level}
-                  </option>
-                ))}
-              </select>
-            </label>
+          <label className="field">
+            <span>Your experience</span>
+            <select name="experienceLevel" value={form.experienceLevel} onChange={updateField}>
+              {EXPERIENCE_LEVELS.map((level) => (
+                <option key={level} value={level}>
+                  {level}
+                </option>
+              ))}
+            </select>
+          </label>
 
-            <label className="field">
-              <span>Preferred date</span>
-              <input
-                type="date"
-                name="preferredDate"
-                value={form.preferredDate}
-                onChange={updateField}
-                min={new Date().toISOString().slice(0, 10)}
-                required
-              />
-              {fieldErrors.preferredDate && (
-                <small className="field__error">{fieldErrors.preferredDate}</small>
-              )}
-            </label>
-          </div>
+          <SlotPicker
+            date={date}
+            onDateChange={setDate}
+            value={form.preferredSlot}
+            onChange={(slot) => setForm((current) => ({ ...current, preferredSlot: slot }))}
+            error={fieldErrors.preferredSlot}
+          />
 
           <label className="field">
             <span>Anything we should know? (optional)</span>
@@ -129,8 +131,12 @@ export default function StudentDashboard() {
             />
           </label>
 
-          <button className="btn btn--primary" type="submit" disabled={submitting}>
-            {submitting ? "Sending..." : "Request interview"}
+          <button
+            className="btn btn--primary"
+            type="submit"
+            disabled={submitting || !form.preferredSlot}
+          >
+            {submitting ? "Booking..." : "Book this slot"}
           </button>
 
           {message && <p className={`notice notice--${message.type}`}>{message.text}</p>}

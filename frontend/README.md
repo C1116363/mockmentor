@@ -29,6 +29,7 @@ Everything is under `src/`:
 | `auth/AuthContext.jsx` | who is logged in; login, signup, logout |
 | `pages/AuthPage.jsx` | the login + signup screen |
 | `pages/StudentDashboard.jsx` | the whole app once you're logged in |
+| `components/SlotPicker.jsx` | date picker + the 1-hour slot grid |
 | `components/RequestCard.jsx` | the card used in the request list |
 | `components/StatusBadge.jsx` | the coloured status pill |
 | `App.jsx` | decides: loading / logged out / logged in |
@@ -41,6 +42,8 @@ Everything is under `src/`:
 | Add a new backend call | `api/client.js`, then use it in a page |
 | Change the signup fields | `pages/AuthPage.jsx` |
 | Change the experience dropdown options | `pages/StudentDashboard.jsx` → `EXPERIENCE_LEVELS` |
+| Change the slot grid layout | `components/SlotPicker.jsx` + `.slots` / `.slot` in `App.css` |
+| Change the bookable hours or slot length | backend: `service/SlotService.java` and `InterviewRequest.SLOT_MINUTES` |
 | Change colours | `src/index.css` → the `:root { }` block |
 | Change what shows on a request card | `components/RequestCard.jsx` |
 | Point at a different API URL | `api/client.js` → `BASE_URL` |
