@@ -1121,133 +1121,156 @@
 /* empty states can now hold an action button */
 .empty { display: flex; flex-direction: column; align-items: center; gap: 12px; }
 
+
 /* ============================================================
-   Header navigation: toggle + the second line it opens
+   Header menu: button + the drop-down list of sections
    ============================================================ */
 
 .topbar__left { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 
-.topbar__subtitle {
-  color: var(--muted);
-  font-size: .86rem;
-  margin: 0 0 20px;
-}
+.topbar__subtitle { color: var(--muted); font-size: .86rem; margin: 0 0 20px; }
 
-.navtoggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-  background: var(--surface);
+/* anchor for the panel, which is positioned against the button */
+.navmenu { position: relative; display: flex; align-items: center; gap: 11px; }
+
+.navmenu__btn {
+  position: relative;
+  width: 38px; height: 38px;
+  display: grid; place-items: center;
   border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 7px 14px 7px 12px;
-  font-size: .86rem;
-  font-weight: 650;
-  color: var(--text);
+  background: var(--surface);
+  border-radius: 10px;
   cursor: pointer;
   transition: all .18s var(--ease);
 }
 
-.navtoggle:hover { border-color: var(--border-strong); box-shadow: var(--shadow-xs); }
+.navmenu__btn:hover { border-color: var(--border-strong); box-shadow: var(--shadow-xs); }
 
-.navtoggle--open {
+.navmenu__btn--open {
   border-color: var(--student);
   background: var(--student-soft);
-  color: var(--student);
 }
 
-.navtoggle__icon { font-size: .95rem; line-height: 1; }
-.navtoggle__label { line-height: 1.2; }
+/* three bars that fold into an X when open */
+.burger { display: grid; gap: 4px; width: 17px; }
 
-.navtoggle__chevron {
-  font-size: .7rem;
-  color: var(--muted);
-  transition: transform .2s var(--ease);
+.burger span {
+  height: 2px;
+  width: 100%;
+  background: var(--text);
+  border-radius: 2px;
+  transition: transform .22s var(--ease), opacity .16s var(--ease);
+  transform-origin: center;
 }
 
-.navtoggle--open .navtoggle__chevron { transform: rotate(180deg); color: inherit; }
+.navmenu__btn--open .burger span { background: var(--student); }
+.navmenu__btn--open .burger span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+.navmenu__btn--open .burger span:nth-child(2) { opacity: 0; }
+.navmenu__btn--open .burger span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
 
-/* work waiting in a section you're not looking at */
-.navtoggle__dot {
+/* count of work waiting in sections you're not on */
+.navmenu__dot {
+  position: absolute;
+  top: -5px; right: -5px;
   min-width: 18px;
   padding: 0 5px;
   border-radius: 999px;
   background: var(--error);
   color: #fff;
-  font-size: .68rem;
+  font-size: .66rem;
   font-weight: 800;
   line-height: 18px;
   text-align: center;
+  border: 2px solid var(--bg);
 }
 
-.navline {
-  display: flex;
-  gap: 5px;
-  flex-wrap: wrap;
+.navmenu__current { font-size: .95rem; font-weight: 700; letter-spacing: -.01em; }
+
+/* ---- the drop-down ---- */
+
+.navmenu__panel {
+  position: absolute;
+  top: calc(100% + 9px);
+  left: 0;
+  z-index: 60;
+  min-width: 258px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 6px;
-  margin-bottom: 18px;
-  box-shadow: var(--shadow-sm);
-  animation: dropdown .22s var(--ease) both;
+  padding: 7px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: menudrop .18s var(--ease) both;
+  transform-origin: top left;
 }
 
-@keyframes dropdown {
-  from { opacity: 0; transform: translateY(-8px); }
+@keyframes menudrop {
+  from { opacity: 0; transform: translateY(-6px) scale(.97); }
   to { opacity: 1; transform: none; }
 }
 
-.navline__item {
-  flex: 1 1 auto;
-  min-width: max-content;
-  display: inline-flex;
+.navmenu__heading {
+  font-size: .66rem;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--faint);
+  padding: 7px 11px 5px;
+}
+
+.navmenu__item {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
+  gap: 11px;
+  width: 100%;
   border: none;
   background: none;
-  padding: 10px 16px;
+  padding: 10px 11px;
   border-radius: 9px;
-  font-size: .87rem;
-  font-weight: 650;
-  color: var(--muted);
+  font-size: .89rem;
+  font-weight: 600;
+  color: var(--text);
   cursor: pointer;
-  white-space: nowrap;
-  transition: all .16s var(--ease);
+  text-align: left;
+  transition: background .14s var(--ease);
 }
 
-.navline__item:hover:not(.navline__item--on) { color: var(--text); background: var(--surface-2); }
+.navmenu__item:hover { background: var(--surface-2); }
 
-.navline__item--on {
-  background: linear-gradient(135deg, var(--student), var(--mentor));
-  color: #fff;
-  box-shadow: 0 2px 10px color-mix(in srgb, var(--student) 30%, transparent);
+.navmenu__item--on { background: var(--student-soft); color: var(--student); }
+
+.navmenu__icon {
+  width: 26px; height: 26px;
+  flex: 0 0 auto;
+  display: grid; place-items: center;
+  border-radius: 7px;
+  background: var(--bg-alt);
+  font-size: .88rem;
 }
 
-.navline__icon { font-size: .95rem; line-height: 1; }
+.navmenu__item--on .navmenu__icon { background: color-mix(in srgb, var(--student) 18%, transparent); }
 
-.navline__count {
-  min-width: 19px;
+.navmenu__label { flex: 1; }
+
+.navmenu__count {
+  min-width: 20px;
   padding: 0 6px;
   border-radius: 999px;
   background: var(--bg-alt);
   color: var(--muted);
   font-size: .71rem;
   font-weight: 800;
-  line-height: 19px;
+  line-height: 20px;
+  text-align: center;
 }
 
-.navline__count--alert { background: var(--error); color: #fff; }
+.navmenu__count--alert { background: var(--error); color: #fff; }
 
-/* on the active item the pill sits on a gradient, so invert it */
-.navline__item--on .navline__count,
-.navline__item--on .navline__count--alert {
-  background: rgba(255, 255, 255, .25);
-  color: #fff;
-}
+.navmenu__tick { color: var(--student); font-weight: 800; font-size: .8rem; }
 
-@media (max-width: 620px) {
-  .navtoggle__label { display: none; }
-  .navline__item { flex: 1 1 100%; justify-content: flex-start; }
+@media (max-width: 560px) {
+  .navmenu__current { display: none; }
+  .navmenu__panel { min-width: 234px; }
 }

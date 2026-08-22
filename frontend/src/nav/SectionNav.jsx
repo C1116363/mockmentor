@@ -1,16 +1,22 @@
-import { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 /**
- * Navigation that lives in the header rather than above the content.
+ * Navigation lives behind a menu button in the header.
  *
- * The header shows a toggle with the current section's name. Clicking it opens
- * a second line underneath with every section; picking one navigates and
- * closes the line again.
+ * Nothing is shown until you click it; then the sections drop down one under
+ * the other, and picking one shows that screen and closes the menu.
  *
- * The state lives up here because the toggle is in the header while the
+ * The state lives up here because the button is in the header while the
  * sections belong to whichever dashboard is mounted. Each dashboard registers
- * its own sections on mount, so the header doesn't need to know anything about
- * roles.
+ * its own sections on mount, so the header knows nothing about roles.
  */
 const SectionNavContext = createContext(null);
 
@@ -18,8 +24,8 @@ export function SectionNavProvider({ children }) {
   const [items, setItems] = useState([]);
   const [active, setActive] = useState(null);
   const [open, setOpen] = useState(false);
-  // Compared against the incoming registration so re-registering identical
-  // sections (which happens on every parent render) doesn't loop setState.
+  // Compared against each incoming registration, so re-registering identical
+  // sections (which happens on every parent render) can't loop setState.
   const signature = useRef("");
 
   const register = useCallback((next, defaultKey) => {
@@ -27,10 +33,9 @@ export function SectionNavProvider({ children }) {
     if (sig === signature.current) return;
     signature.current = sig;
     setItems(next);
-    setActive((current) => {
-      const stillValid = next.some((i) => i.key === current);
-      return stillValid ? current : defaultKey ?? next[0]?.key ?? null;
-    });
+    setActive((current) =>
+      next.some((i) => i.key === current) ? current : defaultKey ?? next[0]?.key ?? null
+    );
   }, []);
 
   const go = useCallback((key) => {
@@ -52,54 +57,90 @@ export function useSectionNav() {
   return context;
 }
 
-/** The button in the header. Shows where you are, and opens the second line. */
-export function SectionToggle() {
-  const { items, active, open, setOpen } = useSectionNav();
+/**
+ * The menu button plus the panel it opens.
+ *
+ * Both live in one component so the panel can be positioned against the
+ * button, and so the outside-click handler has a single element to test.
+ */
+export function SectionMenu() {
+  const { items, active, go, open, setOpen } = useSectionNav();
+  const wrapRef = useRef(null);
+
+  // Clicking anywhere else, or pressing Escape, closes the menu - a dropdown
+  // you can only close by clicking the button again feels stuck.
+  useEffect(() => {
+    if (!open) return;
+
+    const onPointer = (e) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
+    };
+    const onKey = (e) => e.key === "Escape" && setOpen(false);
+
+    document.addEventListener("mousedown", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onPointer);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open, setOpen]);
+
   if (items.length === 0) return null;
 
   const current = items.find((i) => i.key === active);
-  const outstanding = items.reduce((n, i) => n + (i.alert && i.count > 0 ? i.count : 0), 0);
-
-  return (
-    <button
-      className={`navtoggle ${open ? "navtoggle--open" : ""}`}
-      onClick={() => setOpen(!open)}
-      aria-expanded={open}
-      aria-label="Browse sections"
-    >
-      <span className="navtoggle__icon">{current?.icon ?? "☰"}</span>
-      <span className="navtoggle__label">{current?.label ?? "Menu"}</span>
-      {/* Anything needing attention in a section you're NOT on, so closing the
-          line never hides work from you. */}
-      {outstanding > 0 && !open && <span className="navtoggle__dot">{outstanding}</span>}
-      <span className="navtoggle__chevron" aria-hidden="true">▾</span>
-    </button>
+  // Work waiting in sections you are not on, so a closed menu never hides it.
+  const outstanding = items.reduce(
+    (n, i) => n + (i.alert && i.count > 0 && i.key !== active ? i.count : 0),
+    0
   );
-}
-
-/** The second line, revealed under the header. */
-export function SectionLine() {
-  const { items, active, go, open } = useSectionNav();
-  if (items.length === 0 || !open) return null;
 
   return (
-    <nav className="navline" aria-label="Sections">
-      {items.map((i) => (
-        <button
-          key={i.key}
-          className={`navline__item ${active === i.key ? "navline__item--on" : ""}`}
-          onClick={() => go(i.key)}
-          aria-current={active === i.key ? "page" : undefined}
-        >
-          {i.icon && <span className="navline__icon">{i.icon}</span>}
-          <span>{i.label}</span>
-          {i.count > 0 && (
-            <span className={`navline__count ${i.alert ? "navline__count--alert" : ""}`}>
-              {i.count}
-            </span>
-          )}
-        </button>
-      ))}
-    </nav>
+    <div className="navmenu" ref={wrapRef}>
+      <button
+        className={`navmenu__btn ${open ? "navmenu__btn--open" : ""}`}
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        aria-haspopup="menu"
+        aria-label={open ? "Close menu" : "Open menu"}
+      >
+        <span className="burger" aria-hidden="true">
+          <span />
+          <span />
+          <span />
+        </span>
+        {outstanding > 0 && !open && <span className="navmenu__dot">{outstanding}</span>}
+      </button>
+
+      {open && (
+        <div className="navmenu__panel" role="menu">
+          <p className="navmenu__heading">Go to</p>
+
+          {items.map((i) => (
+            <button
+              key={i.key}
+              role="menuitem"
+              className={`navmenu__item ${active === i.key ? "navmenu__item--on" : ""}`}
+              onClick={() => go(i.key)}
+            >
+              <span className="navmenu__icon">{i.icon}</span>
+              <span className="navmenu__label">{i.label}</span>
+              {i.count > 0 && (
+                <span className={`navmenu__count ${i.alert ? "navmenu__count--alert" : ""}`}>
+                  {i.count}
+                </span>
+              )}
+              {active === i.key && (
+                <span className="navmenu__tick" aria-hidden="true">
+                  ✓
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* what you're currently looking at, next to the button */}
+      <span className="navmenu__current">{current?.label}</span>
+    </div>
   );
 }

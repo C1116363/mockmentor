@@ -8,8 +8,9 @@ React 19 + Vite. Three roles, three experiences:
 - **Admins** log in with a seeded account (the Admin option on the login page
   offers no signup), verify mentors, and assign mentors to student requests.
 
-Navigation lives in the header: a toggle showing where you are, which opens a
-second line listing every section. Each dashboard **registers its own sections**
+Navigation is a **☰ menu button in the header**. Nothing is shown until you
+click it; then the sections drop down one under the other, and picking one shows
+that screen and closes the menu. Each dashboard **registers its own sections**
 with `SectionNav` on mount, so the header knows nothing about roles.
 
 `MentorGate.jsx` is the interesting bit — it reads `verificationStatus` and
@@ -54,7 +55,7 @@ Everything is under `src/`:
 | `App.css` | all component styling |
 | `index.css` | **design tokens** — colours, shadows, radii, dark mode |
 | `components/ThemeToggle.jsx` | light / dark switch |
-| `nav/SectionNav.jsx` | header nav: the toggle, the second line, and the shared state |
+| `nav/SectionNav.jsx` | header menu: the ☰ button, the drop-down list, and the shared state |
 
 ### Common edits
 
