@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Counts for the public landing page. Deliberately only aggregate numbers -
+ * Counts for the public website. Deliberately only aggregate numbers -
  * never a list of people.
  */
 @Service

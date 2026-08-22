@@ -4,13 +4,13 @@ A learning project: **students and working professionals request mock interviews
 
 **Stack:** Java 21 · Spring Boot 3.5 · **Spring Security + JWT** · Spring Data JPA · MySQL · **springdoc-openapi (Swagger)** · React 19 (Vite)
 
-Three pieces run side by side:
+The repo is **three folders**, one per piece. Each has its own README telling you where to change things:
 
-| Piece | Port | What it is |
+| Folder | Port | What it is |
 | --- | --- | --- |
-| **Landing page** | `:3000` | A static, interactive marketing page. **"Launch App →" in the top-right corner** redirects to the React app. |
-| **React app** | `:5173` | Login / signup and the three role dashboards. |
-| **Spring Boot API** | `:8080` | The REST backend. **Swagger UI at [`/swagger-ui.html`](http://localhost:8080/swagger-ui.html).** |
+| **`website/`** | `:3000` | The public marketing site. The button in the top-right corner opens the app. |
+| **`frontend/`** | `:5173` | The React app — login, signup, and the three role dashboards. |
+| **`backend/`** | `:8080` | The Spring Boot API. [Swagger UI](http://localhost:8080/swagger-ui.html) at `/swagger-ui.html`. |
 
 Start at <http://localhost:3000> and click the corner button.
 
@@ -44,7 +44,7 @@ real system an existing admin would promote others.
 
 ```
 interview-mentor/
-├── backend/                          Spring Boot API on :8080
+├── backend/                          [README](backend/README.md) — Spring Boot API on :8080
 │   ├── run.sh                        loads .env, then `mvn spring-boot:run`
 │   ├── .env                          DB_USER / DB_PASSWORD (gitignored)
 │   └── src/main/java/com/learn/interviewmentor/
@@ -58,10 +58,10 @@ interview-mentor/
 │       ├── controller/               thin REST layer
 │       ├── exception/                custom exceptions + @RestControllerAdvice
 │       └── config/                   demo data seeder
-├── landing/                          Static landing page on :3000
+├── website/                          [README](website/README.md) — marketing site on :3000
 │   ├── index.html                    one self-contained file — HTML + CSS + JS
-│   └── serve.sh                      python3 -m http.server 3000
-└── frontend/                         React app on :5173
+│   └── serve.sh                      starts it on :3000
+└── frontend/                         [README](frontend/README.md) — React app on :5173
     └── src/
         ├── api/client.js             every fetch call + the token header
         ├── auth/AuthContext.jsx      "who is logged in", shared via React Context
@@ -125,10 +125,10 @@ npm run dev
 
 Open <http://localhost:5173>.
 
-### 3. Landing page (optional)
+### 3. Website
 
 ```bash
-cd landing
+cd website
 ./serve.sh
 ```
 
@@ -229,7 +229,7 @@ throw away a stale token.
 | --- | --- | --- |
 | `GET` | `/api/public/stats` | counts only — mentors, students, interviews done, open requests |
 
-The landing page has no login, so this is the only data it can read. It returns
+The website has no login, so this is the only data it can read. It returns
 **aggregate numbers only, never names or emails** — anything `permitAll()` is
 readable by the whole internet.
 

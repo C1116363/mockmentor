@@ -97,7 +97,7 @@ public class SecurityConfig {
                         // otherwise nobody could ever get one.
                         .requestMatchers("/api/auth/signup/**", "/api/auth/login").permitAll()
 
-                        // The landing page has no login, so its stats endpoint
+                        // The website has no login, so its stats endpoint
                         // must be open. It returns counts only, never people.
                         .requestMatchers("/api/public/**").permitAll()
 

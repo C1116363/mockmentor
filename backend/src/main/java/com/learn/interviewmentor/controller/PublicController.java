@@ -21,7 +21,7 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/public")
-@Tag(name = "5. Public", description = "Open to everyone - no token required. Used by the landing page.")
+@Tag(name = "5. Public", description = "Open to everyone - no token required. Used by the website.")
 public class PublicController {
 
     private final PublicStatsService publicStatsService;
@@ -33,7 +33,7 @@ public class PublicController {
     @GetMapping("/stats")
     @SecurityRequirements // public
     @Operation(
-            summary = "Headline counts for the landing page",
+            summary = "Headline counts for the website",
             description = "Aggregate numbers only - **never** names or emails. Anything marked "
                     + "`permitAll()` is readable by the whole internet, so keep it to counts.")
     @ApiResponses(@ApiResponse(responseCode = "200", description = "Counts",
