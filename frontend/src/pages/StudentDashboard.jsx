@@ -4,6 +4,7 @@ import RequestCard from "../components/RequestCard";
 import SlotPicker from "../components/SlotPicker";
 import UpcomingInterviews, { selectUpcoming } from "../components/UpcomingInterviews";
 import PayModal from "../components/PayModal";
+import TabBar from "../components/TabBar";
 
 const EXPERIENCE_LEVELS = ["Fresher", "0-1 years", "1-3 years", "3-5 years", "5+ years"];
 
@@ -14,16 +15,14 @@ const EMPTY_FORM = {
   notes: "",
 };
 
-/**
- * The whole app, for a candidate: raise a request on the left, track your
- * requests on the right.
- *
- * There is no name or email field - the server takes those from your token.
- */
+/** Still in play vs finished - drives the two list tabs. */
+const LIVE = ["AWAITING_PAYMENT", "PENDING", "SCHEDULED"];
+const DONE = ["COMPLETED", "CANCELLED"];
+
 export default function StudentDashboard() {
+  const [tab, setTab] = useState("book");
+
   const [form, setForm] = useState(EMPTY_FORM);
-  // The date lives outside the form because it only drives the slot grid -
-  // what actually gets submitted is the chosen slot.
   const [date, setDate] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const [message, setMessage] = useState(null);
@@ -31,7 +30,6 @@ export default function StudentDashboard() {
 
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
-  // Which booking the pay popup is open for.
   const [payingFor, setPayingFor] = useState(null);
 
   useEffect(() => {
@@ -42,10 +40,7 @@ export default function StudentDashboard() {
       .finally(() => setLoading(false));
   }, []);
 
-  function updateField(event) {
-    const { name, value } = event.target;
-    setForm((current) => ({ ...current, [name]: value }));
-  }
+  const updateField = (e) => setForm((c) => ({ ...c, [e.target.name]: e.target.value }));
 
   async function submitRequest(event) {
     event.preventDefault();
@@ -64,7 +59,6 @@ export default function StudentDashboard() {
       setForm(EMPTY_FORM);
       setDate("");
       setRequests(await api.myRequests());
-      // Slot is held; now collect the payment.
       setPayingFor(created);
     } catch (error) {
       setFieldErrors(error.fieldErrors);
@@ -84,8 +78,6 @@ export default function StudentDashboard() {
     }
   }
 
-  const upcoming = selectUpcoming(requests);
-
   async function afterPayment() {
     setPayingFor(null);
     setMessage({
@@ -93,7 +85,29 @@ export default function StudentDashboard() {
       text: "Thanks! We're checking your payment. Your slot is held in the meantime.",
     });
     setRequests(await api.myRequests());
+    // Send them to the list, so they can see what state it's in.
+    setTab("active");
   }
+
+  const upcoming = selectUpcoming(requests);
+  const live = requests.filter((r) => LIVE.includes(r.status));
+  const done = requests.filter((r) => DONE.includes(r.status));
+  const unpaid = requests.filter((r) => r.status === "AWAITING_PAYMENT").length;
+
+  const actions = (request) => (
+    <>
+      {request.status === "AWAITING_PAYMENT" && (
+        <button className="btn btn--primary" onClick={() => setPayingFor(request)}>
+          Pay now
+        </button>
+      )}
+      {LIVE.includes(request.status) && (
+        <button className="btn btn--ghost" onClick={() => cancelRequest(request.id)}>
+          Cancel request
+        </button>
+      )}
+    </>
+  );
 
   return (
     <>
@@ -103,9 +117,10 @@ export default function StudentDashboard() {
           onDone={afterPayment}
           onClose={() => {
             setPayingFor(null);
+            setTab("active");
             setMessage({
               type: "error",
-              text: "Your slot is held but not confirmed. Use \u201cPay now\u201d on the booking to finish.",
+              text: "Your slot is held but not confirmed. Use “Pay now” to finish.",
             });
           }}
         />
@@ -117,101 +132,135 @@ export default function StudentDashboard() {
         otherParty={(r) => r.mentor?.name ?? "—"}
       />
 
-    <div className="sections">
-      <section className="panel panel--student">
-        <header className="panel__head">
-          <span className="panel__tag">New request</span>
-          <h2>What do you want to practise?</h2>
-          <p>Tell us the round you&apos;re preparing for and when suits you.</p>
-        </header>
+      <TabBar
+        active={tab}
+        onChange={setTab}
+        tabs={[
+          { key: "book", label: "Book an interview", icon: "＋" },
+          { key: "active", label: "My interviews", icon: "📅", count: live.length, alert: unpaid > 0 },
+          { key: "history", label: "History", icon: "🗂", count: done.length },
+        ]}
+      />
 
-        <form className="form" onSubmit={submitRequest}>
-          <label className="field">
-            <span>Topic</span>
-            <input
-              name="topic"
-              value={form.topic}
-              onChange={updateField}
-              placeholder="Spring Boot backend round"
-              required
+      {message && <p className={`notice notice--${message.type}`}>{message.text}</p>}
+
+      {tab === "book" && (
+        <section className="panel panel--student">
+          <header className="panel__head">
+            <span className="panel__tag">New booking</span>
+            <h2>What do you want to practise?</h2>
+            <p>Tell us the round you&apos;re preparing for, then pick an hour that suits you.</p>
+          </header>
+
+          <form className="form" onSubmit={submitRequest}>
+            <label className="field">
+              <span>Topic</span>
+              <input
+                name="topic"
+                value={form.topic}
+                onChange={updateField}
+                placeholder="Spring Boot backend round"
+                required
+              />
+              {fieldErrors.topic && <small className="field__error">{fieldErrors.topic}</small>}
+            </label>
+
+            <label className="field">
+              <span>Your experience</span>
+              <select name="experienceLevel" value={form.experienceLevel} onChange={updateField}>
+                {EXPERIENCE_LEVELS.map((level) => (
+                  <option key={level} value={level}>
+                    {level}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <SlotPicker
+              date={date}
+              onDateChange={setDate}
+              value={form.preferredSlot}
+              onChange={(slot) => setForm((c) => ({ ...c, preferredSlot: slot }))}
+              error={fieldErrors.preferredSlot}
             />
-            {fieldErrors.topic && <small className="field__error">{fieldErrors.topic}</small>}
-          </label>
 
-          <label className="field">
-            <span>Your experience</span>
-            <select name="experienceLevel" value={form.experienceLevel} onChange={updateField}>
-              {EXPERIENCE_LEVELS.map((level) => (
-                <option key={level} value={level}>
-                  {level}
-                </option>
-              ))}
-            </select>
-          </label>
+            <label className="field">
+              <span>Anything we should know? (optional)</span>
+              <textarea
+                name="notes"
+                value={form.notes}
+                onChange={updateField}
+                rows={3}
+                placeholder="Final year student, weak on JPA relationships."
+              />
+            </label>
 
-          <SlotPicker
-            date={date}
-            onDateChange={setDate}
-            value={form.preferredSlot}
-            onChange={(slot) => setForm((current) => ({ ...current, preferredSlot: slot }))}
-            error={fieldErrors.preferredSlot}
-          />
-
-          <label className="field">
-            <span>Anything we should know? (optional)</span>
-            <textarea
-              name="notes"
-              value={form.notes}
-              onChange={updateField}
-              rows={3}
-              placeholder="Final year student, weak on JPA relationships."
-            />
-          </label>
-
-          <button
-            className="btn btn--primary"
-            type="submit"
-            disabled={submitting || !form.preferredSlot}
-          >
-            {submitting ? "Booking..." : "Book this slot"}
-          </button>
-
-          {message && <p className={`notice notice--${message.type}`}>{message.text}</p>}
-        </form>
-      </section>
-
-      <section className="panel panel--mentor">
-        <header className="panel__head">
-          <span className="panel__tag">Your interviews</span>
-          <h2>
-            Track your requests <span className="count">{requests.length}</span>
-          </h2>
-          <p>Once an interviewer is assigned you&apos;ll see the slot and joining link here.</p>
-        </header>
-
-        {loading && <p className="empty">Loading...</p>}
-        {!loading && requests.length === 0 && (
-          <p className="empty">You haven&apos;t requested an interview yet.</p>
-        )}
-
-        <div className="card-list">
-          {requests.map((request) => (
-            <RequestCard key={request.id} request={request}>
-              {request.status === "AWAITING_PAYMENT" && (
-                <button className="btn btn--primary" onClick={() => setPayingFor(request)}>
-                  Pay now
-                </button>
+            <button
+              className="btn btn--primary"
+              type="submit"
+              disabled={submitting || !form.preferredSlot}
+            >
+              {submitting ? (
+                <>
+                  <span className="spinner" /> Booking
+                </>
+              ) : (
+                "Book slot & pay"
               )}
-              {request.status !== "COMPLETED" && request.status !== "CANCELLED" && (
-                <button className="btn btn--ghost" onClick={() => cancelRequest(request.id)}>
-                  Cancel request
-                </button>
-              )}
-            </RequestCard>
-          ))}
-        </div>
-      </section>
-    </div>
+            </button>
+          </form>
+        </section>
+      )}
+
+      {tab === "active" && (
+        <section className="panel panel--student">
+          <header className="panel__head">
+            <span className="panel__tag">In progress</span>
+            <h2>
+              My interviews <span className="count">{live.length}</span>
+            </h2>
+            <p>Everything booked but not finished yet.</p>
+          </header>
+
+          {loading && <p className="empty">Loading...</p>}
+          {!loading && live.length === 0 && (
+            <div className="empty">
+              <p>Nothing booked right now.</p>
+              <button className="btn btn--primary" onClick={() => setTab("book")}>
+                Book an interview
+              </button>
+            </div>
+          )}
+
+          <div className="card-list">
+            {live.map((r) => (
+              <RequestCard key={r.id} request={r}>
+                {actions(r)}
+              </RequestCard>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {tab === "history" && (
+        <section className="panel panel--mentor">
+          <header className="panel__head">
+            <span className="panel__tag">Past</span>
+            <h2>
+              History <span className="count">{done.length}</span>
+            </h2>
+            <p>Completed interviews and their scorecards, plus anything cancelled.</p>
+          </header>
+
+          {done.length === 0 && <p className="empty">No finished interviews yet.</p>}
+
+          <div className="card-list">
+            {done.map((r) => (
+              <RequestCard key={r.id} request={r} />
+            ))}
+          </div>
+        </section>
+      )}
     </>
   );
 }

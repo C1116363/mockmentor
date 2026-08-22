@@ -29,12 +29,12 @@ Everything is under `src/`:
 | `api/client.js` | **every** call to the backend, in one place |
 | `auth/AuthContext.jsx` | who is logged in; login, signup, logout |
 | `pages/AuthPage.jsx` | the login + signup screen |
-| `pages/StudentDashboard.jsx` | candidate: book + track |
+| `pages/StudentDashboard.jsx` | candidate: **Book / My interviews / History** tabs |
 | `pages/MentorGate.jsx` | picks the mentor screen from verification status |
 | `pages/MentorProfileForm.jsx` | the profile a mentor submits |
 | `pages/MentorPending.jsx` | the "under verification" screen |
-| `pages/MentorDashboard.jsx` | approved mentor: queue + accept + complete |
-| `pages/AdminDashboard.jsx` | four tabs: assign requests, mentors, users, all requests |
+| `pages/MentorDashboard.jsx` | mentor: **Open queue / My interviews / History** tabs |
+| `pages/AdminDashboard.jsx` | admin: **Payments / Assign / Mentors / Users / All requests** tabs |
 | `components/AssignMentorForm.jsx` | admin picking a mentor for one request |
 | `components/MentorProfileCard.jsx` | one mentor, in any verification state |
 | `components/UpcomingInterviews.jsx` | the Join banner, shared by student and mentor |
@@ -50,6 +50,7 @@ Everything is under `src/`:
 | `App.css` | all component styling |
 | `index.css` | **design tokens** — colours, shadows, radii, dark mode |
 | `components/ThemeToggle.jsx` | light / dark switch |
+| `components/TabBar.jsx` | the tab strip all three dashboards share |
 
 ### Common edits
 

@@ -5,6 +5,7 @@ import RequestCard from "../components/RequestCard";
 import AssignMentorForm from "../components/AssignMentorForm";
 import MentorProfileCard from "../components/MentorProfileCard";
 import PaymentReviewCard from "../components/PaymentReviewCard";
+import TabBar from "../components/TabBar";
 
 const STAT_LABELS = {
   awaitingPayment: "Unpaid",
@@ -143,11 +144,11 @@ export default function AdminDashboard() {
   ];
 
   const TABS = [
-    { key: "payments", label: "Payments", count: payments.length },
-    { key: "requests", label: "Interview requests", count: unassigned.length },
-    { key: "verify", label: "Mentors", count: pendingCount },
-    { key: "users", label: "Users", count: 0 },
-    { key: "all", label: "All requests", count: 0 },
+    { key: "payments", label: "Payments", icon: "💳", count: payments.length, alert: true },
+    { key: "requests", label: "Assign", icon: "🔗", count: unassigned.length, alert: true },
+    { key: "verify", label: "Mentors", icon: "🧭", count: pendingCount, alert: true },
+    { key: "users", label: "Users", icon: "👥" },
+    { key: "all", label: "All requests", icon: "🗂" },
   ];
 
   return (
@@ -163,18 +164,7 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      <div className="tabs tabs--admin">
-        {TABS.map((t) => (
-          <button
-            key={t.key}
-            className={`tab ${tab === t.key ? "tab--on" : ""}`}
-            onClick={() => setTab(t.key)}
-          >
-            {t.label}
-            {t.count > 0 && <span className="badge-dot">{t.count}</span>}
-          </button>
-        ))}
-      </div>
+      <TabBar tabs={TABS} active={tab} onChange={setTab} />
 
       {tab === "payments" && (
         <section className="panel">

@@ -3,15 +3,15 @@ import { api } from "../api/client";
 import RequestCard from "../components/RequestCard";
 import UpcomingInterviews, { selectUpcoming } from "../components/UpcomingInterviews";
 import FeedbackModal from "../components/FeedbackModal";
+import TabBar from "../components/TabBar";
 
 function defaultSlotFrom(preferred) {
-  // Default the scheduling input to whatever the candidate asked for.
-  if (!preferred) return "";
-  return preferred.slice(0, 16); // "2026-09-20T15:00:00" -> "2026-09-20T15:00"
+  return preferred ? preferred.slice(0, 16) : "";
 }
 
-/** What an APPROVED mentor sees: the open queue and their own interviews. */
 export default function MentorDashboard() {
+  const [tab, setTab] = useState("queue");
+
   const [pending, setPending] = useState([]);
   const [assigned, setAssigned] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -20,7 +20,6 @@ export default function MentorDashboard() {
   const [openId, setOpenId] = useState(null);
   const [slot, setSlot] = useState("");
   const [meetingLink, setMeetingLink] = useState("");
-  // Which interview the feedback form is open for.
   const [reviewing, setReviewing] = useState(null);
 
   const reload = useCallback(async () => {
@@ -46,6 +45,7 @@ export default function MentorDashboard() {
       setMeetingLink("");
       setMessage({ type: "success", text: "Scheduled. The candidate can see it now." });
       await reload();
+      setTab("mine");
     } catch (error) {
       setMessage({ type: "error", text: error.message });
     }
@@ -58,6 +58,8 @@ export default function MentorDashboard() {
   }
 
   const upcoming = selectUpcoming(assigned);
+  const scheduled = assigned.filter((r) => r.status === "SCHEDULED");
+  const past = assigned.filter((r) => r.status === "COMPLETED" || r.status === "CANCELLED");
 
   return (
     <>
@@ -75,93 +77,130 @@ export default function MentorDashboard() {
         otherParty={(r) => r.student?.fullName ?? "—"}
       />
 
-    <div className="sections">
-      <section className="panel panel--student">
-        <header className="panel__head">
-          <span className="panel__tag">Open queue</span>
-          <h2>
-            Waiting for an interviewer <span className="count">{pending.length}</span>
-          </h2>
-          <p>Pick one, confirm the slot, and share your meeting link.</p>
-        </header>
+      <TabBar
+        active={tab}
+        onChange={setTab}
+        tabs={[
+          { key: "queue", label: "Open queue", icon: "📥", count: pending.length, alert: pending.length > 0 },
+          { key: "mine", label: "My interviews", icon: "📅", count: scheduled.length },
+          { key: "history", label: "History", icon: "🗂", count: past.length },
+        ]}
+      />
 
-        {message && <p className={`notice notice--${message.type}`}>{message.text}</p>}
-        {loading && <p className="empty">Loading the queue...</p>}
-        {!loading && pending.length === 0 && <p className="empty">Nothing in the queue right now.</p>}
+      {message && <p className={`notice notice--${message.type}`}>{message.text}</p>}
 
-        <div className="card-list">
-          {pending.map((r) => (
-            <RequestCard key={r.id} request={r}>
-              {openId === r.id ? (
-                <div className="accept-form">
-                  <label className="field">
-                    <span>Confirm the slot</span>
-                    <input
-                      type="datetime-local"
-                      value={slot}
-                      onChange={(e) => setSlot(e.target.value)}
-                    />
-                  </label>
-                  <label className="field">
-                    <span>Meeting link (optional)</span>
-                    <input
-                      value={meetingLink}
-                      onChange={(e) => setMeetingLink(e.target.value)}
-                      placeholder="Leave blank — a room is created for you"
-                    />
-                  </label>
-                  <div className="accept-form__actions">
-                    <button
-                      className="btn btn--primary"
-                      onClick={() => accept(r.id)}
-                      disabled={!slot}
-                    >
-                      Confirm
-                    </button>
-                    <button className="btn btn--ghost" onClick={() => setOpenId(null)}>
-                      Cancel
-                    </button>
+      {tab === "queue" && (
+        <section className="panel panel--student">
+          <header className="panel__head">
+            <span className="panel__tag">Waiting for an interviewer</span>
+            <h2>
+              Open queue <span className="count">{pending.length}</span>
+            </h2>
+            <p>Pick one, confirm the slot, and share your meeting link — or leave it blank and we&apos;ll create a room.</p>
+          </header>
+
+          {loading && <p className="empty">Loading the queue...</p>}
+          {!loading && pending.length === 0 && (
+            <p className="empty">Nothing in the queue right now. Check back later.</p>
+          )}
+
+          <div className="card-list">
+            {pending.map((r) => (
+              <RequestCard key={r.id} request={r}>
+                {openId === r.id ? (
+                  <div className="accept-form">
+                    <label className="field">
+                      <span>Confirm the slot</span>
+                      <input
+                        type="datetime-local"
+                        value={slot}
+                        onChange={(e) => setSlot(e.target.value)}
+                      />
+                    </label>
+                    <label className="field">
+                      <span>Meeting link (optional)</span>
+                      <input
+                        value={meetingLink}
+                        onChange={(e) => setMeetingLink(e.target.value)}
+                        placeholder="Leave blank — a room is created for you"
+                      />
+                    </label>
+                    <div className="accept-form__actions">
+                      <button className="btn btn--primary" onClick={() => accept(r.id)} disabled={!slot}>
+                        Confirm
+                      </button>
+                      <button className="btn btn--ghost" onClick={() => setOpenId(null)}>
+                        Cancel
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <button
-                  className="btn btn--primary"
-                  onClick={() => {
-                    setOpenId(r.id);
-                    setSlot(defaultSlotFrom(r.preferredSlot));
-                  }}
-                >
-                  Accept this interview
-                </button>
-              )}
-            </RequestCard>
-          ))}
-        </div>
-      </section>
+                ) : (
+                  <button
+                    className="btn btn--primary"
+                    onClick={() => {
+                      setOpenId(r.id);
+                      setSlot(defaultSlotFrom(r.preferredSlot));
+                    }}
+                  >
+                    Accept this interview
+                  </button>
+                )}
+              </RequestCard>
+            ))}
+          </div>
+        </section>
+      )}
 
-      <section className="panel panel--mentor">
-        <header className="panel__head">
-          <span className="panel__tag">Your schedule</span>
-          <h2>
-            My interviews <span className="count">{assigned.length}</span>
-          </h2>
-        </header>
+      {tab === "mine" && (
+        <section className="panel panel--mentor">
+          <header className="panel__head">
+            <span className="panel__tag">Your schedule</span>
+            <h2>
+              My interviews <span className="count">{scheduled.length}</span>
+            </h2>
+            <p>Accepted and coming up. Give feedback once you&apos;ve taken the call.</p>
+          </header>
 
-        {assigned.length === 0 && <p className="empty">You haven&apos;t accepted anything yet.</p>}
+          {scheduled.length === 0 && (
+            <div className="empty">
+              <p>You haven&apos;t accepted anything yet.</p>
+              <button className="btn btn--primary" onClick={() => setTab("queue")}>
+                See the open queue
+              </button>
+            </div>
+          )}
 
-        <div className="card-list">
-          {assigned.map((r) => (
-            <RequestCard key={r.id} request={r}>
-              {r.status === "SCHEDULED" && (
+          <div className="card-list">
+            {scheduled.map((r) => (
+              <RequestCard key={r.id} request={r}>
                 <button className="btn btn--primary" onClick={() => setReviewing(r)}>
                   Give feedback &amp; close
                 </button>
-              )}
-            </RequestCard>
-          ))}
-        </div>
-      </section>
-    </div>
+              </RequestCard>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {tab === "history" && (
+        <section className="panel panel--mentor">
+          <header className="panel__head">
+            <span className="panel__tag">Past</span>
+            <h2>
+              History <span className="count">{past.length}</span>
+            </h2>
+            <p>Interviews you&apos;ve completed, with the feedback you gave.</p>
+          </header>
+
+          {past.length === 0 && <p className="empty">Nothing completed yet.</p>}
+
+          <div className="card-list">
+            {past.map((r) => (
+              <RequestCard key={r.id} request={r} />
+            ))}
+          </div>
+        </section>
+      )}
     </>
   );
 }
