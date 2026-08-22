@@ -32,10 +32,14 @@ public class InterviewRequestService {
 
     private final InterviewRequestRepository requestRepository;
     private final SlotService slotService;
+    private final MentorProfileService mentorProfileService;
 
-    public InterviewRequestService(InterviewRequestRepository requestRepository, SlotService slotService) {
+    public InterviewRequestService(InterviewRequestRepository requestRepository,
+                                   SlotService slotService,
+                                   MentorProfileService mentorProfileService) {
         this.requestRepository = requestRepository;
         this.slotService = slotService;
+        this.mentorProfileService = mentorProfileService;
     }
 
     // ---------- student side ----------
@@ -66,13 +70,16 @@ public class InterviewRequestService {
 
     // ---------- mentor side ----------
 
-    public List<InterviewRequestDto> findPending() {
+    public List<InterviewRequestDto> findPending(User mentor) {
+        // An unverified mentor must not even see the queue.
+        mentorProfileService.assertApproved(mentor);
         return requestRepository.findByStatusOrderByCreatedAtAsc(RequestStatus.PENDING).stream()
                 .map(InterviewRequestDto::from)
                 .toList();
     }
 
     public List<InterviewRequestDto> findMyInterviews(User mentor) {
+        mentorProfileService.assertApproved(mentor);
         return requestRepository.findByMentorIdOrderByScheduledAtAsc(mentor.getId()).stream()
                 .map(InterviewRequestDto::from)
                 .toList();
@@ -80,6 +87,7 @@ public class InterviewRequestService {
 
     @Transactional
     public InterviewRequestDto accept(Long requestId, AcceptRequestDto dto, User mentor) {
+        mentorProfileService.assertApproved(mentor);
         InterviewRequest request = getRequestOrThrow(requestId);
 
         if (request.getStatus() != RequestStatus.PENDING) {
@@ -93,6 +101,7 @@ public class InterviewRequestService {
 
     @Transactional
     public InterviewRequestDto complete(Long requestId, CompleteRequestDto dto, User mentor) {
+        mentorProfileService.assertApproved(mentor);
         InterviewRequest request = getRequestOrThrow(requestId);
 
         // Being a MENTOR is not enough - it has to be YOUR interview.

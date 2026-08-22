@@ -51,6 +51,8 @@ export const api = {
   login: (payload) => request("/auth/login", { method: "POST", body: JSON.stringify(payload) }),
   signupStudent: (payload) =>
     request("/auth/signup/student", { method: "POST", body: JSON.stringify(payload) }),
+  signupMentor: (payload) =>
+    request("/auth/signup/mentor", { method: "POST", body: JSON.stringify(payload) }),
   me: () => request("/auth/me"),
 
   // ---- interview requests ----
@@ -62,4 +64,30 @@ export const api = {
   slots: (date) => request(`/slots?date=${encodeURIComponent(date)}`),
 
   cancelRequest: (id) => request(`/requests/${id}/cancel`, { method: "PATCH" }),
+
+  // ---- mentor ----
+  myMentorProfile: () => request("/mentor/profile"),
+  submitMentorProfile: (payload) =>
+    request("/mentor/profile", { method: "PUT", body: JSON.stringify(payload) }),
+  pendingRequests: () => request("/requests/pending"),
+  assignedRequests: () => request("/requests/assigned"),
+  acceptRequest: (id, payload) =>
+    request(`/requests/${id}/accept`, { method: "PATCH", body: JSON.stringify(payload) }),
+  completeRequest: (id, payload) =>
+    request(`/requests/${id}/complete`, { method: "PATCH", body: JSON.stringify(payload) }),
+
+  // ---- admin ----
+  adminStats: () => request("/admin/stats"),
+  adminUsers: () => request("/admin/users"),
+  adminRequests: () => request("/admin/requests"),
+  pendingMentorProfiles: () => request("/admin/mentor-profiles/pending"),
+  allMentorProfiles: () => request("/admin/mentor-profiles"),
+  approveMentor: (id) => request(`/admin/mentor-profiles/${id}/approve`, { method: "PATCH" }),
+  rejectMentor: (id, reason) =>
+    request(`/admin/mentor-profiles/${id}/reject`, {
+      method: "PATCH",
+      body: JSON.stringify({ reason }),
+    }),
+  deactivateUser: (id) => request(`/admin/users/${id}/deactivate`, { method: "PATCH" }),
+  activateUser: (id) => request(`/admin/users/${id}/activate`, { method: "PATCH" }),
 };

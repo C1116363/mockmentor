@@ -66,13 +66,9 @@ public class AuthService {
     public AuthResponse signupMentor(MentorSignupRequest dto) {
         User user = createUser(dto.fullName(), dto.email(), dto.password(), Role.MENTOR);
 
-        mentorProfileRepository.save(new MentorProfile(
-                user,
-                dto.expertise(),
-                dto.yearsOfExperience(),
-                dto.currentCompany(),
-                dto.bio()
-        ));
+        // A blank profile with status INCOMPLETE. The mentor fills it in after
+        // logging in, and an admin verifies it before they can take interviews.
+        mentorProfileRepository.save(new MentorProfile(user));
 
         return buildResponse(user);
     }

@@ -2,6 +2,7 @@ package com.learn.interviewmentor.service;
 
 import com.learn.interviewmentor.dto.MentorDto;
 import com.learn.interviewmentor.exception.NotFoundException;
+import com.learn.interviewmentor.model.VerificationStatus;
 import com.learn.interviewmentor.repository.MentorProfileRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,9 +19,10 @@ public class MentorService {
         this.mentorProfileRepository = mentorProfileRepository;
     }
 
-    /** Most experienced first. */
+    /** Verified mentors only, most experienced first. */
     public List<MentorDto> findAll() {
-        return mentorProfileRepository.findAllByOrderByYearsOfExperienceDesc().stream()
+        return mentorProfileRepository
+                .findByVerificationStatusOrderByYearsOfExperienceDesc(VerificationStatus.APPROVED).stream()
                 .map(MentorDto::from)
                 .toList();
     }

@@ -80,7 +80,7 @@ public class InterviewRequestController {
     @GetMapping("/pending")
     @Operation(
             summary = "The open queue (mentor)",
-            description = "**Role required: MENTOR**\n\nEverything still PENDING, oldest first.")
+            description = "**Role required: MENTOR, and you must be APPROVED by an admin.**\n\nEverything still PENDING, oldest first.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Unclaimed requests"),
             @ApiResponse(responseCode = "401", description = "Not logged in",
@@ -88,8 +88,8 @@ public class InterviewRequestController {
             @ApiResponse(responseCode = "403", description = "You are not a MENTOR",
                     content = @Content(schema = @Schema(implementation = ApiErrorSchema.class)))
     })
-    public List<InterviewRequestDto> pendingRequests() {
-        return requestService.findPending();
+    public List<InterviewRequestDto> pendingRequests(@CurrentUser User mentor) {
+        return requestService.findPending(mentor);
     }
 
     @GetMapping("/assigned")

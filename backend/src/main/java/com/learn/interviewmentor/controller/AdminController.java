@@ -2,10 +2,13 @@ package com.learn.interviewmentor.controller;
 
 import com.learn.interviewmentor.dto.InterviewRequestDto;
 import com.learn.interviewmentor.dto.auth.UserDto;
+import com.learn.interviewmentor.dto.mentor.MentorProfileDto;
+import com.learn.interviewmentor.dto.mentor.RejectProfileRequest;
 import com.learn.interviewmentor.model.User;
 import com.learn.interviewmentor.security.CurrentUser;
 import com.learn.interviewmentor.service.AdminService;
 import com.learn.interviewmentor.service.InterviewRequestService;
+import com.learn.interviewmentor.service.MentorProfileService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -15,7 +18,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -35,10 +40,78 @@ public class AdminController {
 
     private final AdminService adminService;
     private final InterviewRequestService requestService;
+    private final MentorProfileService profileService;
 
-    public AdminController(AdminService adminService, InterviewRequestService requestService) {
+    public AdminController(AdminService adminService,
+                           InterviewRequestService requestService,
+                           MentorProfileService profileService) {
         this.adminService = adminService;
         this.requestService = requestService;
+        this.profileService = profileService;
+    }
+
+    // ---------------- mentor verification ----------------
+
+    @GetMapping("/mentor-profiles/pending")
+    @Operation(
+            summary = "Mentors waiting to be verified",
+            description = "The review queue, oldest submission first. Aadhaar and bank account "
+                    + "numbers are masked to the last 4 digits - enough to check against a "
+                    + "document, without exposing the full number.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Profiles awaiting review"),
+            @ApiResponse(responseCode = "403", description = "You are not an ADMIN",
+                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class)))
+    })
+    public List<MentorProfileDto> pendingProfiles() {
+        return profileService.awaitingReview();
+    }
+
+    @GetMapping("/mentor-profiles")
+    @Operation(summary = "Every mentor profile", description = "All statuses, newest submission first.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "All profiles"),
+            @ApiResponse(responseCode = "403", description = "You are not an ADMIN",
+                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class)))
+    })
+    public List<MentorProfileDto> allProfiles() {
+        return profileService.allProfiles();
+    }
+
+    @PatchMapping("/mentor-profiles/{id}/approve")
+    @Operation(
+            summary = "Verify a mentor",
+            description = "Moves them to APPROVED. Only then can they see the interview queue "
+                    + "and accept requests.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Approved"),
+            @ApiResponse(responseCode = "400", description = "The profile is not PENDING",
+                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class))),
+            @ApiResponse(responseCode = "404", description = "No profile with that id",
+                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class)))
+    })
+    public MentorProfileDto approveProfile(
+            @Parameter(description = "Mentor profile id", example = "1") @PathVariable Long id,
+            @CurrentUser User admin) {
+        return profileService.approve(id, admin);
+    }
+
+    @PatchMapping("/mentor-profiles/{id}/reject")
+    @Operation(
+            summary = "Reject a mentor profile",
+            description = "The reason is shown to the mentor so they can fix it and resubmit.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Rejected"),
+            @ApiResponse(responseCode = "400", description = "Not PENDING, or no reason given",
+                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class))),
+            @ApiResponse(responseCode = "404", description = "No profile with that id",
+                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class)))
+    })
+    public MentorProfileDto rejectProfile(
+            @Parameter(description = "Mentor profile id", example = "1") @PathVariable Long id,
+            @Valid @RequestBody RejectProfileRequest dto,
+            @CurrentUser User admin) {
+        return profileService.reject(id, dto.reason(), admin);
     }
 
     @GetMapping("/stats")

@@ -11,9 +11,10 @@ const EMPTY = { fullName: "", email: "", password: "" };
  * this interface.
  */
 export default function AuthPage() {
-  const { login, signupStudent } = useAuth();
+  const { login, signupStudent, signupMentor } = useAuth();
 
   const [mode, setMode] = useState("login");
+  const [role, setRole] = useState("STUDENT");
   const [form, setForm] = useState(EMPTY);
   const [fieldErrors, setFieldErrors] = useState({});
   const [error, setError] = useState(null);
@@ -28,6 +29,7 @@ export default function AuthPage() {
 
   function switchMode(next) {
     setMode(next);
+    setRole("STUDENT");
     setError(null);
     setFieldErrors({});
   }
@@ -39,7 +41,12 @@ export default function AuthPage() {
     setFieldErrors({});
 
     try {
-      if (isSignup) {
+      if (isSignup && role === "MENTOR") {
+        // Mentors sign up with just the basics; the full profile (experience,
+        // KYC, bank details) is filled in after logging in and then verified
+        // by an admin.
+        await signupMentor(form);
+      } else if (isSignup) {
         await signupStudent(form);
       } else {
         await login({ email: form.email, password: form.password });
@@ -93,10 +100,36 @@ export default function AuthPage() {
           </button>
         </div>
 
+        {isSignup && (
+          <div className="role-picker">
+            <span>I want to</span>
+            <div className="role-picker__options">
+              <button
+                type="button"
+                className={`chip ${role === "STUDENT" ? "chip--on" : ""}`}
+                onClick={() => setRole("STUDENT")}
+              >
+                Take interviews
+                <small>Student / professional</small>
+              </button>
+              <button
+                type="button"
+                className={`chip ${role === "MENTOR" ? "chip--on" : ""}`}
+                onClick={() => setRole("MENTOR")}
+              >
+                Give interviews
+                <small>Senior engineer</small>
+              </button>
+            </div>
+          </div>
+        )}
+
         <p className="auth__hint">
-          {isSignup
-            ? "For students and working professionals preparing for interviews."
-            : "Welcome back. Log in to book or track your interviews."}
+          {!isSignup
+            ? "Welcome back."
+            : role === "MENTOR"
+            ? "After signing up you'll complete a profile that an admin verifies before you can take interviews."
+            : "For students and working professionals preparing for interviews."}
         </p>
 
         <form className="form" onSubmit={submit}>

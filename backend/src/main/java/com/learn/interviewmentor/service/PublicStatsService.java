@@ -2,6 +2,7 @@ package com.learn.interviewmentor.service;
 
 import com.learn.interviewmentor.dto.PublicMentorDto;
 import com.learn.interviewmentor.model.RequestStatus;
+import com.learn.interviewmentor.model.VerificationStatus;
 import com.learn.interviewmentor.model.Role;
 import com.learn.interviewmentor.repository.InterviewRequestRepository;
 import com.learn.interviewmentor.repository.MentorProfileRepository;
@@ -38,7 +39,8 @@ public class PublicStatsService {
      * Capped so the marketing page can never accidentally dump the whole table.
      */
     public List<PublicMentorDto> featuredMentors(int limit) {
-        return mentorProfileRepository.findAllByOrderByYearsOfExperienceDesc().stream()
+        return mentorProfileRepository
+                .findByVerificationStatusOrderByYearsOfExperienceDesc(VerificationStatus.APPROVED).stream()
                 .map(PublicMentorDto::from)
                 .limit(limit)
                 .toList();
@@ -46,7 +48,7 @@ public class PublicStatsService {
 
     public Map<String, Long> counts() {
         Map<String, Long> stats = new LinkedHashMap<>();
-        stats.put("mentors", userRepository.countByRole(Role.MENTOR));
+        stats.put("mentors", mentorProfileRepository.countByVerificationStatus(VerificationStatus.APPROVED));
         stats.put("students", userRepository.countByRole(Role.STUDENT));
         stats.put("interviewsDone", requestRepository.countByStatus(RequestStatus.COMPLETED));
         stats.put("openRequests", requestRepository.countByStatus(RequestStatus.PENDING));

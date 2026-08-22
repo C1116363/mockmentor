@@ -69,6 +69,11 @@ public class DataSeeder implements CommandLineRunner {
                         "Have taken 200+ interviews. Expect real interview pressure.")
         ));
 
+        // One mentor who has signed up but not filled in their profile yet, so
+        // the admin verification queue isn't empty the first time you look.
+        User arjun = userRepository.save(user("Arjun Nair", "arjun@example.com", Role.MENTOR));
+        mentorProfileRepository.save(new MentorProfile(arjun));
+
         User rahul = userRepository.save(user("Rahul Sharma", "rahul@example.com", Role.STUDENT));
         userRepository.save(user("Priya Menon", "priya@example.com", Role.STUDENT));
 
@@ -81,6 +86,7 @@ public class DataSeeder implements CommandLineRunner {
         ));
 
         log.info("Seeded demo accounts. Every account uses the password: {}", DEMO_PASSWORD);
+        log.info("arjun@example.com is a MENTOR with an INCOMPLETE profile - use it to try onboarding.");
     }
 
     private User user(String name, String email, Role role) {

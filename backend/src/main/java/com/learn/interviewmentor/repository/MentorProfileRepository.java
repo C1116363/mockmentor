@@ -1,6 +1,7 @@
 package com.learn.interviewmentor.repository;
 
 import com.learn.interviewmentor.model.MentorProfile;
+import com.learn.interviewmentor.model.VerificationStatus;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -15,4 +16,17 @@ public interface MentorProfileRepository extends JpaRepository<MentorProfile, Lo
 
     @EntityGraph(attributePaths = "user")
     List<MentorProfile> findAllByOrderByYearsOfExperienceDesc();
+
+    /** Only verified mentors are shown publicly or counted as capacity. */
+    @EntityGraph(attributePaths = "user")
+    List<MentorProfile> findByVerificationStatusOrderByYearsOfExperienceDesc(VerificationStatus status);
+
+    /** The admin's review queue, oldest submission first. */
+    @EntityGraph(attributePaths = {"user", "reviewedBy"})
+    List<MentorProfile> findByVerificationStatusOrderBySubmittedAtAsc(VerificationStatus status);
+
+    @EntityGraph(attributePaths = {"user", "reviewedBy"})
+    List<MentorProfile> findAllByOrderBySubmittedAtDesc();
+
+    long countByVerificationStatus(VerificationStatus status);
 }

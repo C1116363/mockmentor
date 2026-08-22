@@ -16,31 +16,62 @@ Start at <http://localhost:3000> and click the corner button.
 
 ---
 
-## How it works right now
+## Three roles, three screens
 
-**The app is for candidates only.** Students and working professionals sign up,
-book a mock interview and track it. That is the entire user interface.
+| Role | Sign up? | What they see |
+| --- | --- | --- |
+| **STUDENT** (candidate) | Yes | Book a 1-hour slot, track requests, read feedback |
+| **MENTOR** | Yes → then **verified by an admin** | Profile form → "under verification" → the interview queue |
+| **ADMIN** | No — seeded | Verification queue, users, all requests |
 
-Everything else — creating mentors, assigning one to a request, marking an
-interview complete, managing accounts — is done **from the backend**, through
-Swagger or any API client. Those endpoints all still exist and are fully
-documented; they just don't have a UI yet.
+Admin accounts are **not** created through signup. A public "make me an admin"
+endpoint would let anyone grant themselves full access; the first admin comes
+from the seeder and would promote others.
 
-| Role | Where they work |
-| --- | --- |
-| **STUDENT** (candidate) | The React app — signup, login, book, track |
-| **MENTOR** | API only — accepts requests, adds feedback |
-| **ADMIN** | API only — stats, user management |
+## Mentor verification
+
+A mentor cannot just sign up and start interviewing. They go through this:
+
+```
+sign up  →  INCOMPLETE  →  fill in the profile  →  PENDING
+                                                     │
+                              admin rejects ─────────┤
+                                    │                │
+                                REJECTED ────────► APPROVED
+                             (reason shown,          │
+                              can resubmit)          ▼
+                                              can take interviews
+```
+
+The profile asks for professional details (expertise, company, designation,
+years), education (qualification, university, year), contact, **KYC** (Aadhaar,
+PAN) and **bank details** for payouts.
+
+**Only `APPROVED` mentors can do anything.** `MentorProfileService.assertApproved()`
+runs before the queue, accept and complete. The waiting screen in the browser is
+presentation — the server refuses regardless. Unverified mentors also stay off
+the public website and don't count toward slot capacity.
+
+### ⚠️ About the sensitive data
+
+Aadhaar and bank account numbers are **masked to the last 4 digits** in every
+response — the full values never leave the server, not even for an admin.
+
+They are, however, stored **in plain text** in MySQL. That is fine for learning
+and **not acceptable in production**, where you would need column-level
+encryption, access logging, a retention policy, and to check what the law
+requires before storing Aadhaar at all. Don't deploy this as-is with real data.
 
 ### Demo logins
 
 Every seeded account uses the password `password123`:
 
-| Role | Email | Use it in |
+| Role | Email | What you'll see |
 | --- | --- | --- |
-| Student | `rahul@example.com` | the app |
-| Mentor | `ananya@example.com` | Swagger / API |
-| Admin | `admin@example.com` | Swagger / API |
+| Candidate | `rahul@example.com` | Booking + tracking |
+| Mentor (verified) | `ananya@example.com` | The interview queue |
+| Mentor (unverified) | `arjun@example.com` | The profile form — try onboarding |
+| Admin | `admin@example.com` | The verification queue |
 
 There is deliberately **no public "sign up as admin"** endpoint — that would let
 anyone grant themselves full access. The first admin comes from the seeder; in a
@@ -240,11 +271,22 @@ The website has no login, so this is the only data it can read. It returns
 **aggregate numbers only, never names or emails** — anything `permitAll()` is
 readable by the whole internet.
 
+### Mentor onboarding — `/api/mentor/profile`
+
+| Method | Path | Who |
+| --- | --- | --- |
+| `GET` | `/api/mentor/profile` | MENTOR — my profile + verification status |
+| `PUT` | `/api/mentor/profile` | MENTOR — submit or resubmit for review |
+
 ### Mentors & admin
 
 | Method | Path | Who |
 | --- | --- | --- |
-| `GET` | `/api/mentors` | any logged-in user |
+| `GET` | `/api/mentors` | any logged-in user (APPROVED mentors only) |
+| `GET` | `/api/admin/mentor-profiles/pending` | ADMIN — the review queue |
+| `GET` | `/api/admin/mentor-profiles` | ADMIN — every profile |
+| `PATCH` | `/api/admin/mentor-profiles/{id}/approve` | ADMIN |
+| `PATCH` | `/api/admin/mentor-profiles/{id}/reject` | ADMIN — `{ reason }` |
 | `GET` | `/api/admin/stats` | ADMIN |
 | `GET` | `/api/admin/users` | ADMIN |
 | `GET` | `/api/admin/requests` | ADMIN |

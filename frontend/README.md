@@ -1,14 +1,14 @@
 # 3. frontend — the React app
 
-React 19 + Vite. **This app is for candidates only** — students and working
-professionals who want a mock interview.
+React 19 + Vite. Three roles, three experiences:
 
-Login, signup, book an interview, track it. That's the whole app.
+- **Candidates** sign up, book a 1-hour slot, track their requests.
+- **Mentors** sign up, fill in a profile (experience, education, KYC, bank
+  details), wait for an admin to verify it, then get the interview queue.
+- **Admins** log in with a seeded account and verify mentors.
 
-Mentors and admins still exist in the system, but their work (assigning a
-mentor, accepting a request, managing accounts) happens through the API, not
-through this interface. If a mentor or admin logs in here they get a polite
-"nothing here for you yet" screen.
+`MentorGate.jsx` is the interesting bit — it reads `verificationStatus` and
+picks the form, the waiting screen, or the dashboard.
 
 ## Run it
 
@@ -28,7 +28,12 @@ Everything is under `src/`:
 | `api/client.js` | **every** call to the backend, in one place |
 | `auth/AuthContext.jsx` | who is logged in; login, signup, logout |
 | `pages/AuthPage.jsx` | the login + signup screen |
-| `pages/StudentDashboard.jsx` | the whole app once you're logged in |
+| `pages/StudentDashboard.jsx` | candidate: book + track |
+| `pages/MentorGate.jsx` | picks the mentor screen from verification status |
+| `pages/MentorProfileForm.jsx` | the profile a mentor submits |
+| `pages/MentorPending.jsx` | the "under verification" screen |
+| `pages/MentorDashboard.jsx` | approved mentor: queue + accept + complete |
+| `pages/AdminDashboard.jsx` | verification queue, users, all requests |
 | `components/SlotPicker.jsx` | date picker + the 1-hour slot grid |
 | `components/RequestCard.jsx` | the card used in the request list |
 | `components/StatusBadge.jsx` | the coloured status pill |

@@ -4,9 +4,9 @@ import com.learn.interviewmentor.dto.SlotDto;
 import com.learn.interviewmentor.exception.BadRequestException;
 import com.learn.interviewmentor.model.InterviewRequest;
 import com.learn.interviewmentor.model.RequestStatus;
-import com.learn.interviewmentor.model.Role;
+import com.learn.interviewmentor.model.VerificationStatus;
 import com.learn.interviewmentor.repository.InterviewRequestRepository;
-import com.learn.interviewmentor.repository.UserRepository;
+import com.learn.interviewmentor.repository.MentorProfileRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,11 +44,16 @@ public class SlotService {
             List.of(RequestStatus.PENDING, RequestStatus.SCHEDULED, RequestStatus.COMPLETED);
 
     private final InterviewRequestRepository requestRepository;
-    private final UserRepository userRepository;
+    private final MentorProfileRepository mentorProfileRepository;
 
-    public SlotService(InterviewRequestRepository requestRepository, UserRepository userRepository) {
+    public SlotService(InterviewRequestRepository requestRepository,
+                       MentorProfileRepository mentorProfileRepository) {
         this.requestRepository = requestRepository;
-        this.userRepository = userRepository;
+        this.mentorProfileRepository = mentorProfileRepository;
+    }
+
+    private long approvedMentorCount() {
+        return Math.max(mentorProfileRepository.countByVerificationStatus(VerificationStatus.APPROVED), 1);
     }
 
     /** The grid the candidate sees for one day. */
@@ -64,8 +69,9 @@ public class SlotService {
             throw new BadRequestException("You can only book up to " + MAX_DAYS_AHEAD + " days ahead");
         }
 
-        // How many interviews can run at once = how many mentors exist.
-        long capacity = Math.max(userRepository.countByRole(Role.MENTOR), 1);
+        // Capacity is how many VERIFIED mentors exist - an unapproved mentor
+        // cannot take an interview, so they must not inflate availability.
+        long capacity = approvedMentorCount();
         LocalDateTime now = LocalDateTime.now();
 
         List<SlotDto> slots = new ArrayList<>();
@@ -110,8 +116,7 @@ public class SlotService {
                     "Interviews run between " + DAY_START.format(LABEL) + " and " + DAY_END.format(LABEL));
         }
 
-        long capacity = Math.max(userRepository.countByRole(Role.MENTOR), 1);
-        if (requestRepository.countByPreferredSlotAndStatusIn(slot, ACTIVE) >= capacity) {
+        if (requestRepository.countByPreferredSlotAndStatusIn(slot, ACTIVE) >= approvedMentorCount()) {
             throw new BadRequestException("That slot just filled up. Please pick another one.");
         }
     }
