@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { api } from "../api/client";
 import RequestCard from "../components/RequestCard";
 import UpcomingInterviews, { selectUpcoming } from "../components/UpcomingInterviews";
+import FeedbackModal from "../components/FeedbackModal";
 
 function defaultSlotFrom(preferred) {
   // Default the scheduling input to whatever the candidate asked for.
@@ -19,6 +20,8 @@ export default function MentorDashboard() {
   const [openId, setOpenId] = useState(null);
   const [slot, setSlot] = useState("");
   const [meetingLink, setMeetingLink] = useState("");
+  // Which interview the feedback form is open for.
+  const [reviewing, setReviewing] = useState(null);
 
   const reload = useCallback(async () => {
     const [p, a] = await Promise.all([api.pendingRequests(), api.assignedRequests()]);
@@ -48,22 +51,24 @@ export default function MentorDashboard() {
     }
   }
 
-  async function complete(id) {
-    const feedback = window.prompt("How did the interview go? (saved as feedback)");
-    if (!feedback) return;
-    try {
-      await api.completeRequest(id, { feedback });
-      setMessage({ type: "success", text: "Marked as completed." });
-      await reload();
-    } catch (error) {
-      setMessage({ type: "error", text: error.message });
-    }
+  async function afterFeedback() {
+    setReviewing(null);
+    setMessage({ type: "success", text: "Feedback sent. The candidate can read it now." });
+    await reload();
   }
 
   const upcoming = selectUpcoming(assigned);
 
   return (
     <>
+      {reviewing && (
+        <FeedbackModal
+          request={reviewing}
+          onDone={afterFeedback}
+          onClose={() => setReviewing(null)}
+        />
+      )}
+
       <UpcomingInterviews
         interviews={upcoming}
         otherPartyLabel="Candidate"
@@ -148,8 +153,8 @@ export default function MentorDashboard() {
           {assigned.map((r) => (
             <RequestCard key={r.id} request={r}>
               {r.status === "SCHEDULED" && (
-                <button className="btn btn--ghost" onClick={() => complete(r.id)}>
-                  Mark completed &amp; add feedback
+                <button className="btn btn--primary" onClick={() => setReviewing(r)}>
+                  Give feedback &amp; close
                 </button>
               )}
             </RequestCard>

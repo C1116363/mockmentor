@@ -72,8 +72,40 @@ public class InterviewRequest {
     @Column(name = "meeting_link")
     private String meetingLink;
 
+    // ---------- feedback (all null until the mentor completes it) ----------
+
+    /** Free-text summary the mentor writes. */
     @Column(length = 2000)
     private String feedback;
+
+    /** What went well. */
+    @Column(length = 2000)
+    private String strengths;
+
+    /** What to work on before the real interview. */
+    @Column(length = 2000)
+    private String improvements;
+
+    /**
+     * Scores out of 5. Integer rather than int so "not rated" is distinct from
+     * a score of zero - older interviews completed before scoring existed have
+     * these as null.
+     */
+    @Column(name = "overall_rating")
+    private Integer overallRating;
+
+    @Column(name = "technical_rating")
+    private Integer technicalRating;
+
+    @Column(name = "communication_rating")
+    private Integer communicationRating;
+
+    @Column(name = "problem_solving_rating")
+    private Integer problemSolvingRating;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private Recommendation recommendation;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -114,8 +146,19 @@ public class InterviewRequest {
         this.status = RequestStatus.SCHEDULED;
     }
 
-    public void complete(String feedback) {
+    /** The mentor's scorecard. Everything except the summary is optional. */
+    public void complete(String feedback, String strengths, String improvements,
+                         Integer overallRating, Integer technicalRating,
+                         Integer communicationRating, Integer problemSolvingRating,
+                         Recommendation recommendation) {
         this.feedback = feedback;
+        this.strengths = strengths;
+        this.improvements = improvements;
+        this.overallRating = overallRating;
+        this.technicalRating = technicalRating;
+        this.communicationRating = communicationRating;
+        this.problemSolvingRating = problemSolvingRating;
+        this.recommendation = recommendation;
         this.status = RequestStatus.COMPLETED;
     }
 
@@ -179,6 +222,34 @@ public class InterviewRequest {
 
     public String getFeedback() {
         return feedback;
+    }
+
+    public String getStrengths() {
+        return strengths;
+    }
+
+    public String getImprovements() {
+        return improvements;
+    }
+
+    public Integer getOverallRating() {
+        return overallRating;
+    }
+
+    public Integer getTechnicalRating() {
+        return technicalRating;
+    }
+
+    public Integer getCommunicationRating() {
+        return communicationRating;
+    }
+
+    public Integer getProblemSolvingRating() {
+        return problemSolvingRating;
+    }
+
+    public Recommendation getRecommendation() {
+        return recommendation;
     }
 
     public LocalDateTime getCreatedAt() {

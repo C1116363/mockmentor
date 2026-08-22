@@ -40,6 +40,9 @@ Everything is under `src/`:
 | `components/UpcomingInterviews.jsx` | the Join banner, shared by student and mentor |
 | `components/PayModal.jsx` | the pay-to-book popup: UPI ID, UTR, screenshot |
 | `components/PaymentReviewCard.jsx` | admin checking one payment |
+| `components/FeedbackModal.jsx` | the mentor's scorecard form |
+| `components/StarRating.jsx` | clickable 1-5 stars, keyboard accessible |
+| `components/FeedbackCard.jsx` | the scorecard as the candidate reads it |
 | `components/SlotPicker.jsx` | date picker + the 1-hour slot grid |
 | `components/RequestCard.jsx` | the card used in the request list |
 | `components/StatusBadge.jsx` | the coloured status pill |

@@ -1,4 +1,5 @@
 import StatusBadge from "./StatusBadge";
+import FeedbackCard from "./FeedbackCard";
 
 function formatDateTime(value) {
   if (!value) return null;
@@ -57,12 +58,7 @@ export default function RequestCard({ request, children }) {
         </a>
       )}
 
-      {request.feedback && (
-        <div className="card__feedback">
-          <strong>Mentor feedback</strong>
-          <p>{request.feedback}</p>
-        </div>
-      )}
+      <FeedbackCard request={request} />
 
       {children}
     </article>

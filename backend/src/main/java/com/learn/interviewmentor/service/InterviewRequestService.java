@@ -144,7 +144,15 @@ public class InterviewRequestService {
             throw new BadRequestException("Only a SCHEDULED interview can be completed");
         }
 
-        request.complete(dto.feedback());
+        request.complete(
+                dto.feedback(),
+                dto.strengths(),
+                dto.improvements(),
+                dto.overallRating(),
+                dto.technicalRating(),
+                dto.communicationRating(),
+                dto.problemSolvingRating(),
+                dto.recommendation());
         return InterviewRequestDto.from(request);
     }
 

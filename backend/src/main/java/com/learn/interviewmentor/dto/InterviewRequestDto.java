@@ -3,6 +3,7 @@ package com.learn.interviewmentor.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import com.learn.interviewmentor.dto.auth.UserDto;
 import com.learn.interviewmentor.model.InterviewRequest;
+import com.learn.interviewmentor.model.Recommendation;
 import com.learn.interviewmentor.model.RequestStatus;
 
 import java.time.LocalDateTime;
@@ -29,6 +30,27 @@ public record InterviewRequestDto(
         String meetingLink,
         @Schema(description = "Written by the mentor once COMPLETED")
         String feedback,
+
+        @Schema(description = "What the candidate did well")
+        String strengths,
+
+        @Schema(description = "What to work on next")
+        String improvements,
+
+        @Schema(description = "Overall score out of 5", example = "4")
+        Integer overallRating,
+
+        @Schema(description = "Technical knowledge out of 5", example = "4")
+        Integer technicalRating,
+
+        @Schema(description = "Communication out of 5", example = "5")
+        Integer communicationRating,
+
+        @Schema(description = "Problem solving out of 5", example = "3")
+        Integer problemSolvingRating,
+
+        @Schema(description = "READY, ALMOST_READY or NEEDS_WORK", example = "ALMOST_READY")
+        Recommendation recommendation,
         LocalDateTime createdAt
 ) {
     public static InterviewRequestDto from(InterviewRequest request) {
@@ -45,6 +67,13 @@ public record InterviewRequestDto(
                 request.getScheduledAt(),
                 request.getMeetingLink(),
                 request.getFeedback(),
+                request.getStrengths(),
+                request.getImprovements(),
+                request.getOverallRating(),
+                request.getTechnicalRating(),
+                request.getCommunicationRating(),
+                request.getProblemSolvingRating(),
+                request.getRecommendation(),
                 request.getCreatedAt()
         );
     }

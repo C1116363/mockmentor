@@ -83,6 +83,25 @@ No refunds, no automatic reconciliation, and **no payouts to mentors** — you'd
 pay them manually. Real payouts mean Razorpay Route or Stripe Connect plus
 mentor KYC, which is a much bigger job.
 
+## Interview feedback
+
+Closing an interview means filling in a **scorecard**, not a paragraph:
+
+| Field | Required |
+| --- | --- |
+| Overall rating (1–5) | yes |
+| Verdict — Ready / Almost there / Needs work | yes |
+| Summary | yes |
+| Technical, Problem solving, Communication (1–5 each) | no |
+| What went well / What to work on | no |
+
+The optional ratings are `Integer`, not `int`, so **"not rated" stays distinct
+from "scored zero"** — interviews completed before scoring existed have them as
+null, and the candidate's scorecard just omits those rows.
+
+The mentor gets clickable stars with hover preview; the candidate gets a
+scorecard with the overall score, per-skill stars and a colour-coded verdict.
+
 ## Meeting links
 
 **A meeting room is created automatically when a mentor is assigned.** Both the
@@ -354,7 +373,7 @@ throw away a stale token.
 | `GET` | `/api/requests/pending` | MENTOR — the open queue |
 | `GET` | `/api/requests/assigned` | MENTOR — what you accepted |
 | `PATCH` | `/api/requests/{id}/accept` | MENTOR — `{ scheduledAt, meetingLink }` |
-| `PATCH` | `/api/requests/{id}/complete` | MENTOR (owner only) — `{ feedback }` |
+| `PATCH` | `/api/requests/{id}/complete` | MENTOR (owner only) — the scorecard |
 | `PATCH` | `/api/requests/{id}/cancel` | student, mentor, or admin |
 
 ### Public — `/api/public` (no token at all)
