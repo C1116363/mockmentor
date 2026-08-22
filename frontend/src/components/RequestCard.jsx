@@ -19,9 +19,7 @@ export default function RequestCard({ request, children }) {
       <header className="card__head">
         <div>
           <h4 className="card__title">{request.topic}</h4>
-          <p className="card__sub">
-            {request.student.fullName} &middot; {request.experienceLevel}
-          </p>
+          <p className="card__sub">{request.experienceLevel}</p>
         </div>
         <StatusBadge status={request.status} />
       </header>
@@ -31,13 +29,9 @@ export default function RequestCard({ request, children }) {
           <dt>Preferred date</dt>
           <dd>{formatDate(request.preferredDate)}</dd>
         </div>
-        <div>
-          <dt>Student email</dt>
-          <dd>{request.student.email}</dd>
-        </div>
         {request.mentor && (
           <div>
-            <dt>Mentor</dt>
+            <dt>Interviewer</dt>
             <dd>{request.mentor.name}</dd>
           </div>
         )}

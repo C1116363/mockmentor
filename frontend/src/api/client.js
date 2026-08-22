@@ -51,30 +51,11 @@ export const api = {
   login: (payload) => request("/auth/login", { method: "POST", body: JSON.stringify(payload) }),
   signupStudent: (payload) =>
     request("/auth/signup/student", { method: "POST", body: JSON.stringify(payload) }),
-  signupMentor: (payload) =>
-    request("/auth/signup/mentor", { method: "POST", body: JSON.stringify(payload) }),
   me: () => request("/auth/me"),
 
-  // ---- mentors ----
-  listMentors: () => request("/mentors"),
-
-  // ---- student ----
+  // ---- interview requests ----
   createRequest: (payload) => request("/requests", { method: "POST", body: JSON.stringify(payload) }),
   myRequests: () => request("/requests/mine"),
 
-  // ---- mentor ----
-  pendingRequests: () => request("/requests/pending"),
-  assignedRequests: () => request("/requests/assigned"),
-  acceptRequest: (id, payload) =>
-    request(`/requests/${id}/accept`, { method: "PATCH", body: JSON.stringify(payload) }),
-  completeRequest: (id, payload) =>
-    request(`/requests/${id}/complete`, { method: "PATCH", body: JSON.stringify(payload) }),
   cancelRequest: (id) => request(`/requests/${id}/cancel`, { method: "PATCH" }),
-
-  // ---- admin ----
-  adminStats: () => request("/admin/stats"),
-  adminUsers: () => request("/admin/users"),
-  adminRequests: () => request("/admin/requests"),
-  deactivateUser: (id) => request(`/admin/users/${id}/deactivate`, { method: "PATCH" }),
-  activateUser: (id) => request(`/admin/users/${id}/activate`, { method: "PATCH" }),
 };

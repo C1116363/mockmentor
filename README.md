@@ -9,30 +9,38 @@ The repo is **three folders**, one per piece. Each has its own README telling yo
 | Folder | Port | What it is |
 | --- | --- | --- |
 | **`website/`** | `:3000` | The public marketing site. The button in the top-right corner opens the app. |
-| **`frontend/`** | `:5173` | The React app — login, signup, and the three role dashboards. |
+| **`frontend/`** | `:5173` | The React app — login, signup and the candidate dashboard. |
 | **`backend/`** | `:8080` | The Spring Boot API. [Swagger UI](http://localhost:8080/swagger-ui.html) at `/swagger-ui.html`. |
 
 Start at <http://localhost:3000> and click the corner button.
 
 ---
 
-## Three roles
+## How it works right now
 
-| Role | What they can do |
+**The app is for candidates only.** Students and working professionals sign up,
+book a mock interview and track it. That is the entire user interface.
+
+Everything else — creating mentors, assigning one to a request, marking an
+interview complete, managing accounts — is done **from the backend**, through
+Swagger or any API client. Those endpoints all still exist and are fully
+documented; they just don't have a UI yet.
+
+| Role | Where they work |
 | --- | --- |
-| **STUDENT** | Sign up, raise interview requests, track them, cancel their own |
-| **MENTOR** | Sign up with a profile, see the open queue, accept with a slot + link, complete with feedback |
-| **ADMIN** | See stats, every user and every request; deactivate or reactivate accounts |
+| **STUDENT** (candidate) | The React app — signup, login, book, track |
+| **MENTOR** | API only — accepts requests, adds feedback |
+| **ADMIN** | API only — stats, user management |
 
 ### Demo logins
 
 Every seeded account uses the password `password123`:
 
-| Role | Email |
-| --- | --- |
-| Student | `rahul@example.com` |
-| Mentor | `ananya@example.com` |
-| Admin | `admin@example.com` |
+| Role | Email | Use it in |
+| --- | --- | --- |
+| Student | `rahul@example.com` | the app |
+| Mentor | `ananya@example.com` | Swagger / API |
+| Admin | `admin@example.com` | Swagger / API |
 
 There is deliberately **no public "sign up as admin"** endpoint — that would let
 anyone grant themselves full access. The first admin comes from the seeder; in a
@@ -66,12 +74,10 @@ interview-mentor/
         ├── api/client.js             every fetch call + the token header
         ├── auth/AuthContext.jsx      "who is logged in", shared via React Context
         ├── pages/
-        │   ├── AuthPage.jsx          login + signup (student or mentor)
-        │   ├── StudentDashboard.jsx
-        │   ├── MentorDashboard.jsx
-        │   └── AdminDashboard.jsx
+        │   ├── AuthPage.jsx          login + signup
+        │   └── StudentDashboard.jsx  book + track interviews
         ├── components/               RequestCard, StatusBadge
-        └── App.jsx                   picks the dashboard based on role
+        └── App.jsx                   loading / logged out / logged in
 ```
 
 ---

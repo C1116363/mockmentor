@@ -219,24 +219,6 @@
 
 /* ---------- lookup ---------- */
 
-.lookup__form {
-  display: flex;
-  gap: 8px;
-  margin: 12px 0;
-}
-
-.lookup__form input {
-  flex: 1;
-  padding: 9px 12px;
-  border: 1px solid var(--border);
-  border-radius: 9px;
-  outline: none;
-}
-
-.lookup__form input:focus {
-  border-color: var(--accent);
-}
-
 /* ---------- cards ---------- */
 
 .card-list {
@@ -509,40 +491,6 @@
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
-.role-picker {
-  margin-bottom: 16px;
-}
-
-.role-picker > span {
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--muted);
-}
-
-.role-picker__options {
-  display: flex;
-  gap: 8px;
-  margin-top: 8px;
-}
-
-.chip {
-  flex: 1;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  border-radius: 9px;
-  padding: 9px;
-  font-size: 0.84rem;
-  cursor: pointer;
-  color: var(--muted);
-}
-
-.chip--on {
-  border-color: var(--student);
-  color: var(--student);
-  background: #eff4ff;
-  font-weight: 600;
-}
-
 .btn--wide {
   width: 100%;
   align-self: stretch;
@@ -614,96 +562,81 @@
 
 /* ================= mentor chips ================= */
 
-.mentor-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.mentor-chip {
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 10px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  background: #fcfdff;
-}
-
-.mentor-chip span {
-  font-size: 0.84rem;
-  color: var(--muted);
-}
-
-.mentor-chip small {
-  font-size: 0.76rem;
-  color: var(--muted);
-}
-
 /* ================= admin ================= */
 
-.admin {
+
+/* ---------- candidate-only additions ---------- */
+
+.auth__points {
+  list-style: none;
+  padding: 0;
+  margin: 22px 0 0;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 9px;
+  font-size: .92rem;
+  color: var(--muted);
 }
 
-.stat-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-  gap: 12px;
-}
-
-.stat {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 16px;
+.auth__points li {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  align-items: center;
+  gap: 10px;
 }
 
-.stat__value {
-  font-size: 1.7rem;
+.auth__points li::before {
+  content: "✓";
+  color: var(--success);
   font-weight: 700;
-  line-height: 1;
 }
 
-.stat__label {
-  font-size: 0.78rem;
+.auth__hint {
+  font-size: .86rem;
   color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  margin-bottom: 16px;
 }
 
-.table-wrap {
-  overflow-x: auto;
-}
-
-.table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.88rem;
-}
-
-.table th {
-  text-align: left;
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+.auth__switch {
+  margin-top: 16px;
+  text-align: center;
+  font-size: .86rem;
   color: var(--muted);
-  padding: 8px 12px 8px 0;
-  border-bottom: 1px solid var(--border);
-  white-space: nowrap;
 }
 
-.table td {
-  padding: 11px 12px 11px 0;
-  border-bottom: 1px solid var(--border);
-  vertical-align: middle;
+.auth__switch button {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--student);
+  cursor: pointer;
+  text-decoration: underline;
 }
 
-.table .muted {
+.topbar__email {
+  font-size: .8rem;
   color: var(--muted);
+}
+
+.notice-panel {
+  --accent: var(--student);
+  max-width: 520px;
+  margin: 40px auto;
+  text-align: center;
+}
+
+.notice-panel h2 {
+  font-size: 1.3rem;
+  margin-bottom: 10px;
+}
+
+.notice-panel p {
+  color: var(--muted);
+  font-size: .93rem;
+  margin-bottom: 20px;
+}
+
+.notice-panel .btn--primary {
+  align-self: center;
 }

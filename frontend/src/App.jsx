@@ -1,30 +1,15 @@
 import { AuthProvider, useAuth } from "./auth/AuthContext";
 import AuthPage from "./pages/AuthPage";
 import StudentDashboard from "./pages/StudentDashboard";
-import MentorDashboard from "./pages/MentorDashboard";
-import AdminDashboard from "./pages/AdminDashboard";
 import "./App.css";
 
-const DASHBOARDS = {
-  STUDENT: StudentDashboard,
-  MENTOR: MentorDashboard,
-  ADMIN: AdminDashboard,
-};
-
-const SUBTITLES = {
-  STUDENT: "Request a mock interview and track it",
-  MENTOR: "Pick up requests and take interviews",
-  ADMIN: "Manage users and oversee every request",
-};
-
 /**
- * Decides what to show:
- *   still checking a saved token -> a spinner
- *   nobody logged in             -> the login / signup page
- *   logged in                    -> the dashboard for that role
+ * This interface is for candidates only - students and working professionals
+ * who want a mock interview.
  *
- * This is role-based routing without a router library. Once you add more pages,
- * swap this for react-router.
+ * Mentors and admins still exist in the system, but their work (assigning
+ * mentors, accepting requests, managing accounts) is done through the API
+ * rather than through this app.
  */
 function Shell() {
   const { user, loading, logout } = useAuth();
@@ -37,20 +22,20 @@ function Shell() {
     return <AuthPage />;
   }
 
-  const Dashboard = DASHBOARDS[user.role];
+  const isCandidate = user.role === "STUDENT";
 
   return (
     <div className="app">
       <header className="topbar">
         <div>
           <h1>MockMentor</h1>
-          <p>{SUBTITLES[user.role]}</p>
+          <p>Book a mock interview and track it</p>
         </div>
 
         <div className="topbar__user">
           <div className="topbar__who">
             <strong>{user.fullName}</strong>
-            <span className={`role role--${user.role.toLowerCase()}`}>{user.role}</span>
+            <span className="topbar__email">{user.email}</span>
           </div>
           <button className="btn btn--ghost btn--sm" onClick={logout}>
             Log out
@@ -59,12 +44,26 @@ function Shell() {
       </header>
 
       <main>
-        {Dashboard ? <Dashboard /> : <p className="empty">Unknown role: {user.role}</p>}
+        {isCandidate ? (
+          <StudentDashboard />
+        ) : (
+          // A mentor or admin logging in here isn't an error - there is just
+          // nothing for them in this interface yet.
+          <div className="panel notice-panel">
+            <h2>Nothing here for you yet</h2>
+            <p>
+              This app is for candidates booking mock interviews. Your account is
+              a <strong>{user.role.toLowerCase()}</strong> account, and that side
+              of things is handled through the API for now.
+            </p>
+            <button className="btn btn--primary" onClick={logout}>
+              Log out
+            </button>
+          </div>
+        )}
       </main>
 
-      <footer className="footer">
-        Spring Boot &middot; Spring Security + JWT &middot; MySQL &middot; React
-      </footer>
+      <footer className="footer">MockMentor</footer>
     </div>
   );
 }

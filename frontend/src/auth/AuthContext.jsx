@@ -40,7 +40,6 @@ export function AuthProvider({ children }) {
       loading,
       login: (payload) => api.login(payload).then(acceptAuth),
       signupStudent: (payload) => api.signupStudent(payload).then(acceptAuth),
-      signupMentor: (payload) => api.signupMentor(payload).then(acceptAuth),
       logout: () => {
         // Logging out is purely a client-side act with JWTs: the server keeps
         // no session, so we just throw the token away.

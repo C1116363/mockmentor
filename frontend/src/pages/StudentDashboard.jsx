@@ -12,8 +12,10 @@ const EMPTY_FORM = {
 };
 
 /**
- * The student's view. Notice there is no name/email field any more and no
- * "look up by email" box - the server already knows who you are from the token.
+ * The whole app, for a candidate: raise a request on the left, track your
+ * requests on the right.
+ *
+ * There is no name or email field - the server takes those from your token.
  */
 export default function StudentDashboard() {
   const [form, setForm] = useState(EMPTY_FORM);
@@ -22,15 +24,12 @@ export default function StudentDashboard() {
   const [submitting, setSubmitting] = useState(false);
 
   const [requests, setRequests] = useState([]);
-  const [mentors, setMentors] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([api.myRequests(), api.listMentors()])
-      .then(([mine, mentorList]) => {
-        setRequests(mine);
-        setMentors(mentorList);
-      })
+    api
+      .myRequests()
+      .then(setRequests)
       .catch((error) => setMessage({ type: "error", text: error.message }))
       .finally(() => setLoading(false));
   }, []);
@@ -49,7 +48,7 @@ export default function StudentDashboard() {
     try {
       await api.createRequest(form);
       setForm(EMPTY_FORM);
-      setMessage({ type: "success", text: "Request sent. A mentor will pick it up soon." });
+      setMessage({ type: "success", text: "Request sent. We'll line up an interviewer for you." });
       setRequests(await api.myRequests());
     } catch (error) {
       setFieldErrors(error.fieldErrors);
@@ -73,9 +72,9 @@ export default function StudentDashboard() {
     <div className="sections">
       <section className="panel panel--student">
         <header className="panel__head">
-          <span className="panel__tag">Request an interview</span>
+          <span className="panel__tag">New request</span>
           <h2>What do you want to practise?</h2>
-          <p>A senior mentor picks it up and schedules a call with you.</p>
+          <p>Tell us the round you&apos;re preparing for and when suits you.</p>
         </header>
 
         <form className="form" onSubmit={submitRequest}>
@@ -120,7 +119,7 @@ export default function StudentDashboard() {
           </div>
 
           <label className="field">
-            <span>Anything else the mentor should know? (optional)</span>
+            <span>Anything we should know? (optional)</span>
             <textarea
               name="notes"
               value={form.notes}
@@ -136,29 +135,15 @@ export default function StudentDashboard() {
 
           {message && <p className={`notice notice--${message.type}`}>{message.text}</p>}
         </form>
-
-        <div className="divider" />
-
-        <h3>Available mentors <span className="count">{mentors.length}</span></h3>
-        <div className="mentor-list">
-          {mentors.map((mentor) => (
-            <div className="mentor-chip" key={mentor.userId}>
-              <strong>{mentor.name}</strong>
-              <span>{mentor.expertise}</span>
-              <small>
-                {mentor.yearsOfExperience} yrs
-                {mentor.currentCompany && ` · ${mentor.currentCompany}`}
-              </small>
-            </div>
-          ))}
-        </div>
       </section>
 
       <section className="panel panel--mentor">
         <header className="panel__head">
           <span className="panel__tag">Your interviews</span>
-          <h2>Track your requests</h2>
-          <p>Everything you have asked for, newest first.</p>
+          <h2>
+            Track your requests <span className="count">{requests.length}</span>
+          </h2>
+          <p>Once an interviewer is assigned you&apos;ll see the slot and joining link here.</p>
         </header>
 
         {loading && <p className="empty">Loading...</p>}
