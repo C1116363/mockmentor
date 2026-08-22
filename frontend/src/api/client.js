@@ -80,6 +80,13 @@ export const api = {
   adminStats: () => request("/admin/stats"),
   adminUsers: () => request("/admin/users"),
   adminRequests: () => request("/admin/requests"),
+  adminPendingRequests: () => request("/admin/requests/pending"),
+  assignMentor: (requestId, payload) =>
+    request(`/admin/requests/${requestId}/assign`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
+  listMentors: () => request("/mentors"),
   pendingMentorProfiles: () => request("/admin/mentor-profiles/pending"),
   allMentorProfiles: () => request("/admin/mentor-profiles"),
   approveMentor: (id) => request(`/admin/mentor-profiles/${id}/approve`, { method: "PATCH" }),

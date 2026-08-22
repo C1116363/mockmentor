@@ -112,6 +112,13 @@ public class MentorProfileService {
 
     // ---------- the gate ----------
 
+    /** Quiet check - true only if this user is a mentor with an APPROVED profile. */
+    public boolean isApproved(User user) {
+        return profileRepository.findByUserId(user.getId())
+                .map(MentorProfile::isApproved)
+                .orElse(false);
+    }
+
     /**
      * Called before any mentor action. This is what actually stops an
      * unverified mentor from working - the frontend showing a waiting screen

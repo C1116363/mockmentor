@@ -1,5 +1,6 @@
 package com.learn.interviewmentor.controller;
 
+import com.learn.interviewmentor.dto.AssignMentorRequest;
 import com.learn.interviewmentor.dto.InterviewRequestDto;
 import com.learn.interviewmentor.dto.auth.UserDto;
 import com.learn.interviewmentor.dto.mentor.MentorProfileDto;
@@ -145,6 +146,49 @@ public class AdminController {
     })
     public List<UserDto> allUsers() {
         return adminService.findAllUsers();
+    }
+
+    // ---------------- interview requests ----------------
+
+    @GetMapping("/requests/pending")
+    @Operation(
+            summary = "Requests waiting for a mentor",
+            description = "Interview requests students have sent that nobody has picked up yet, "
+                    + "oldest first. This is the admin's assignment queue.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Unassigned requests"),
+            @ApiResponse(responseCode = "403", description = "You are not an ADMIN",
+                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class)))
+    })
+    public List<InterviewRequestDto> pendingRequests() {
+        return requestService.findPendingForAdmin();
+    }
+
+    @PatchMapping("/requests/{id}/assign")
+    @Operation(
+            summary = "Attach a mentor to a student's request",
+            description = "Hands a pending request to a specific mentor and schedules it, moving "
+                    + "it from PENDING to SCHEDULED.\n\n"
+                    + "This is the second route to scheduling: a mentor can claim a request from "
+                    + "the queue themselves, or an admin can assign one directly.\n\n"
+                    + "Leave `scheduledAt` out and the student's own requested slot is used.\n\n"
+                    + "The mentor must be **verified** - assigning an unapproved mentor would "
+                    + "sidestep the whole verification step, so it is refused.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Assigned and scheduled"),
+            @ApiResponse(responseCode = "400",
+                    description = "Request is not PENDING, or that user is not a verified, active mentor",
+                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class))),
+            @ApiResponse(responseCode = "403", description = "You are not an ADMIN",
+                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class))),
+            @ApiResponse(responseCode = "404", description = "No request or no such user",
+                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class)))
+    })
+    public InterviewRequestDto assignMentor(
+            @Parameter(description = "Interview request id", example = "1") @PathVariable Long id,
+            @Valid @RequestBody AssignMentorRequest dto,
+            @CurrentUser User admin) {
+        return requestService.assignMentor(id, dto, admin);
     }
 
     @GetMapping("/requests")

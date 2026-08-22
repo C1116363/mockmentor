@@ -3,55 +3,69 @@ import { useAuth } from "../auth/AuthContext";
 
 const EMPTY = { fullName: "", email: "", password: "" };
 
+const PORTALS = [
+  { key: "STUDENT", label: "Take interviews", sub: "Student / professional", canSignup: true },
+  { key: "MENTOR", label: "Give interviews", sub: "Senior engineer", canSignup: true },
+  { key: "ADMIN", label: "Admin", sub: "Staff login", canSignup: false },
+];
+
+const HINTS = {
+  STUDENT: "For students and working professionals preparing for interviews.",
+  MENTOR:
+    "After signing up you'll complete a profile that an admin verifies before you can take interviews.",
+  ADMIN: "Admin accounts are created internally — there is no admin signup. Log in with the account you were given.",
+};
+
 /**
- * Login and signup for candidates - students and working professionals.
+ * Login and signup for all three roles.
  *
- * There is no role picker any more. Anyone signing up here becomes a STUDENT.
- * Mentor and admin accounts are created and managed from the backend, not from
- * this interface.
+ * Admin is deliberately login-only: a public "make me an admin" endpoint would
+ * let anyone grant themselves full control of the platform. Picking Admin hides
+ * the signup tab entirely.
  */
 export default function AuthPage() {
   const { login, signupStudent, signupMentor } = useAuth();
 
+  const [portal, setPortal] = useState("STUDENT");
   const [mode, setMode] = useState("login");
-  const [role, setRole] = useState("STUDENT");
   const [form, setForm] = useState(EMPTY);
   const [fieldErrors, setFieldErrors] = useState({});
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
 
-  const isSignup = mode === "signup";
+  const current = PORTALS.find((p) => p.key === portal);
+  const isSignup = mode === "signup" && current.canSignup;
 
   function updateField(event) {
     const { name, value } = event.target;
-    setForm((current) => ({ ...current, [name]: value }));
+    setForm((c) => ({ ...c, [name]: value }));
   }
 
-  function switchMode(next) {
-    setMode(next);
-    setRole("STUDENT");
+  function reset() {
     setError(null);
     setFieldErrors({});
+  }
+
+  function choosePortal(key) {
+    setPortal(key);
+    reset();
+    // Admin has no signup, so fall back to login when switching to it.
+    if (!PORTALS.find((p) => p.key === key).canSignup) setMode("login");
   }
 
   async function submit(event) {
     event.preventDefault();
     setBusy(true);
-    setError(null);
-    setFieldErrors({});
+    reset();
 
     try {
-      if (isSignup && role === "MENTOR") {
-        // Mentors sign up with just the basics; the full profile (experience,
-        // KYC, bank details) is filled in after logging in and then verified
-        // by an admin.
+      if (isSignup && portal === "MENTOR") {
         await signupMentor(form);
       } else if (isSignup) {
         await signupStudent(form);
       } else {
         await login({ email: form.email, password: form.password });
       }
-      // On success AuthContext sets the user and App swaps in the dashboard.
     } catch (err) {
       setError(err.message);
       setFieldErrors(err.fieldErrors ?? {});
@@ -72,7 +86,7 @@ export default function AuthPage() {
         <ul className="auth__points">
           <li>A real interview, not a chat</li>
           <li>Written feedback you keep</li>
-          <li>Pick a date that suits you</li>
+          <li>Pick a date and a time that suit you</li>
         </ul>
 
         <div className="demo-box">
@@ -81,7 +95,8 @@ export default function AuthPage() {
             type="button"
             className="demo-box__fill"
             onClick={() => {
-              switchMode("login");
+              choosePortal("STUDENT");
+              setMode("login");
               setForm({ ...EMPTY, email: "rahul@example.com", password: "password123" });
             }}
           >
@@ -91,46 +106,50 @@ export default function AuthPage() {
       </header>
 
       <div className="auth__card">
-        <div className="tabs">
-          <button className={`tab ${!isSignup ? "tab--on" : ""}`} onClick={() => switchMode("login")}>
-            Log in
-          </button>
-          <button className={`tab ${isSignup ? "tab--on" : ""}`} onClick={() => switchMode("signup")}>
-            Sign up
-          </button>
+        <div className="portal">
+          {PORTALS.map((p) => (
+            <button
+              key={p.key}
+              type="button"
+              className={`chip ${portal === p.key ? "chip--on" : ""}`}
+              onClick={() => choosePortal(p.key)}
+            >
+              {p.label}
+              <small>{p.sub}</small>
+            </button>
+          ))}
         </div>
 
-        {isSignup && (
-          <div className="role-picker">
-            <span>I want to</span>
-            <div className="role-picker__options">
-              <button
-                type="button"
-                className={`chip ${role === "STUDENT" ? "chip--on" : ""}`}
-                onClick={() => setRole("STUDENT")}
-              >
-                Take interviews
-                <small>Student / professional</small>
-              </button>
-              <button
-                type="button"
-                className={`chip ${role === "MENTOR" ? "chip--on" : ""}`}
-                onClick={() => setRole("MENTOR")}
-              >
-                Give interviews
-                <small>Senior engineer</small>
-              </button>
-            </div>
+        {current.canSignup ? (
+          <div className="tabs">
+            <button
+              className={`tab ${mode === "login" ? "tab--on" : ""}`}
+              onClick={() => {
+                setMode("login");
+                reset();
+              }}
+            >
+              Log in
+            </button>
+            <button
+              className={`tab ${mode === "signup" ? "tab--on" : ""}`}
+              onClick={() => {
+                setMode("signup");
+                reset();
+              }}
+            >
+              Sign up
+            </button>
+          </div>
+        ) : (
+          <div className="tabs">
+            <button className="tab tab--on" disabled>
+              Log in
+            </button>
           </div>
         )}
 
-        <p className="auth__hint">
-          {!isSignup
-            ? "Welcome back."
-            : role === "MENTOR"
-            ? "After signing up you'll complete a profile that an admin verifies before you can take interviews."
-            : "For students and working professionals preparing for interviews."}
-        </p>
+        <p className="auth__hint">{HINTS[portal]}</p>
 
         <form className="form" onSubmit={submit}>
           {isSignup && (
@@ -175,19 +194,17 @@ export default function AuthPage() {
           </label>
 
           <button className="btn btn--primary btn--wide" type="submit" disabled={busy}>
-            {busy ? "Please wait..." : isSignup ? "Create account" : "Log in"}
+            {busy
+              ? "Please wait..."
+              : isSignup
+              ? portal === "MENTOR"
+                ? "Sign up as a mentor"
+                : "Create account"
+              : "Log in"}
           </button>
 
           {error && <p className="notice notice--error">{error}</p>}
         </form>
-
-        <p className="auth__switch">
-          {isSignup ? (
-            <>Already have an account? <button onClick={() => switchMode("login")}>Log in</button></>
-          ) : (
-            <>New here? <button onClick={() => switchMode("signup")}>Create an account</button></>
-          )}
-        </p>
       </div>
     </div>
   );

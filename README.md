@@ -22,11 +22,24 @@ Start at <http://localhost:3000> and click the corner button.
 | --- | --- | --- |
 | **STUDENT** (candidate) | Yes | Book a 1-hour slot, track requests, read feedback |
 | **MENTOR** | Yes → then **verified by an admin** | Profile form → "under verification" → the interview queue |
-| **ADMIN** | No — seeded | Verification queue, users, all requests |
+| **ADMIN** | No — seeded | Verification queue, **assigning mentors to requests**, users |
 
-Admin accounts are **not** created through signup. A public "make me an admin"
-endpoint would let anyone grant themselves full access; the first admin comes
+Admin accounts are **not** created through signup. The login page has an Admin
+option, but it only ever shows a login form — a public "make me an admin"
+endpoint would let anyone grant themselves full access. The first admin comes
 from the seeder and would promote others.
+
+## Two ways a request gets scheduled
+
+1. **A mentor claims it** — a verified mentor sees the open queue and accepts
+   one themselves.
+2. **An admin assigns it** — the admin sees every unassigned request and hands
+   it to a specific mentor. Useful when a request needs someone particular, or
+   has been sitting unclaimed.
+
+Either way the request moves `PENDING -> SCHEDULED` and the student sees their
+interviewer, the slot and the joining link. An admin cannot assign an
+**unverified** mentor — that would sidestep verification entirely.
 
 ## Mentor verification
 
@@ -287,6 +300,8 @@ readable by the whole internet.
 | `GET` | `/api/admin/mentor-profiles` | ADMIN — every profile |
 | `PATCH` | `/api/admin/mentor-profiles/{id}/approve` | ADMIN |
 | `PATCH` | `/api/admin/mentor-profiles/{id}/reject` | ADMIN — `{ reason }` |
+| `GET` | `/api/admin/requests/pending` | ADMIN — requests with no mentor yet |
+| `PATCH` | `/api/admin/requests/{id}/assign` | ADMIN — `{ mentorId, scheduledAt?, meetingLink }` |
 | `GET` | `/api/admin/stats` | ADMIN |
 | `GET` | `/api/admin/users` | ADMIN |
 | `GET` | `/api/admin/requests` | ADMIN |

@@ -888,3 +888,25 @@
 }
 
 .table .muted { color: var(--muted); }
+
+/* ---------- three-way portal picker on the auth page ---------- */
+
+.portal {
+  display: flex;
+  gap: 7px;
+  margin-bottom: 16px;
+}
+
+.portal .chip {
+  padding: 9px 10px;
+  font-size: .82rem;
+}
+
+.portal .chip small {
+  font-size: .68rem;
+}
+
+.tabs .tab:disabled {
+  cursor: default;
+  opacity: 1;
+}

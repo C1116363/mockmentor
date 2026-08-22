@@ -5,7 +5,8 @@ React 19 + Vite. Three roles, three experiences:
 - **Candidates** sign up, book a 1-hour slot, track their requests.
 - **Mentors** sign up, fill in a profile (experience, education, KYC, bank
   details), wait for an admin to verify it, then get the interview queue.
-- **Admins** log in with a seeded account and verify mentors.
+- **Admins** log in with a seeded account (the Admin option on the login page
+  offers no signup), verify mentors, and assign mentors to student requests.
 
 `MentorGate.jsx` is the interesting bit — it reads `verificationStatus` and
 picks the form, the waiting screen, or the dashboard.
@@ -33,7 +34,8 @@ Everything is under `src/`:
 | `pages/MentorProfileForm.jsx` | the profile a mentor submits |
 | `pages/MentorPending.jsx` | the "under verification" screen |
 | `pages/MentorDashboard.jsx` | approved mentor: queue + accept + complete |
-| `pages/AdminDashboard.jsx` | verification queue, users, all requests |
+| `pages/AdminDashboard.jsx` | four tabs: assign requests, verify mentors, users, all requests |
+| `components/AssignMentorForm.jsx` | admin picking a mentor for one request |
 | `components/SlotPicker.jsx` | date picker + the 1-hour slot grid |
 | `components/RequestCard.jsx` | the card used in the request list |
 | `components/StatusBadge.jsx` | the coloured status pill |
