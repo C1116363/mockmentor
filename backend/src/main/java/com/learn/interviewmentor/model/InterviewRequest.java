@@ -212,10 +212,51 @@ public class InterviewRequest {
         this.recommendation = scored ? recommendation : null;
 
         this.status = RequestStatus.COMPLETED;
+        this.completedAt = LocalDateTime.now();
     }
 
     public void cancel() {
         this.status = RequestStatus.CANCELLED;
+    }
+
+    /**
+     * When the mentor wrote this up. Null for anything not finished.
+     *
+     * <h2>Null on old rows, and that is a migration trap</h2>
+     * ddl-auto=update adds this column to a table that already has completed
+     * interviews in it, and every one of them gets null - the information was
+     * simply never recorded. Payroll reads it to work out the period a payout
+     * covers, so {@link #getCompletedAt()} falls back rather than returning
+     * null and putting a hole in a payslip.
+     */
+    @Column(name = "completed_at")
+    private LocalDateTime completedAt;
+
+    /**
+     * The payout that paid for this session, or null if it has not been paid.
+     *
+     * <h2>This field is the whole anti-double-pay mechanism</h2>
+     * Payroll picks up completed sessions where this is null, and stamps them
+     * as it goes. A session can therefore appear in exactly one payout, whatever
+     * order the runs happen in and however many admins are clicking at once -
+     * the claim is a single UPDATE with {@code payout_id IS NULL} in its WHERE,
+     * so the database decides the winner rather than the application.
+     *
+     * The alternative - paying "everything completed between two dates" - looks
+     * equivalent and is not: a session completed while the run is in progress
+     * lands on one side or the other depending on rounding, and nobody notices
+     * until a mentor is paid twice or not at all.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "payout_id")
+    private MentorPayout payout;
+
+    public MentorPayout getPayout() {
+        return payout;
+    }
+
+    public boolean isPaidOut() {
+        return payout != null;
     }
 
     /**
@@ -330,6 +371,20 @@ public class InterviewRequest {
 
     public Recommendation getRecommendation() {
         return recommendation;
+    }
+
+    /**
+     * When it was completed, falling back for rows that predate the column.
+     *
+     * scheduledAt is the closest honest answer - it is when the session
+     * actually happened - and createdAt is the last resort. Better a payslip
+     * that says roughly when than one with a blank where a date should be.
+     */
+    public LocalDateTime getCompletedAt() {
+        if (completedAt != null) {
+            return completedAt;
+        }
+        return scheduledAt != null ? scheduledAt : createdAt;
     }
 
     public LocalDateTime getCreatedAt() {

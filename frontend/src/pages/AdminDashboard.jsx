@@ -5,6 +5,8 @@ import { useAllAvailability } from "../features/mentors/useAllAvailability";
 import ProjectAdminCard from "../features/projects/components/ProjectAdminCard";
 import ProjectEditor from "../features/projects/components/ProjectEditor";
 import ConfirmDialog from "../components/ConfirmDialog";
+import PayrollSection from "../features/payroll/components/PayrollSection";
+import { usePayroll } from "../features/payroll/usePayroll";
 import Skeleton from "../components/Skeleton";
 import AccessReviewCard from "../features/projects/components/AccessReviewCard";
 import StatusBadge from "../components/StatusBadge";
@@ -21,6 +23,7 @@ import { useSectionNav } from "../layout/SectionNav";
 /** Everything an admin does: verify mentors, and match students to mentors. */
 export default function AdminDashboard() {
   const { active: tab, register } = useSectionNav();
+  const payroll = usePayroll();
   // One hook for this screen - the facade layer. An admin genuinely needs users,
   // mentor profiles, sessions, two payment queues, plans and material at once, so
   // something has to compose them; better there, once, than sixteen useState here.
@@ -202,6 +205,8 @@ export default function AdminDashboard() {
         { key: "projects", label: "Live projects", icon: "🛠", count: projectsAdmin.projects.length },
         { key: "availability", label: "Mentor availability", icon: "🗓",
           count: availability.openCount, alert: availability.openCount === 0 },
+        { key: "payroll", label: "Payroll", icon: "💰",
+          count: payroll.summary?.pendingPayouts ?? 0, alert: true },
         { key: "users", label: "Users", icon: "👥" },
         { key: "all", label: "All requests", icon: "🗂" },
       ],
@@ -210,7 +215,8 @@ export default function AdminDashboard() {
   }, [register, payments.length, unassigned.length, pendingCount, planPayments.length,
       plans.length, materials.length, projectsAdmin.pending.length,
       projectsAdmin.awaitingInvite.length, projectsAdmin.pastExpiry.length,
-      projectsAdmin.projects.length, availability.openCount]);
+      projectsAdmin.projects.length, availability.openCount,
+      payroll.summary?.pendingPayouts]);
 
   if (loading) {
     return (
@@ -745,6 +751,8 @@ export default function AdminDashboard() {
           ))}
         </section>
       )}
+
+      {tab === "payroll" && <PayrollSection payroll={payroll} />}
 
       {tab === "users" && (
         <section className="panel">

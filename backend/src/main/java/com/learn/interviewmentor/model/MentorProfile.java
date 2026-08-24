@@ -13,6 +13,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -117,6 +118,54 @@ public class MentorProfile {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reviewed_by")
     private User reviewedBy;
+
+    // ---------- payroll ----------
+
+    /**
+     * Whether this mentor is on payroll.
+     *
+     * Off until an admin turns it on, so a newly verified mentor cannot appear
+     * in a payout run at a rate nobody chose. It is also the switch for someone
+     * who has stopped taking sessions: turning it off stops new payouts without
+     * touching what they have already earned.
+     */
+    @Column(name = "payroll_enabled", nullable = false)
+    private boolean payrollEnabled = false;
+
+    /**
+     * Paid per completed mock interview.
+     *
+     * Per session rather than hourly, because a session is the unit the app
+     * actually records - there is no clock on it, so an hourly rate would be a
+     * number multiplied by an assumption.
+     */
+    @Column(name = "interview_rate", precision = 10, scale = 2)
+    private BigDecimal interviewRate;
+
+    /**
+     * Paid per completed mentoring session.
+     *
+     * Its own rate rather than a share of the interview one: a mock interview
+     * ends in a written scorecard and a mentoring session does not, so they are
+     * different amounts of work and most places pay them differently.
+     */
+    @Column(name = "mentoring_rate", precision = 10, scale = 2)
+    private BigDecimal mentoringRate;
+
+    /** Enabled, and both rates actually set. Payouts need all three. */
+    public boolean isPayrollReady() {
+        return payrollEnabled && interviewRate != null && mentoringRate != null;
+    }
+
+    public void configurePayroll(boolean enabled, BigDecimal interviewRate, BigDecimal mentoringRate) {
+        this.payrollEnabled = enabled;
+        this.interviewRate = interviewRate;
+        this.mentoringRate = mentoringRate;
+    }
+
+    public boolean isPayrollEnabled() { return payrollEnabled; }
+    public BigDecimal getInterviewRate() { return interviewRate; }
+    public BigDecimal getMentoringRate() { return mentoringRate; }
 
     protected MentorProfile() {
         // JPA

@@ -2478,3 +2478,239 @@
 @media (max-width: 880px) {
   .auth--single { grid-template-columns: 1fr; }
 }
+
+/* ---------------------------------------------------------------------------
+   Payroll (admin)
+   Two views: mentors who are owed, and the payout history.
+   --------------------------------------------------------------------------- */
+
+.payroll { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+
+.payroll__summary {
+  display: grid;
+  /* auto-fit rather than three fixed columns: on a narrow window these stack
+     instead of squeezing three currency figures into an unreadable row. */
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+
+.payroll__summary > div { min-width: 0; }
+.payroll__summary-label {
+  display: block;
+  font-size: .72rem;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--muted);
+}
+.payroll__summary-value { display: block; margin-top: 4px; font-size: 1.35rem; font-weight: 800; }
+.payroll__summary small { display: block; margin-top: 2px; font-size: .76rem; color: var(--faint); }
+
+/* ---- a mentor row ---- */
+
+.payroll-card {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  padding: 15px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  min-width: 0;
+}
+
+/* Money outstanding is the reason this screen exists, so those rows are marked. */
+.payroll-card--owed { border-left: 3px solid var(--warning); }
+
+.payroll-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.payroll-card__who { min-width: 0; }
+.payroll-card__who strong { display: block; font-size: .95rem; }
+.payroll-card__who small { display: block; font-size: .78rem; color: var(--muted); word-break: break-all; }
+
+.payroll-card__flags { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.payroll-card__figures {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 11px 13px;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  min-width: 0;
+}
+
+.figure { display: flex; flex-direction: column; align-items: center; }
+.figure__value { font-size: 1.2rem; font-weight: 800; line-height: 1.1; }
+.figure__label { font-size: .71rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.figure__plus { color: var(--faint); font-weight: 700; }
+
+/* margin-left:auto pushes the amount to the far edge, so the eye can run down
+   a column of figures instead of hunting for each one. */
+.payroll-card__due { margin-left: auto; text-align: right; min-width: 0; }
+.payroll-card__amount { display: block; font-size: 1.3rem; font-weight: 800; }
+.payroll-card__unpriced { display: block; font-size: .71rem; color: var(--warning); }
+
+.payroll-card__rates {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: .82rem;
+}
+
+.payroll-card__warn { margin: 0; font-size: .8rem; }
+.payroll-card__blocked { font-size: .76rem; color: var(--muted); text-align: right; }
+
+.payroll-card__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-top: 11px;
+  border-top: 1px solid var(--border);
+}
+
+.payroll-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: .8rem;
+  color: var(--muted);
+}
+
+.payroll__rest { margin-top: 6px; }
+.payroll__rest > summary {
+  cursor: pointer;
+  padding: 10px 12px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius);
+  font-size: .82rem;
+  color: var(--muted);
+}
+.payroll__rest > summary:hover { background: var(--surface-2); }
+.payroll__rest .payroll-card { margin-top: 10px; }
+
+/* ---- rate editor ---- */
+
+.rate-editor {
+  padding: 13px;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  gap: 11px;
+}
+
+.rate-input { display: flex; align-items: center; gap: 0; }
+.rate-input__unit {
+  padding: 0 10px;
+  align-self: stretch;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border-strong);
+  border-right: none;
+  border-radius: 9px 0 0 9px;
+  background: var(--surface);
+  color: var(--muted);
+  font-weight: 700;
+}
+.rate-input input { border-radius: 0 9px 9px 0; min-width: 0; }
+
+.rate-editor__actions { display: flex; gap: 8px; }
+
+/* ---- payout history ---- */
+
+.payout-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+
+.payout {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 13px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  min-width: 0;
+}
+
+.payout--warning { border-left-color: var(--warning); }
+.payout--success { border-left-color: var(--success); }
+.payout--muted   { border-left-color: var(--faint); opacity: .75; }
+
+.payout__main {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.payout__main > div { min-width: 0; }
+.payout__sub { display: block; margin-top: 3px; font-size: .77rem; color: var(--muted); }
+.payout__amount { display: flex; align-items: center; gap: 9px; white-space: nowrap; }
+.payout__amount strong { font-size: 1.08rem; }
+
+.payout__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: .76rem;
+  color: var(--muted);
+}
+.payout__meta code { font-size: .74rem; word-break: break-all; }
+.payout__notes { font-style: italic; }
+
+.payout__actions { display: flex; gap: 8px; }
+
+/* ---- bank details ---- */
+
+.bank-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 12px;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  font-size: .82rem;
+}
+.bank-details > div { min-width: 0; }
+.bank-details dt { font-size: .71rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.bank-details dd { margin: 2px 0 0; font-weight: 650; word-break: break-all; }
+
+/* ---- shared small bits ---- */
+
+.pill {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .03em;
+  white-space: nowrap;
+}
+.pill--success { background: var(--success-soft); color: var(--success); }
+.pill--warning { background: var(--warning-soft); color: var(--warning); }
+.pill--muted   { background: var(--surface-2); color: var(--muted); }
+
+.muted-text { color: var(--muted); font-size: .82rem; }
+
+.notice--warning {
+  background: var(--warning-soft);
+  color: var(--warning);
+  border: 1px solid color-mix(in srgb, var(--warning) 30%, transparent);
+}
