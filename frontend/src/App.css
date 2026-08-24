@@ -149,6 +149,16 @@
   line-height: 1.08;
   letter-spacing: -.02em;
   margin-top: 0;
+
+  /*
+   * Break the two lines evenly instead of filling the first and stranding the
+   * rest. "Walk in already prepared" otherwise sets as a full line and one
+   * short word, which looks like a mistake rather than a line break - and the
+   * gradient span makes it worse, because background-clip: text restarts the
+   * gradient on each line box, so an uneven break shows two mismatched colour
+   * runs.
+   */
+  text-wrap: balance;
 }
 
 .grad {
@@ -158,15 +168,57 @@
   color: transparent;
 }
 
+/**
+ * The gradient half of the headline gets its own line.
+ *
+ * Two problems, one fix.
+ *
+ * At 3.4rem "Walk in already prepared" is about 679px against a 552px column,
+ * so it wrapped greedily as "Walk in already" / "prepared" - a break in the
+ * middle of the gradient phrase, which reads as a mistake.
+ *
+ * Worse, background-clip: text on an INLINE element paints the background once
+ * per line fragment. So the split gave "already" its own full gradient and
+ * "prepared" another, and the two runs did not line up - the letters came out
+ * in visibly mismatched colours, which is what "looks broken" meant.
+ *
+ * display: block fixes both: the phrase always sits on its own line, and the
+ * background is painted across the whole element box rather than per fragment,
+ * so the gradient runs continuously even if it wraps on a narrow screen.
+ */
+.auth__intro h1 .grad {
+  display: block;
+}
+
 .auth__lede {
   margin-top: 18px;
   color: var(--muted);
-  font-size: 1.06rem;
+  font-size: 1.12rem;
   line-height: 1.6;
-  /* ~46 characters a line. Wider than this and the eye loses its place coming
-     back to the start of the next line - the reason every column of body text
-     you have ever read comfortably is about this wide. */
-  max-width: 44ch;
+
+  /*
+   * Fills the column.
+   *
+   * This was capped at 44ch on the reading-measure argument, which is sound for
+   * a page of prose and wrong here. The left column is about 552px - 1120 total,
+   * less 48 of padding, less the 460 card, less the 60 gap - so a 44ch cap drew
+   * the paragraph at roughly 375px and left 177px of empty column beside it. A
+   * short block with a ragged edge and a void to its right does not read as a
+   * careful measure, it reads as broken.
+   *
+   * At this size the full column is around 55 characters, which is still inside
+   * the comfortable range, and it is three lines rather than three hundred.
+   */
+  max-width: 100%;
+
+  /*
+   * Stops the last line being a single stranded word.
+   *
+   * An orphan is the other thing that makes a short paragraph look broken, and
+   * it is entirely a function of where the text happens to run out. Ignored by
+   * browsers that do not know it, so there is nothing to fall back to.
+   */
+  text-wrap: pretty;
 }
 @media (max-width: 940px) { .auth__lede { margin-inline: auto; } }
 
