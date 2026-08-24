@@ -129,6 +129,18 @@ public class SecurityConfig {
                         // reach their own view under /api/admin/materials.
                         .requestMatchers(HttpMethod.GET, "/api/materials/**").authenticated()
 
+                        // Anyone logged in may browse the project catalogue - the
+                        // repository path is withheld from the response unless
+                        // they hold access, so browsing leaks nothing. Only
+                        // students can request or pay for access.
+                        .requestMatchers(HttpMethod.POST, "/api/projects/*/request-access")
+                                .hasRole(Role.STUDENT.name())
+                        .requestMatchers("/api/projects/access/*/proof").hasRole(Role.STUDENT.name())
+                        .requestMatchers("/api/projects/access/*/cancel").hasRole(Role.STUDENT.name())
+                        .requestMatchers("/api/projects/access/*/github-username")
+                                .hasRole(Role.STUDENT.name())
+                        .requestMatchers(HttpMethod.GET, "/api/projects/**").authenticated()
+
                         .requestMatchers("/api/admin/**").hasRole(Role.ADMIN.name())
 
                         // Only students raise requests.

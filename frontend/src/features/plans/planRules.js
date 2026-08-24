@@ -34,6 +34,3 @@ export const activePlanCount = (enrollments) => enrollments.filter((e) => e.curr
 
 export const needsPaymentCount = (enrollments) =>
   enrollments.filter((e) => ["AWAITING_PAYMENT", "REJECTED"].includes(e.status)).length;
-
-/** Indian digit grouping: 2999 -> "2,999". Used wherever a price is printed. */
-export const formatPrice = (value) => Number(value).toLocaleString("en-IN");

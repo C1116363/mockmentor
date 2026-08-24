@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { formatPrice } from "../../plans/planRules";
+import { formatPrice } from "../../../utils/format";
 
 const AUDIENCES = [
   { key: "ALL", label: "All students", hint: "Everyone with a student account sees it." },

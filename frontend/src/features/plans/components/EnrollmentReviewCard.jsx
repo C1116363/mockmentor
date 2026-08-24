@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useEnrollmentScreenshot } from "../useEnrollmentScreenshot";
-import { formatPrice } from "../planRules";
+import { formatPrice } from "../../../utils/format";
 
 /**
  * One plan payment for an admin to check against the bank statement.

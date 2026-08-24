@@ -195,6 +195,20 @@ export async function fetchMaterialBlobUrl(materialId) {
   return URL.createObjectURL(await response.blob());
 }
 
+/** The project-access payment screenshot. Same shape, different endpoint. */
+export async function fetchProjectScreenshotUrl(accessId) {
+  const response = await fetch(`${BASE_URL}/projects/access/${accessId}/screenshot`, {
+    headers: { Authorization: `Bearer ${tokenStore.get()}` },
+  });
+
+  if (!response.ok) {
+    if (response.status === 401) tokenStore.clear();
+    const body = await response.json().catch(() => null);
+    throw new ApiError(body, response.status);
+  }
+  return URL.createObjectURL(await response.blob());
+}
+
 /**
  * The plan payment screenshot, for the admin review card.
  *

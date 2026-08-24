@@ -2,8 +2,8 @@
 
 A map of the codebase. If you are looking for where something is, start here.
 
-- 124 Java files across 5 layers · 60 endpoints
-- 54 JS/JSX files across the same 5 layers
+- 143 Java files across 5 layers · 78 endpoints
+- 68 JS/JSX files across the same 5 layers
 - Both halves use the **same layering**, so what you learn on one side transfers
 
 **Just want to run it?** → [SETUP.md](SETUP.md)
@@ -43,13 +43,13 @@ See [rules you can grep](#rules-you-can-grep) — every one of them returns empt
 
 | Package | Files | What is in it |
 | --- | --- | --- |
-| `controller/` | 11 | HTTP only. Every method returns `ApiResult<T>`. |
-| `facade/` + `impl/` | 9 + 9 | Use cases. Interface + implementation. |
-| `service/` + `impl/` | 11 + 11 | Business rules. Interface + implementation. |
-| `repository/` | 7 | Spring Data interfaces. One per table. |
-| `model/` | 16 | JPA entities + their enums. |
-| `dto/` | 12 | Requests coming **in**. Every class ends in `Dto`. |
-| `vo/` | 12 | Responses going **out**. Every class ends in `Vo`. |
+| `controller/` | 13 | HTTP only. Every method returns `ApiResult<T>`. |
+| `facade/` + `impl/` | 10 + 10 | Use cases. Interface + implementation. |
+| `service/` + `impl/` | 13 + 13 | Business rules. Interface + implementation. |
+| `repository/` | 9 | Spring Data interfaces. One per table. |
+| `model/` | 20 | JPA entities + their enums. |
+| `dto/` | 14 | Requests coming **in**. Every class ends in `Dto`. |
+| `vo/` | 14 | Responses going **out**. Every class ends in `Vo`. |
 | `common/` | 2 | `ApiResult` (the response envelope) + the advice that syncs its status. |
 | `exception/` | 7 | Custom exceptions + the `@RestControllerAdvice` that maps them. |
 | `security/` | 8 | JWT filter, role rules, the 401/403 writers. |
@@ -57,6 +57,7 @@ See [rules you can grep](#rules-you-can-grep) — every one of them returns empt
 | `meeting/` | 3 | Meeting-link generators (Jitsi, Google). |
 | `config/` | 2 | Swagger metadata, demo-data seeder. |
 | `util/` | 1 | `Masking` — last-4-digits for sensitive numbers. |
+| `github/` | 3 | Granting collaborator access on a private repo. Interface + manual impl + API stub. |
 
 ### Which file for which feature
 
@@ -73,6 +74,8 @@ See [rules you can grep](#rules-you-can-grep) — every one of them returns empt
 | Marketing site data | `PublicController` | `PublicFacade` | `PublicStatsService`, `PlanService` |
 | Admin — core | `AdminController` | `AdminFacade` | Admin, InterviewRequest, MentorProfile, Payment |
 | Admin — plans & material | `AdminPlanController` | `PlanFacade`, `StudyMaterialFacade` | Plan, PlanEnrollment, StudyMaterial |
+| Live projects (student) | `ProjectController` | `ProjectFacade` | `LiveProjectService`, `ProjectAccessService` |
+| Admin — live projects | `AdminProjectController` | `ProjectFacade` | same two |
 
 ### The data model
 
@@ -85,9 +88,12 @@ See [rules you can grep](#rules-you-can-grep) — every one of them returns empt
 | `Plan` | `plans` | A product. **The price lives here**, not in config. |
 | `PlanEnrollment` | `plan_enrollments` | One student buying one plan. Copies the price. |
 | `StudyMaterial` | `study_materials` | A file or link, with one of three audiences. |
+| `LiveProject` | `live_projects` | A private repo sold as contributor access. Repo stored as owner + name. |
+| `ProjectAccessRequest` | `project_access_requests` | One student's paid access to one repo. |
 
 Enums: `Role`, `RequestStatus`, `SessionType`, `PaymentStatus`, `EnrollmentStatus`,
-`VerificationStatus`, `MaterialAudience`, `MaterialKind`, `Recommendation`.
+`VerificationStatus`, `MaterialAudience`, `MaterialKind`, `Recommendation`,
+`ProjectAccessStatus`, `ProjectDifficulty`.
 
 ---
 
@@ -104,6 +110,7 @@ Enums: `Role`, `RequestStatus`, `SessionType`, `PaymentStatus`, `EnrollmentStatu
 | `api/` | 9 | One module per backend controller, plus `http.js`. |
 | `components/` | 3 | Shared UI only — `StatusBadge`, `StarRating`, `ThemeToggle`. |
 | `hooks/` | 1 | `useBlobUrl` — shared, feature-agnostic. |
+| `utils/` | 1 | `format.js` — `formatPrice`. No feature knowledge. |
 | `layout/` | 1 | `SectionNav` — the header's section menu. |
 
 ### `api/` lines up 1:1 with the backend
@@ -118,6 +125,8 @@ Enums: `Role`, `RequestStatus`, `SessionType`, `PaymentStatus`, `EnrollmentStatu
 | `planApi.js` | `PlanController` |
 | `materialApi.js` | `StudyMaterialController` |
 | `adminApi.js` | `AdminController` + `AdminPlanController` |
+| `projectApi.js` | `ProjectController` |
+| `adminProjectApi.js` | `AdminProjectController` |
 | `http.js` | — (transport: fetch, auth header, envelope, token) |
 
 **If you know the endpoint, you know the file.**
@@ -138,6 +147,10 @@ Enums: `Role`, `RequestStatus`, `SessionType`, `PaymentStatus`, `EnrollmentStatu
 | `useMaterials` + `useMaterialDownload` | materials | `StudentDashboard`, `MaterialCard` |
 | `useMentorProfile` | mentors | `MentorGate`, `MentorProfileForm` |
 | `useAdminDashboard` | admin | `AdminDashboard` |
+| `useProjects` | projects | `StudentDashboard` |
+| `useProjectAccessPayment` | projects | `ProjectPayModal` |
+| `useProjectAccessScreenshot` | projects | `AccessReviewCard` |
+| `useAdminProjects` | projects | `AdminDashboard` |
 
 One hook **per feature**, not per screen. `StudentDashboard` calls three, so a
 broken plans call cannot blank out the interview list. `useAdminDashboard` is the

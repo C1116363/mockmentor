@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
 import { useAdminDashboard } from "../features/admin/useAdminDashboard";
+import { useAdminProjects } from "../features/projects/useAdminProjects";
+import ProjectAdminCard from "../features/projects/components/ProjectAdminCard";
+import ProjectEditor from "../features/projects/components/ProjectEditor";
+import AccessReviewCard from "../features/projects/components/AccessReviewCard";
 import StatusBadge from "../components/StatusBadge";
 import RequestCard from "../features/sessions/components/RequestCard";
 import AssignMentorForm from "../features/mentors/components/AssignMentorForm";
@@ -26,6 +30,10 @@ const STAT_LABELS = {
   planPaymentsToCheck: "Plan pay",
   activeEnrollments: "Enrolled",
   materials: "Material",
+  liveProjects: "Projects",
+  projectAccessToCheck: "Proj pay",
+  contributors: "Contribs",
+  awaitingRepoInvite: "To invite",
 };
 
 /** Everything an admin does: verify mentors, and match students to mentors. */
@@ -45,6 +53,12 @@ export default function AdminDashboard() {
     activateEnrollment, rejectEnrollment: doRejectEnrollment,
     uploadMaterial, shareMaterialLink, toggleMaterial,
   } = useAdminDashboard();
+
+  // Its own hook: live projects are a separate feature with their own queues, and
+  // a failure loading them should not blank the payments screen.
+  const projectsAdmin = useAdminProjects();
+  const [editingProject, setEditingProject] = useState(null);
+  const [contributorsOf, setContributorsOf] = useState(null);
 
   const [mentorFilter, setMentorFilter] = useState("PENDING");
   const [assigning, setAssigning] = useState(null);
@@ -75,6 +89,32 @@ export default function AdminDashboard() {
     setAssigning(null);
   }
 
+  async function saveProject(payload) {
+    await projectsAdmin.saveProject(editingProject, payload);
+    setEditingProject(null);
+  }
+
+  async function rejectAccess(access) {
+    const reason = window.prompt(
+      `Why are you rejecting ${access.studentName}'s payment for ${access.projectName}?`);
+    if (reason) await projectsAdmin.reject(access, reason);
+  }
+
+  async function revokeAccess(access) {
+    const reason = window.prompt(
+      `Why are you revoking @${access.githubUsername}'s access to ${access.projectName}? `
+      + "They see this reason.");
+    if (reason) await projectsAdmin.revoke(access, reason);
+  }
+
+  async function showContributors(project) {
+    try {
+      setContributorsOf({ project, rows: await projectsAdmin.contributors(project.id) });
+    } catch (e) {
+      setMessage({ type: "error", text: e.message });
+    }
+  }
+
   async function savePlan(payload) {
     await doSavePlan(editingPlan, payload);
     setEditingPlan(null);
@@ -93,13 +133,19 @@ export default function AdminDashboard() {
         { key: "verify", label: "Mentors", icon: "🧭", count: pendingCount, alert: true },
         { key: "plans", label: "Plans & prices", icon: "🎯", count: plans.length },
         { key: "material", label: "Study material", icon: "📚", count: materials.length },
+        { key: "projaccess", label: "Project access", icon: "🔑",
+          count: projectsAdmin.pending.length + projectsAdmin.awaitingInvite.length
+                 + projectsAdmin.pastExpiry.length, alert: true },
+        { key: "projects", label: "Live projects", icon: "🛠", count: projectsAdmin.projects.length },
         { key: "users", label: "Users", icon: "👥" },
         { key: "all", label: "All requests", icon: "🗂" },
       ],
       "payments"
     );
   }, [register, payments.length, unassigned.length, pendingCount, planPayments.length,
-      plans.length, materials.length]);
+      plans.length, materials.length, projectsAdmin.pending.length,
+      projectsAdmin.awaitingInvite.length, projectsAdmin.pastExpiry.length,
+      projectsAdmin.projects.length]);
 
   if (loading) return <p className="empty">Loading admin data...</p>;
 
@@ -124,7 +170,21 @@ export default function AdminDashboard() {
         />
       )}
 
+      {editingProject && (
+        <ProjectEditor
+          project={editingProject === "new" ? null : editingProject}
+          reviewers={users.filter((u) => u.role !== "STUDENT" && u.active)}
+          onSave={saveProject}
+          onCancel={() => setEditingProject(null)}
+        />
+      )}
+
       {message && <p className={`notice notice--${message.type}`}>{message.text}</p>}
+      {projectsAdmin.message && (
+        <p className={`notice notice--${projectsAdmin.message.type}`}>
+          {projectsAdmin.message.text}
+        </p>
+      )}
 
       <div className="stat-grid">
         {Object.entries(stats).map(([key, value]) => (
@@ -380,6 +440,166 @@ export default function AdminDashboard() {
               </tbody>
             </table>
           </div>
+        </section>
+      )}
+
+      {tab === "projaccess" && (
+        <section className="panel">
+          <header className="panel__head">
+            <span className="panel__tag">Repository access</span>
+            <h2>Project access</h2>
+            <p>
+              Three queues, and they are not the same job. Money to check, people
+              to add on GitHub, and people whose access has run out.
+            </p>
+          </header>
+
+          {/* Deliberately first: these people have paid and still cannot open the
+              repo. It is the only queue where somebody is actively worse off. */}
+          <h3 className="subhead">
+            Add on GitHub <span className="count">{projectsAdmin.awaitingInvite.length}</span>
+          </h3>
+          {projectsAdmin.awaitingInvite.length === 0 ? (
+            <p className="empty">Nobody is waiting to be added.</p>
+          ) : (
+            <>
+              <p className="notice notice--error">
+                These contributors have paid and their access is active in here, but
+                they cannot open the repository until you add them on GitHub.
+              </p>
+              <div className="card-list">
+                {projectsAdmin.awaitingInvite.map((a) => (
+                  <AccessReviewCard key={a.id} access={a} mode="invite"
+                    onConfirmInvite={projectsAdmin.confirmInvite} onRevoke={revokeAccess} />
+                ))}
+              </div>
+            </>
+          )}
+
+          <h3 className="subhead">
+            Payments to verify <span className="count">{projectsAdmin.pending.length}</span>
+          </h3>
+          {projectsAdmin.pending.length === 0 ? (
+            <p className="empty">No access payments waiting.</p>
+          ) : (
+            <div className="card-list">
+              {projectsAdmin.pending.map((a) => (
+                <AccessReviewCard key={a.id} access={a} mode="payment"
+                  onApprove={projectsAdmin.approve} onReject={rejectAccess} />
+              ))}
+            </div>
+          )}
+
+          <h3 className="subhead">
+            Expired but still on the repo{" "}
+            <span className="count">{projectsAdmin.pastExpiry.length}</span>
+          </h3>
+          {projectsAdmin.pastExpiry.length === 0 ? (
+            <p className="empty">Nothing has outlived its access window.</p>
+          ) : (
+            <>
+              <p className="pay-note">
+                Nothing removes collaborators automatically, so these people still
+                have push access after their window closed.
+              </p>
+              <div className="card-list">
+                {projectsAdmin.pastExpiry.map((a) => (
+                  <AccessReviewCard key={a.id} access={a} mode="expired"
+                    onRevoke={revokeAccess} />
+                ))}
+              </div>
+            </>
+          )}
+        </section>
+      )}
+
+      {tab === "projects" && (
+        <section className="panel">
+          <header className="panel__head">
+            <span className="panel__tag">The catalogue</span>
+            <h2>
+              Live projects <span className="count">{projectsAdmin.projects.length}</span>
+            </h2>
+            <p>
+              Our own private repos, sold as contributor access. Set the price and
+              the seat limit — one reviewer can only review so many newcomers at once.
+            </p>
+          </header>
+
+          <div className="chips-row">
+            <button className="btn btn--primary btn--sm" onClick={() => setEditingProject("new")}>
+              + New project
+            </button>
+          </div>
+
+          {projectsAdmin.projects.length === 0 && (
+            <p className="empty">No projects yet. Add the first one.</p>
+          )}
+
+          <div className="card-list">
+            {projectsAdmin.projects.map((project) => (
+              <ProjectAdminCard
+                key={project.id}
+                project={project}
+                onSavePrice={projectsAdmin.savePrice}
+                onToggleActive={projectsAdmin.toggleProject}
+                onEdit={setEditingProject}
+                onViewContributors={showContributors}
+              />
+            ))}
+          </div>
+
+          {contributorsOf && (
+            <>
+              <h3 className="subhead">
+                Contributors on {contributorsOf.project.name}{" "}
+                <span className="count">{contributorsOf.rows.length}</span>
+                <button className="linkish" onClick={() => setContributorsOf(null)}>
+                  hide
+                </button>
+              </h3>
+              {contributorsOf.rows.length === 0 ? (
+                <p className="empty">Nobody has access to this project yet.</p>
+              ) : (
+                <div className="table-wrap">
+                  <table className="table">
+                    <thead>
+                      <tr>
+                        <th>Student</th><th>GitHub</th><th>Granted</th><th>Expires</th>
+                        <th>On repo?</th><th />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {contributorsOf.rows.map((r) => (
+                        <tr key={r.id}>
+                          <td>{r.studentName}<div className="muted small">{r.studentEmail}</div></td>
+                          <td className="mono">@{r.githubUsername}</td>
+                          <td className="muted">
+                            {r.grantedAt ? new Date(r.grantedAt).toLocaleDateString() : "—"}
+                          </td>
+                          <td className="muted">
+                            {r.expiresAt ? new Date(r.expiresAt).toLocaleDateString() : "—"}
+                          </td>
+                          <td>
+                            <span className={`badge ${
+                              r.collaboratorGranted ? "badge--completed" : "badge--pending"}`}>
+                              {r.collaboratorGranted ? "YES" : "NOT YET"}
+                            </span>
+                          </td>
+                          <td>
+                            <button className="btn btn--ghost btn--sm"
+                                    onClick={() => revokeAccess(r)}>
+                              Revoke
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
+          )}
         </section>
       )}
 

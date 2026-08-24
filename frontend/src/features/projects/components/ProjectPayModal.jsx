@@ -1,25 +1,23 @@
 import { useEffect, useState } from "react";
-import { usePlanPayment } from "../usePlanPayment";
+import { useProjectAccessPayment } from "../useProjectAccessPayment";
 import { formatPrice } from "../../../utils/format";
 
 /**
- * Pay for a plan. The same manual UPI flow as booking an interview, because it
- * is the same process: pay our UPI ID from your own app, send the UTR and a
- * screenshot, an admin confirms the money landed.
+ * Pay for contributor access to a project.
  *
- * The amount is fetched from the server, not passed in as a prop. It has to be:
- * the purchase froze the price when it was created, so if an admin has since
- * changed the plan, the number on this screen must be what the student actually
- * owes - not whatever the plan card happened to be showing.
+ * Same manual UPI flow as everything else here. The amount is fetched from the
+ * server rather than passed in: the request froze the price when it was created,
+ * so if an admin has since changed the project, this shows what the student
+ * actually owes and not what the card happens to be displaying.
  */
-export default function PlanPayModal({ enrollment, onDone, onClose }) {
+export default function ProjectPayModal({ access, onDone, onClose }) {
   const [upiReference, setUpiReference] = useState("");
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [copied, setCopied] = useState(false);
 
   // The amount comes from the purchase, which froze the price when it was made.
-  const { instructions, error, setError, busy, submitProof } = usePlanPayment(enrollment.id);
+  const { instructions, error, setError, busy, submitProof } = useProjectAccessPayment(access.id);
 
   useEffect(() => {
     const onKey = (e) => e.key === "Escape" && onClose();
@@ -62,11 +60,14 @@ export default function PlanPayModal({ enrollment, onDone, onClose }) {
 
   return (
     <div className="modal-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="modal" role="dialog" aria-modal="true" aria-label="Pay for your plan">
+      <div className="modal" role="dialog" aria-modal="true" aria-label="Pay for project access">
         <header className="modal__head">
           <div>
-            <h3>Pay for {enrollment.planName}</h3>
-            <p className="modal__sub">Access starts as soon as an admin confirms the payment.</p>
+            <h3>Pay for {access.projectName}</h3>
+            <p className="modal__sub">
+              You&apos;ll be added to the repository as <strong>@{access.githubUsername}</strong>{" "}
+              once an admin confirms this.
+            </p>
           </div>
           <button className="modal__x" onClick={onClose} aria-label="Close">×</button>
         </header>
@@ -86,7 +87,7 @@ export default function PlanPayModal({ enrollment, onDone, onClose }) {
                 so - otherwise a student who sees a different number on the
                 pricing page thinks something is broken. */}
             <p className="pay-note">
-              This is the price when you chose the plan. It stays fixed even if the
+              This is the price when you requested access. It stays fixed even if the
               listed price changes.
             </p>
 
@@ -148,8 +149,9 @@ export default function PlanPayModal({ enrollment, onDone, onClose }) {
             </ol>
 
             <p className="pay-note pay-note--foot">
-              An admin usually confirms within a few hours. Your plan — and anything
-              shared only with its members — unlocks the moment they do.
+              An admin usually confirms within a few hours. You&apos;ll get a
+              collaborator invite from GitHub by email once they do — check the
+              account you named, not just this app.
             </p>
           </>
         )}

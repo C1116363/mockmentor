@@ -2,6 +2,10 @@ import { useEffect, useState } from "react";
 import { useSessions } from "../features/sessions/useSessions";
 import { usePlans } from "../features/plans/usePlans";
 import { useMaterials } from "../features/materials/useMaterials";
+import { useProjects } from "../features/projects/useProjects";
+import ProjectCard from "../features/projects/components/ProjectCard";
+import ProjectRequestModal from "../features/projects/components/ProjectRequestModal";
+import ProjectPayModal from "../features/projects/components/ProjectPayModal";
 import { LIVE_STATUSES } from "../features/sessions/sessionRules";
 import RequestCard from "../features/sessions/components/RequestCard";
 import SlotPicker from "../features/sessions/components/SlotPicker";
@@ -68,6 +72,7 @@ export default function StudentDashboard() {
   const { live, done, unpaidCount, upcoming, loading, book, cancel } = useSessions();
   const plansFeature = usePlans();
   const { materials } = useMaterials();
+  const projectsFeature = useProjects();
 
   const [form, setForm] = useState(EMPTY_FORM);
   const [date, setDate] = useState("");
@@ -77,6 +82,10 @@ export default function StudentDashboard() {
   const [payingFor, setPayingFor] = useState(null);
   const [gettingPlan, setGettingPlan] = useState(null);
   const [payingPlan, setPayingPlan] = useState(null);
+  // requesting = the project whose request form is open; payingProject = the
+  // access row being paid for. Two states because they are two steps.
+  const [requesting, setRequesting] = useState(null);
+  const [payingProject, setPayingProject] = useState(null);
 
   async function getPlan(plan) {
     setGettingPlan(plan.id);
@@ -90,6 +99,24 @@ export default function StudentDashboard() {
     } finally {
       setGettingPlan(null);
     }
+  }
+
+  async function requestProjectAccess(payload) {
+    const access = await projectsFeature.requestAccess(requesting.id, payload);
+    setRequesting(null);
+    // Straight into paying - requesting and paying are one intention, and a
+    // student who has to find a second button usually just leaves.
+    setPayingProject(access);
+  }
+
+  async function afterProjectPayment() {
+    setPayingProject(null);
+    setMessage({
+      type: "success",
+      text: "Thanks! Once an admin confirms the payment you'll get a collaborator "
+        + "invite from GitHub by email.",
+    });
+    await projectsFeature.reload();
   }
 
   async function afterPlanPayment() {
@@ -172,11 +199,14 @@ export default function StudentDashboard() {
         { key: "active", label: "My interviews", icon: "📅", count: live.length, alert: unpaidCount > 0 },
         { key: "plans", label: "Plans", icon: "🎯", count: plansFeature.activeCount, alert: plansFeature.needsPaymentCount > 0 },
         { key: "material", label: "Study material", icon: "📚", count: materials.length },
+        { key: "projects", label: "Live projects", icon: "🛠", count: projectsFeature.activeCount,
+          alert: projectsFeature.needsPaymentCount > 0 },
         { key: "history", label: "History", icon: "🗂", count: done.length },
       ],
       "book"
     );
-  }, [register, live.length, done.length, unpaidCount, plansFeature.activeCount, plansFeature.needsPaymentCount, materials.length]);
+  }, [register, live.length, done.length, unpaidCount, plansFeature.activeCount, plansFeature.needsPaymentCount, materials.length,
+      projectsFeature.activeCount, projectsFeature.needsPaymentCount]);
 
   const actions = (request) => (
     <>
@@ -220,6 +250,29 @@ export default function StudentDashboard() {
             setMessage({
               type: "error",
               text: "Your plan isn't active yet. Use “Finish payment” on the card when you're ready.",
+            });
+          }}
+        />
+      )}
+
+      {requesting && (
+        <ProjectRequestModal
+          project={requesting}
+          onSubmit={requestProjectAccess}
+          onClose={() => setRequesting(null)}
+        />
+      )}
+
+      {payingProject && (
+        <ProjectPayModal
+          access={payingProject}
+          onDone={afterProjectPayment}
+          onClose={() => {
+            setPayingProject(null);
+            setTab("projects");
+            setMessage({
+              type: "error",
+              text: "Your request isn't paid for yet. Use \u201cFinish payment\u201d on the card.",
             });
           }}
         />
@@ -406,6 +459,46 @@ export default function StudentDashboard() {
           <div className="card-list">
             {materials.map((m) => (
               <MaterialCard key={m.id} material={m} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {tab === "projects" && (
+        <section className="panel panel--mentor">
+          <header className="panel__head">
+            <span className="panel__tag">Contribute for real</span>
+            <h2>
+              Live projects <span className="count">{projectsFeature.projects.length}</span>
+            </h2>
+            <p>
+              These are our own private codebases, running in production — not open
+              source. Pay for contributor access, raise pull requests, and a senior
+              engineer reviews and merges them. That review is the part you
+              can&apos;t get from a public repo nobody looks at.
+            </p>
+          </header>
+
+          {projectsFeature.awaitingInviteCount > 0 && (
+            <p className="notice notice--success">
+              Your payment is confirmed. We&apos;re adding you to the repository —
+              watch for a collaborator invite from GitHub by email.
+            </p>
+          )}
+
+          {projectsFeature.projects.length === 0 && (
+            <p className="empty">No projects open for contributors right now.</p>
+          )}
+
+          <div className="project-grid">
+            {projectsFeature.projects.map((project) => (
+              <ProjectCard
+                key={project.id}
+                project={project}
+                access={projectsFeature.accessOf(project.id)}
+                onRequest={setRequesting}
+                onPay={setPayingProject}
+              />
             ))}
           </div>
         </section>

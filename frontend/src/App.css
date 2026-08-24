@@ -1567,3 +1567,179 @@
 @media (max-width: 520px) {
   .session-pick { grid-template-columns: 1fr; }
 }
+
+/* ============================================================
+   Live projects
+   ============================================================ */
+.project-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+
+.project {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 22px 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
+  transition: transform .16s var(--ease), box-shadow .16s var(--ease), border-color .16s var(--ease);
+}
+
+.project:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--border-strong);
+}
+
+/* A project you already contribute to reads differently from one you could buy. */
+.project--mine { border-color: color-mix(in srgb, var(--success) 45%, transparent); }
+
+.project__head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.project__name { font-size: 1.06rem; line-height: 1.3; }
+.project__summary { font-size: .84rem; color: var(--muted); margin-top: 3px; }
+
+/* Difficulty. Three colours rather than three words, so a grid can be scanned. */
+.diff {
+  flex-shrink: 0;
+  padding: 2px 9px;
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.diff--beginner     { color: var(--success); background: var(--success-soft); }
+.diff--intermediate { color: var(--warning); background: var(--warning-soft); }
+.diff--advanced     { color: var(--error);   background: var(--error-soft); }
+
+.project__stack { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; }
+.project__stack li {
+  padding: 2px 8px;
+  font-size: .72rem;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--bg-alt);
+  border-radius: 6px;
+}
+
+.project__desc { font-size: .85rem; color: var(--muted); }
+
+.project__tasks {
+  padding: 12px 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.project__tasks h4 {
+  font-size: .74rem;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--faint);
+  margin-bottom: 8px;
+}
+.project__tasks ul { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.project__tasks li { position: relative; padding-left: 16px; font-size: .83rem; }
+/* A dash rather than a bullet - these are tasks, not features being sold. */
+.project__tasks li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: .68em;
+  width: 8px;
+  height: 1.5px;
+  background: var(--faint);
+}
+
+.project__facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+.project__facts dt {
+  font-size: .69rem;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--faint);
+}
+.project__facts dd { margin: 2px 0 0; font-size: .85rem; font-weight: 600; }
+
+.project__price { display: flex; align-items: baseline; gap: 2px; }
+.project__rupee { font-size: 1rem; font-weight: 650; color: var(--muted); }
+.project__amount { font-size: 1.7rem; font-weight: 800; line-height: 1; letter-spacing: -.02em; }
+
+.project__foot {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  /* Pushes the button down so a row of cards with different amounts of text
+     still lines its buttons up. */
+  margin-top: auto;
+  padding-top: 6px;
+}
+
+.project__note { font-size: .77rem; color: var(--muted); line-height: 1.5; }
+
+/* ---- the @ prefix on a GitHub username input ---- */
+.gh-input {
+  display: flex;
+  align-items: center;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: border-color .14s var(--ease), box-shadow .14s var(--ease);
+}
+.gh-input:focus-within {
+  border-color: var(--student);
+  box-shadow: 0 0 0 3px var(--student-soft);
+}
+.gh-input__at {
+  padding: 0 2px 0 11px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--faint);
+}
+.gh-input input {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  padding: 10px 11px 10px 2px;
+  font: inherit;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--text);
+}
+.gh-input input:focus { outline: none; }
+
+/* ---- admin: the exact next action on a card ---- */
+.next-step {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 7px;
+  padding: 13px 15px;
+  background: var(--student-soft);
+  border: 1px solid color-mix(in srgb, var(--student) 30%, transparent);
+  border-radius: var(--radius);
+}
+.next-step strong { font-size: .85rem; color: var(--student); }
+.next-step p { font-size: .82rem; color: var(--text); }
+
+.next-step--warn {
+  background: var(--warning-soft);
+  border-color: color-mix(in srgb, var(--warning) 32%, transparent);
+}
+.next-step--warn strong { color: var(--warning); }
+
+/* A card carrying work somebody is blocked on. Subtle - the .next-step block
+   inside it is already doing the shouting. */
+.card--action { border-color: color-mix(in srgb, var(--student) 34%, transparent); }
+
+@media (max-width: 560px) {
+  .project-grid { grid-template-columns: 1fr; }
+}

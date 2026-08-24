@@ -1,4 +1,4 @@
-import { formatPrice } from "../planRules";
+import { formatPrice } from "../../../utils/format";
 /**
  * One plan on the pricing grid.
  *

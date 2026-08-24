@@ -2,13 +2,16 @@ package com.learn.interviewmentor.config;
 
 import com.learn.interviewmentor.model.InterviewRequest;
 import com.learn.interviewmentor.model.MentorProfile;
+import com.learn.interviewmentor.model.LiveProject;
 import com.learn.interviewmentor.model.Plan;
+import com.learn.interviewmentor.model.ProjectDifficulty;
 import com.learn.interviewmentor.model.Role;
 import com.learn.interviewmentor.model.SessionType;
 import com.learn.interviewmentor.model.StudyMaterial;
 import com.learn.interviewmentor.model.User;
 import com.learn.interviewmentor.repository.InterviewRequestRepository;
 import com.learn.interviewmentor.repository.MentorProfileRepository;
+import com.learn.interviewmentor.repository.LiveProjectRepository;
 import com.learn.interviewmentor.repository.PlanRepository;
 import com.learn.interviewmentor.repository.StudyMaterialRepository;
 import com.learn.interviewmentor.repository.UserRepository;
@@ -43,6 +46,7 @@ public class DataSeeder implements CommandLineRunner {
     private final MentorProfileRepository mentorProfileRepository;
     private final InterviewRequestRepository requestRepository;
     private final PlanRepository planRepository;
+    private final LiveProjectRepository projectRepository;
     private final StudyMaterialRepository materialRepository;
     private final PasswordEncoder passwordEncoder;
 
@@ -50,12 +54,14 @@ public class DataSeeder implements CommandLineRunner {
                       MentorProfileRepository mentorProfileRepository,
                       InterviewRequestRepository requestRepository,
                       PlanRepository planRepository,
+                      LiveProjectRepository projectRepository,
                       StudyMaterialRepository materialRepository,
                       PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.mentorProfileRepository = mentorProfileRepository;
         this.requestRepository = requestRepository;
         this.planRepository = planRepository;
+        this.projectRepository = projectRepository;
         this.materialRepository = materialRepository;
         this.passwordEncoder = passwordEncoder;
     }
@@ -68,6 +74,7 @@ public class DataSeeder implements CommandLineRunner {
         // leave every existing install with an empty plans page.
         seedAccounts();
         seedPlans();
+        seedLiveProjects();
     }
 
     private void seedAccounts() {
@@ -211,5 +218,75 @@ public class DataSeeder implements CommandLineRunner {
 
     private User user(String name, String email, Role role) {
         return new User(name, email, passwordEncoder.encode(DEMO_PASSWORD), role);
+    }
+
+    /**
+     * A couple of live projects so the contribution page is not empty.
+     *
+     * The repos here are placeholders. Point them at real repositories you own
+     * before selling access - the app cannot tell whether owner/name exists, and
+     * granting access to a repo that isn't yours simply fails on GitHub's side
+     * after somebody has paid.
+     */
+    private void seedLiveProjects() {
+        if (projectRepository.count() > 0) {
+            return;
+        }
+
+        User ananya = userRepository.findByEmailIgnoreCase("ananya@example.com").orElse(null);
+        User vikram = userRepository.findByEmailIgnoreCase("vikram@example.com").orElse(null);
+
+        LiveProject gateway = new LiveProject(
+                "eSign gateway",
+                "Production signing flows, used by real customers",
+                "The service that actually puts signatures on documents. You would start on "
+                        + "something self-contained - a webhook retry, a validation gap - and work "
+                        + "up. Every PR is reviewed before it merges.",
+                "Java, Spring Boot, MySQL, Docker",
+                """
+                Add retry handling to the webhook dispatcher
+                Write tests for the PDF signing path
+                Improve the audit log's query performance""",
+                "your-org", "esign-gateway",
+                new BigDecimal("7999.00"), 90, 4,
+                ProjectDifficulty.INTERMEDIATE, 1);
+        gateway.setLeadReviewer(ananya);
+        projectRepository.save(gateway);
+
+        LiveProject console = new LiveProject(
+                "Customer console (frontend)",
+                "The React app customers log into every day",
+                "Dashboards, document lists, and the signing widget. Good first project: the UI "
+                        + "surface is large, so there is always something self-contained to pick up.",
+                "React, Vite, TypeScript, CSS",
+                """
+                Make the document list keyboard navigable
+                Add empty states to three screens
+                Fix the mobile layout on the signing widget""",
+                "your-org", "customer-console",
+                new BigDecimal("5999.00"), 90, 6,
+                ProjectDifficulty.BEGINNER, 2);
+        console.setLeadReviewer(vikram);
+        projectRepository.save(console);
+
+        LiveProject pipeline = new LiveProject(
+                "Document processing pipeline",
+                "High-throughput async processing. Not a first project.",
+                "Queue consumers, idempotency, back-pressure. Assumes you are comfortable with "
+                        + "concurrency and have debugged something distributed before.",
+                "Java, Spring Boot, Kafka, Redis",
+                """
+                Add idempotency keys to the consumer
+                Instrument the pipeline with metrics
+                Reduce p99 latency on the thumbnail stage""",
+                "your-org", "doc-pipeline",
+                new BigDecimal("11999.00"), 120, 2,
+                ProjectDifficulty.ADVANCED, 3);
+        pipeline.setLeadReviewer(ananya);
+        projectRepository.save(pipeline);
+
+        log.info("Seeded {} live projects. The repo owner/name are placeholders "
+                + "('your-org/...') - point them at real repositories before selling access.",
+                projectRepository.count());
     }
 }

@@ -345,3 +345,109 @@ before knowing which booking it is for. Making the fee vary by type means passin
 the request id into that endpoint and having the modal fetch per-booking — the
 same shape `PlanEnrollmentService.instructionsFor(id, caller)` already uses, so
 copy that.
+
+## Live project contribution
+
+Students pay for contributor access to one of our **private** repositories, raise
+pull requests, and a senior engineer reviews and merges them. The review is the
+product — it is the thing a beginner cannot get from a public repo nobody looks at.
+
+| Step | Status | Who |
+| --- | --- | --- |
+| Student requests access, supplying their GitHub username | `AWAITING_PAYMENT` | student |
+| Pays our UPI ID, uploads UTR + screenshot | `SUBMITTED` | student |
+| Admin checks the UTR and approves | `ACTIVE` | admin |
+| Admin adds them as a collaborator on GitHub | `collaboratorGranted = true` | admin |
+| Access window ends, or is ended early | `EXPIRED` / `REVOKED` | — |
+
+### Approving and inviting are two separate things
+
+`status = ACTIVE` means the money is confirmed. `collaboratorGranted` means the
+GitHub side actually happened. **They are separate columns on purpose.**
+
+Fold them into one and a failed invite reads as granted access: the student is
+told they can contribute, hits a 404 on the repo, and nothing in the system knows
+anything is wrong. Kept apart, that becomes a queue —
+`GET /api/admin/projects/access/awaiting-invite` — of people who have paid and
+cannot yet see the code.
+
+There are three admin queues, and they are three different jobs:
+
+| Queue | Means |
+| --- | --- |
+| `access/pending` | Money to check |
+| `access/awaiting-invite` | **Paid, approved, still not on the repo.** Somebody is locked out of what they bought |
+| `access/past-expiry` | Access ran out, but they are still a collaborator. Nothing sweeps this automatically |
+
+### The GitHub side
+
+`github/CollaboratorGranter` is an interface, same pattern as
+`MeetingLinkGenerator`, with two implementations chosen by `app.github.provider`:
+
+- **`manual`** (default) — we record who should have access and an admin clicks
+  *Add people*. Not a placeholder: push access to a private repo is worth a person
+  looking at, and it keeps a repo-admin token out of the application's environment
+  entirely, so compromising the app does not compromise every repository.
+- **`api`** — **not implemented**, and it throws rather than silently telling a
+  paying student they have access. The class javadoc has the full contract:
+  the exact endpoint, every response code that matters (**201 means *invited*, not
+  *added*** — they are not a collaborator until they accept), rate limits, and why
+  automating this is a genuine privilege-escalation path worth thinking about first.
+
+`GrantResult` is why the interface does not return `void`. A grant that did not
+happen must never look like one that did.
+
+### The repository path is private data
+
+`repoFullName`, `repoUrl` and `onboardingUrl` are **null** in every response
+unless the caller's access to that project is currently active. These are private
+repos; naming one to somebody who cannot open it tells an attacker what to aim at
+for no benefit, and it would sit in the JSON of a page anyone logged in can read.
+
+`LiveProjectVo` has two builders, `forBrowsing` and `forContributor`, and
+deliberately **no** plain `from()` — so it is impossible to build one without
+having decided. `ProjectAccessVo` checks `isCurrentlyActive()`, not "was approved
+once", so revoking or expiring access stops naming the repo too.
+
+### Seats
+
+`maxContributors` caps how many people hold access at once, because a real repo
+has a real review budget. `SUBMITTED` counts as a taken seat — somebody who has
+paid and is waiting has effectively claimed one, and overselling means telling one
+of them no after taking their money.
+
+Seats are checked **twice**: at request time, and again at approval, because days
+pass in between and the last seat can go.
+
+> **The bug that taught us the exclusion matters.** At approval the row being
+> approved is itself `SUBMITTED`, so it is already inside the seat count — a full
+> project refused to approve the very request holding one of its own seats. Hence
+> `countTakenSeats(projectId, now, excludeId)` and
+> `assertSeatAvailable(project, excludingRequestId)`.
+
+### Other guards worth knowing
+
+- **The GitHub username is collected at request time**, not after payment. Asking
+  later means an admin sitting on a verified payment waiting for an email.
+  Validated against GitHub's own rules on both sides — a bad handle means the
+  invite 404s at the worst moment.
+- **Changing a project's repo is refused while contributors hold access**, or their
+  rows would silently start claiming access to a codebase nobody granted them.
+- **Closing a project does not revoke anyone.** Existing access runs to its expiry.
+- **A student cannot change their handle after it has been granted** — the old
+  account is already a collaborator, so silently swapping the column would leave
+  that access in place with nothing pointing at it.
+
+### Where to change things
+
+| I want to… | Where |
+| --- | --- |
+| Add a project | Admin panel → Live projects → **+ New project** |
+| Automate GitHub invites | `app.github.provider=api`, then implement `GitHubApiCollaboratorGranter` |
+| Change the seeded demo projects | `config/DataSeeder.java` → `seedLiveProjects()` |
+| Change what permission contributors get | `github/CollaboratorGranter.PUSH` |
+
+> **The seeded projects point at `your-org/...`, which does not exist.** Point them
+> at repositories you actually own before selling access — nothing here can check
+> whether a repo exists, and the invite simply fails on GitHub's side after
+> somebody has paid.

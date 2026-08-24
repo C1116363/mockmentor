@@ -1,6 +1,8 @@
 package com.learn.interviewmentor.service.impl;
 
 import com.learn.interviewmentor.service.AdminService;
+import com.learn.interviewmentor.service.LiveProjectService;
+import com.learn.interviewmentor.service.ProjectAccessService;
 import com.learn.interviewmentor.service.InterviewRequestService;
 import com.learn.interviewmentor.service.PaymentService;
 import com.learn.interviewmentor.service.PlanEnrollmentService;
@@ -32,19 +34,25 @@ public class AdminServiceImpl implements AdminService {
     private final PlanService planService;
     private final PlanEnrollmentService enrollmentService;
     private final StudyMaterialService materialService;
+    private final LiveProjectService projectService;
+    private final ProjectAccessService projectAccessService;
 
     public AdminServiceImpl(UserRepository userRepository,
                         InterviewRequestService requestService,
                         PaymentService paymentService,
                         PlanService planService,
                         PlanEnrollmentService enrollmentService,
-                        StudyMaterialService materialService) {
+                        StudyMaterialService materialService,
+                        LiveProjectService projectService,
+                        ProjectAccessService projectAccessService) {
         this.userRepository = userRepository;
         this.requestService = requestService;
         this.paymentService = paymentService;
         this.planService = planService;
         this.enrollmentService = enrollmentService;
         this.materialService = materialService;
+        this.projectService = projectService;
+        this.projectAccessService = projectAccessService;
     }
 
     @Override
@@ -72,6 +80,13 @@ public class AdminServiceImpl implements AdminService {
         stats.put("planPaymentsToCheck", enrollmentService.countAwaitingReview());
         stats.put("activeEnrollments", enrollmentService.countActive());
         stats.put("materials", materialService.activeCount());
+        stats.put("liveProjects", projectService.openCount());
+        stats.put("projectAccessToCheck", projectAccessService.countAwaitingReview());
+        stats.put("contributors", projectAccessService.countActive());
+        // Paid, approved, and still not added on GitHub. Front and centre in the
+        // tiles because every one of these is somebody locked out of what they
+        // paid for.
+        stats.put("awaitingRepoInvite", projectAccessService.countAwaitingInvite());
         return stats;
     }
 

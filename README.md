@@ -106,6 +106,28 @@ booking — so `SessionType.isScored()` carries the answer and
 nulls any ratings that arrive for an unscored session, so a client can't staple a
 fake scorecard onto a conversation.
 
+## Live project contribution
+
+Students can pay for contributor access to one of our **private** repositories —
+real code that runs, where a senior engineer reviews and merges their pull
+requests. That review is the part open source doesn't give a beginner.
+
+An admin adds the project, sets the price and a seat limit; a student requests
+access with their GitHub username and pays; the admin verifies the payment and
+adds them as a collaborator.
+
+**Two things worth knowing:**
+
+- **The repository path is never sent to somebody without access.** These are
+  private repos, so `repoFullName` and `repoUrl` come back null until your access
+  is live — and go back to null when it expires or is revoked.
+- **Approving the payment and adding them on GitHub are tracked separately.** If
+  they were one flag, a failed invite would read as granted access: student told
+  they're in, 404 on the repo, nothing in the system aware. Instead there's a
+  queue of people who have paid and can't see the code yet.
+
+Detail in the [backend README](backend/README.md#live-project-contribution).
+
 ## Plans and study material
 
 Beyond one-off interviews, a student can buy a **plan** — Placement Guide, or a
@@ -379,7 +401,7 @@ cd website  && ./serve.sh        # :3000
 | --- | --- |
 | The app | <http://localhost:5173> |
 | Marketing site | <http://localhost:3000> |
-| **API docs — all 60 endpoints** | <http://localhost:8080/swagger-ui.html> |
+| **API docs — all 78 endpoints** | <http://localhost:8080/swagger-ui.html> |
 | Raw OpenAPI spec | <http://localhost:8080/v3/api-docs> |
 
 To call a protected endpoint from Swagger: run `POST /api/auth/login` with a demo
@@ -556,6 +578,16 @@ readable by the whole internet.
 | `PATCH` | `/api/admin/plan-enrollments/{id}/reject` | ADMIN — `{ reason }` |
 | `GET` | `/api/admin/materials` | ADMIN — everything ever sent |
 | `POST` | `/api/admin/materials` | ADMIN — multipart `title`, `file`, optional `targetStudentId` **or** `targetPlanId` |
+| `GET` | `/api/projects` | any logged-in user — the catalogue; repo path withheld unless you hold access |
+| `POST` | `/api/projects/{id}/request-access` | STUDENT — `{ githubUsername, motivation? }` |
+| `GET` | `/api/projects/access/mine` | STUDENT — my access requests |
+| `POST` | `/api/projects/access/{id}/proof` | STUDENT — multipart UTR + screenshot |
+| `GET` | `/api/admin/projects` | ADMIN — the catalogue, repo always shown |
+| `GET` | `/api/admin/projects/access/awaiting-invite` | ADMIN — **paid, not yet on the repo** |
+| `GET` | `/api/admin/projects/access/past-expiry` | ADMIN — access that outlived its window |
+| `PATCH` | `/api/admin/projects/access/{id}/approve` | ADMIN — confirm payment, start access |
+| `PATCH` | `/api/admin/projects/access/{id}/confirm-invite` | ADMIN — "I've added them on GitHub" |
+| `PATCH` | `/api/admin/projects/access/{id}/revoke` | ADMIN — `{ reason }` |
 | `POST` | `/api/admin/materials/link` | ADMIN — `{ title, description, linkUrl }` + the same optional audience params |
 | `PATCH` | `/api/admin/materials/{id}/active?active=` | ADMIN — publish or hide |
 

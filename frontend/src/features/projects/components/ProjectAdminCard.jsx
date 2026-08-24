@@ -2,14 +2,14 @@ import { useEffect, useState } from "react";
 import { formatPrice } from "../../../utils/format";
 
 /**
- * One plan in the admin list, with the price editable in place.
+ * One live project in the admin list, with the price editable in place.
  *
- * Editing the price is its own small form hitting its own endpoint, rather than
- * part of a full plan edit. Two reasons: it is by far the most common change, and
- * a full-plan PUT from a partly-filled form is how a description gets silently
- * blanked.
+ * The repository is shown as owner/name with a link, because that is the thing an
+ * admin needs to check against reality - a project pointing at a repo that does
+ * not exist looks completely fine here until somebody pays and the invite 404s.
  */
-export default function PlanAdminCard({ plan, onSavePrice, onToggleActive, onEdit }) {
+export default function ProjectAdminCard({ project: plan, onSavePrice, onToggleActive,
+                                          onEdit, onViewContributors }) {
   const [editing, setEditing] = useState(false);
   const [price, setPrice] = useState(String(plan.price));
   const [busy, setBusy] = useState(false);
@@ -50,10 +50,20 @@ export default function PlanAdminCard({ plan, onSavePrice, onToggleActive, onEdi
       <header className="card__head">
         <div>
           <h4 className="card__title">{plan.name}</h4>
-          <p className="card__sub">{plan.tagline ?? "—"}</p>
+          <p className="card__sub">
+            {plan.summary ?? "—"}
+            {plan.repoFullName && (
+              <>
+                <span className="card__sub-sep">·</span>
+                <a className="mono" href={plan.repoUrl} target="_blank" rel="noopener noreferrer">
+                  {plan.repoFullName}
+                </a>
+              </>
+            )}
+          </p>
         </div>
         <span className={`badge ${plan.active ? "badge--completed" : "badge--cancelled"}`}>
-          {plan.active ? "ON SALE" : "RETIRED"}
+          {plan.active ? "OPEN" : "CLOSED"}
         </span>
       </header>
 
@@ -100,11 +110,19 @@ export default function PlanAdminCard({ plan, onSavePrice, onToggleActive, onEdi
         </div>
         <div>
           <dt>Access</dt>
-          <dd>{plan.durationDays} days</dd>
+          <dd>{plan.accessDurationDays} days</dd>
         </div>
         <div>
-          <dt>Order</dt>
-          <dd>{plan.displayOrder}</dd>
+          <dt>Contributors</dt>
+          <dd>
+            {plan.seatsTaken}
+            {plan.maxContributors ? ` / ${plan.maxContributors}` : " (no limit)"}
+            {!plan.seatsAvailable && <span className="badge badge--cancelled"> FULL</span>}
+          </dd>
+        </div>
+        <div>
+          <dt>Reviewer</dt>
+          <dd>{plan.leadReviewer ?? "—"}</dd>
         </div>
         <div>
           <dt>Last changed</dt>
@@ -116,8 +134,8 @@ export default function PlanAdminCard({ plan, onSavePrice, onToggleActive, onEdi
 
       {editing && (
         <p className="pay-note">
-          Students see the new price on their next page load. Anyone who already
-          bought this plan keeps the price they paid.
+          Live for the next request. Anyone who already requested access keeps the
+          price they were quoted.
         </p>
       )}
 
@@ -125,8 +143,11 @@ export default function PlanAdminCard({ plan, onSavePrice, onToggleActive, onEdi
         <button className="btn btn--ghost btn--sm" onClick={() => onEdit(plan)}>
           Edit details
         </button>
+        <button className="btn btn--ghost btn--sm" onClick={() => onViewContributors(plan)}>
+          Contributors ({plan.seatsTaken})
+        </button>
         <button className="btn btn--ghost btn--sm" onClick={() => onToggleActive(plan)}>
-          {plan.active ? "Take off sale" : "Put on sale"}
+          {plan.active ? "Close to new" : "Open to new"}
         </button>
       </div>
     </article>
