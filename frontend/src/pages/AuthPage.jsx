@@ -30,10 +30,42 @@ const HINTS = {
   ADMIN: "Admin accounts are created internally — log in with the account you were given.",
 };
 
+/**
+ * What the product actually is, for somebody who has never seen it.
+ *
+ * <h2>Why these four and not the old three</h2>
+ * The first version listed a mock interview, a scorecard and slot picking -
+ * which described one feature and one mechanic, and by then the app sold four
+ * things. Worse, it opened with "Not a chat", while Book a session offers a
+ * mentoring option whose own subtitle is "Just talk it through with an expert".
+ * The landing page was ruling out one of the two things you can book.
+ *
+ * So: one line per thing you can actually do here, in the order somebody grows
+ * into them - practise, talk it through, learn, then build something real.
+ * Slot picking dropped; it is a mechanic, not a reason to sign up, and it is
+ * obvious the moment you see the booking screen.
+ */
 const POINTS = [
-  { icon: "🎙️", title: "A real interview", text: "Not a chat. One honest hour with a senior engineer." },
-  { icon: "📋", title: "A written scorecard", text: "Ratings per skill, and exactly what to fix." },
-  { icon: "📅", title: "Your slot, your call", text: "Pick any free hour in the next 30 days." },
+  {
+    icon: "🎙️",
+    title: "Mock interviews, then a scorecard",
+    text: "One honest hour with a senior engineer, and a written breakdown afterwards — ratings per skill and exactly what to fix.",
+  },
+  {
+    icon: "💬",
+    title: "Or just talk it through",
+    text: "Not preparing for a round? Book a mentoring session instead — career advice, a code review, whatever you're stuck on.",
+  },
+  {
+    icon: "🛠",
+    title: "Real code, not toy projects",
+    text: "Contribute to private codebases we actually run. Your pull requests get reviewed by the senior devs who own them.",
+  },
+  {
+    icon: "🎯",
+    title: "Plans and study material",
+    text: "Structured preparation, sent to you by the same people who take the interviews.",
+  },
 ];
 
 export default function AuthPage() {
@@ -118,8 +150,8 @@ export default function AuthPage() {
           Walk in <span className="grad">already prepared</span>
         </h1>
         <p className="auth__lede">
-          Practise with engineers who take real interviews for a living, then get
-          a written breakdown of exactly what to fix.
+          Practise with engineers who take real interviews for a living — then keep
+          going with mentoring, study plans, and real code to contribute to.
         </p>
 
         <ul className="auth__points">

@@ -271,6 +271,17 @@
     font-weight: 800; font-size: .92rem; color: #fff; margin-bottom: 15px;
     background: linear-gradient(135deg, var(--brand), var(--brand-2));
   }
+  /* The numbered variant is a gradient chip with white text, which is right for
+     "1 2 3" and wrong for an emoji - the glyph brings its own colour, so
+     color:#fff does nothing and it ends up sitting on a purple square. This one
+     is a soft tint that lets the emoji be the colour. */
+  .step__ico {
+    width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center;
+    font-size: 1.2rem; margin-bottom: 15px;
+    background: color-mix(in srgb, var(--brand) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--brand) 20%, transparent);
+  }
+
   .step h4 { font-size: 1.03rem; margin-bottom: 7px; }
   .step p { font-size: .9rem; color: var(--muted); }
 
@@ -359,6 +370,7 @@
     <nav class="nav__links">
       <a href="#mentors">Mentors</a>
       <a href="#how">How it works</a>
+      <a href="#more">What else</a>
       <a href="#reviews">Reviews</a>
       <a href="#faq">FAQ</a>
     </nav>
@@ -392,7 +404,8 @@
 
       <p class="lede">
         Practise with working engineers and educators. One honest hour, one
-        written scorecard, and a clear list of what to fix.
+        written scorecard, and a clear list of what to fix &mdash; then mentoring,
+        study plans and real code to contribute to.
       </p>
 
       <div class="hero__cta">
@@ -446,12 +459,59 @@
         <div class="step">
           <div class="step__n">2</div>
           <h4>A senior engineer picks it up</h4>
-          <p>They confirm a slot and send you a meeting link. You get a real interview, not a chat.</p>
+          <p>They confirm a slot and send you a meeting link, then run it like the real thing &mdash; pressure included.</p>
         </div>
         <div class="step">
           <div class="step__n">3</div>
           <h4>Get your scorecard</h4>
           <p>Written feedback on what went well and exactly what to work on before the real thing.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!--
+    Added because the site sold one of four things.
+
+    Mock interviews were the whole pitch, while the app also offers mentoring
+    sessions, study plans and paid contributor access to private repositories.
+    Somebody deciding whether to sign up could not find out that three of them
+    existed - and the step above used to say "a real interview, not a chat",
+    which actively ruled out the mentoring option.
+  -->
+  <section class="block reveal" id="more">
+    <div class="wrap">
+      <div class="block__head">
+        <span class="eyebrow">More than mock interviews</span>
+        <h2>Once you&rsquo;ve practised, keep going</h2>
+      </div>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step__ico">&#128172;</div>
+          <h4>Mentoring sessions</h4>
+          <p>
+            Not preparing for a round? Book an hour to talk it through instead &mdash;
+            career advice, a code review, or whichever decision you keep going back
+            and forth on. No ratings, just notes.
+          </p>
+        </div>
+        <div class="step">
+          <div class="step__ico">&#128736;</div>
+          <h4>Contribute to real projects</h4>
+          <p>
+            Get collaborator access to private codebases we actually run. Your pull
+            requests are reviewed by the senior devs who own them &mdash; the thing
+            a portfolio of tutorial projects can never show.
+          </p>
+        </div>
+        <div class="step">
+          <div class="step__ico">&#127919;</div>
+          <h4>Plans and study material</h4>
+          <p>
+            Structured preparation put together by the same engineers who take the
+            interviews, sent straight to you as you work through it.
+          </p>
         </div>
       </div>
     </div>
@@ -549,6 +609,7 @@
           <h5>Product</h5>
           <a href="#mentors">Mentors</a>
           <a href="#how">How it works</a>
+          <a href="#more">What else</a>
           <a href="#reviews">Reviews</a>
         </div>
         <div class="foot__col">

@@ -103,11 +103,14 @@
 
 .auth__points {
   list-style: none;
-  margin: 34px 0 0;
+  /* Tightened from 34/16 when this went from three points to four. The column
+     is vertically centred, so extra height pushes the headline off-screen on a
+     laptop before it ever scrolls. */
+  margin: 26px 0 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 13px;
 }
 
 .auth__points li { display: flex; gap: 13px; align-items: flex-start; text-align: left; }
