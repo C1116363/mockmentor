@@ -176,6 +176,89 @@ Tomcat started on port 8080
 
 ---
 
+## Sending real emails (Gmail)
+
+Password reset works out of the box **without this** — the email is printed to
+the backend console and you copy the link from there. Do this only when you want
+real email to arrive in a real inbox.
+
+### 1. Turn on 2-Step Verification
+
+**myaccount.google.com → Security → 2-Step Verification** → turn it **ON**.
+
+App Passwords do not exist until this is on — that is the whole reason this step
+comes first.
+
+### 2. Create an App Password
+
+**myaccount.google.com/apppasswords** → type any name (`ConfirmPlacement`) →
+**Create** → copy the 16 characters.
+
+Google displays them as `abcd efgh ijkl mnop`. **The spaces are not part of the
+password** — paste it as one string.
+
+> Your normal Google account password will **not** work here. Google removed
+> plain-password SMTP ("less secure apps") in 2022, so the real password is
+> simply rejected. This is the single most common reason this setup fails.
+
+### 3. Fill in `backend/.env`
+
+```ini
+MAIL_PROVIDER=smtp
+MAIL_USERNAME=youraddress@gmail.com
+MAIL_FROM=youraddress@gmail.com
+MAIL_PASSWORD=abcdefghijklmnop
+```
+
+`.env` is gitignored, so the App Password never reaches GitHub.
+
+### 4. Restart the backend
+
+```bash
+cd backend
+lsof -ti:8080 | xargs kill
+./run.sh
+```
+
+### 5. Test it
+
+Click **Forgot your password?** on the login screen and send yourself a link.
+
+**Check your spam folder.** The first few messages from a personal Gmail address
+sent by a server almost always land there.
+
+### Did it work?
+
+The backend log answers directly. Where to look depends on how you started it:
+
+```bash
+# started with ./start.sh  -> it logs to a file
+grep -iE "Could not send|Sent '" .logs/backend.log
+
+# started with backend/./run.sh -> it prints straight to that terminal,
+# so just scroll up in it
+```
+
+| What you see | What it means |
+| --- | --- |
+| `Sent 'Reset your ConfirmPlacement password' to …` | It went out. If nothing arrived, it is in spam. |
+| `Username and Password not accepted` | You used the Google password, or 2-Step Verification is off |
+| `Connection timed out` | Port 587 is blocked. Test with `nc -z smtp.gmail.com 587` |
+| Nothing at all | Still on `MAIL_PROVIDER=log`, or the backend was not restarted |
+
+### What Gmail is and isn't good for
+
+Free, instant, and capped around **500 messages a day** — fine for password
+resets at this size. It is not a bulk sender: mail goes out as your personal
+address rather than your own domain, so it lands in spam more often, and Google
+will lock the account if it decides you are sending marketing.
+
+When that starts to matter, a transactional provider (Brevo, Resend, SendGrid —
+all have free tiers) is a drop-in replacement. Only these four properties
+change; nothing in the code does.
+
+---
+
 ## Verify it worked
 
 ```bash
@@ -319,19 +402,11 @@ Subject: Reset your ConfirmPlacement password
 http://localhost:5173/?reset=jSBRgyKcnG-_mwAirNN81yoWQXp2bqiRi5yafgQ1590
 ```
 
-To send real email through Gmail, put this in `backend/.env`:
+Copy that link into your browser and the reset page opens — the whole flow
+works this way, with no Gmail account involved.
 
-```ini
-MAIL_PROVIDER=smtp
-MAIL_USERNAME=youraddress@gmail.com
-MAIL_PASSWORD=your-16-char-app-password
-MAIL_FROM=youraddress@gmail.com
-```
-
-`MAIL_PASSWORD` is an **App Password**, not your Google password — Google
-removed plain-password SMTP in 2022, so the real one is simply rejected. Turn on
-2-Step Verification first (App Passwords do not exist without it), then
-myaccount.google.com → Security → App passwords.
+To send real email instead, follow
+[Sending real emails](#sending-real-emails-gmail) above.
 
 ### Logged out every time I switch tabs
 
@@ -351,3 +426,4 @@ session and closing a tab logs you out. Refreshing keeps you in. See
 | Change a screen | [frontend/README.md](frontend/README.md) |
 | Change the marketing page | [website/README.md](website/README.md) |
 | **Take card / UPI payments (Razorpay)** | [**PAYMENTS.md**](PAYMENTS.md) |
+| **Send real password-reset emails** | [Sending real emails](#sending-real-emails-gmail) |
