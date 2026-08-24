@@ -115,13 +115,16 @@
   /* The bar stays left/right even when the pitch below it centres - a logo
      centred over centred text reads as a third heading. */
   .auth__intro { text-align: center; }
-  .auth__points { max-width: 420px; margin-inline: auto; }
 }
 
 .auth__intro h1 {
-  font-size: clamp(2rem, 4.6vw, 3rem);
-  /* Was 26px to clear the brand that used to sit directly above it. The brand
-     is in the top bar now, so this would be a gap above nothing. */
+  /* Bigger than it was, because the column lost its feature list and is now a
+     heading and one sentence. At the old size that leaves a short block
+     floating beside a tall form; at this size the headline is the thing you
+     read first, which is what it is for. */
+  font-size: clamp(2.15rem, 5.2vw, 3.4rem);
+  line-height: 1.08;
+  letter-spacing: -.02em;
   margin-top: 0;
 }
 
@@ -132,35 +135,21 @@
   color: transparent;
 }
 
-.auth__lede { margin-top: 15px; color: var(--muted); font-size: 1.03rem; max-width: 440px; }
+.auth__lede {
+  margin-top: 18px;
+  color: var(--muted);
+  font-size: 1.06rem;
+  line-height: 1.6;
+  /* ~46 characters a line. Wider than this and the eye loses its place coming
+     back to the start of the next line - the reason every column of body text
+     you have ever read comfortably is about this wide. */
+  max-width: 44ch;
+}
 @media (max-width: 940px) { .auth__lede { margin-inline: auto; } }
 
-.auth__points {
-  list-style: none;
-  /* Tightened from 34/16 when this went from three points to four. The column
-     is vertically centred, so extra height pushes the headline off-screen on a
-     laptop before it ever scrolls. */
-  margin: 26px 0 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 13px;
-}
 
-.auth__points li { display: flex; gap: 13px; align-items: flex-start; text-align: left; }
 
-.auth__point-icon {
-  width: 36px; height: 36px; flex: 0 0 auto;
-  border-radius: 10px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  display: grid; place-items: center;
-  font-size: 1rem;
-  box-shadow: var(--shadow-xs);
-}
 
-.auth__points strong { display: block; font-size: .92rem; }
-.auth__points small { color: var(--muted); font-size: .85rem; }
 
 .auth__card {
   background: var(--surface);
