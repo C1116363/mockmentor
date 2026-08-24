@@ -107,14 +107,37 @@
   min-width: 0;
 }
 
+/**
+ * The pitch sits at the top of its row, not the middle of it.
+ *
+ * The grid centres its items, and the card is much the taller of the two - so
+ * a heading and one sentence ended up floating halfway down the page, level
+ * with the middle of the form and a long way from the logo above it.
+ *
+ * align-self: start puts its first line level with the top of the card, which
+ * is where the eye starts anyway. It has to be align-self on this item rather
+ * than align-items on the grid: the card should keep centring, because it
+ * changes height as you switch between Log in and Sign up and pinning it to
+ * the top would make the whole page jump on every switch.
+ */
+.auth__intro {
+  align-self: start;
+  min-width: 0;
+}
+
 @media (max-width: 940px) {
   /* padding-top drops back to the normal 40px: the extra 72px existed only to
      clear the toggle when it was out of flow, and the bar now reserves its own
      space. */
   .auth { grid-template-columns: 1fr; gap: 30px; padding-top: 40px; }
-  /* The bar stays left/right even when the pitch below it centres - a logo
-     centred over centred text reads as a third heading. */
-  .auth__intro { text-align: center; }
+
+  /* Stacked, so there is no taller sibling to align against - and the bar above
+     deliberately stays left/right, because a logo centred over centred text
+     reads as a third heading.
+     This block has to come AFTER the base .auth__intro rule, not before it: the
+     two have equal specificity, so a media query placed earlier in the file
+     loses to the plain rule and silently does nothing. */
+  .auth__intro { align-self: auto; text-align: center; }
 }
 
 .auth__intro h1 {
