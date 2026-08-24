@@ -1,5 +1,7 @@
 # 2. backend — the Spring Boot API
 
+> Setting up from scratch? → [SETUP.md](../SETUP.md). To start just this part: `./start.sh backend` from the repo root.
+
 Java 21 · Spring Boot 3.5 · Spring Security + JWT · Spring Data JPA · MySQL
 
 ## Run it

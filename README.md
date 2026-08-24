@@ -16,6 +16,9 @@ Start at <http://localhost:3000> and click the corner button.
 
 ---
 
+> **Just cloned this?** → [**SETUP.md**](SETUP.md) — installs, database, and
+> `./start.sh` to bring up all three servers.
+>
 > **Looking for where something is in the code?**
 > [**ARCHITECTURE.md**](ARCHITECTURE.md) is the map — every folder, which file
 > handles which feature, one request traced end to end, and a recipe for adding a
@@ -326,98 +329,72 @@ interview-mentor/
 
 ## Running it
 
-You need MySQL running, plus Java 21+, Maven and Node.
+**First time on this machine?** → [**SETUP.md**](SETUP.md) covers installing Java,
+Node and MySQL, creating the database, and the errors you are likely to hit.
 
-### 1. Backend
-
-```bash
-cd backend
-./run.sh
-```
-
-You do **not** need to create the database by hand. The JDBC URL uses
-`createDatabaseIfNotExist=true` and `ddl-auto=update` makes Hibernate create the
-`users`, `mentor_profiles` and `interview_requests` tables on first boot.
-A seeder then inserts the demo accounts.
-
-DB credentials come from `backend/.env`:
-
-```
-DB_USER=root
-DB_PASSWORD=your-password
-```
-
-API is at <http://localhost:8080>.
-
-**Interactive API docs: <http://localhost:8080/swagger-ui.html>**
-
-All 19 endpoints are documented there, with request/response schemas, example
-values and every status code they can return. To call a protected endpoint:
-
-1. Run `POST /api/auth/login` with a demo account.
-2. Copy the `token` out of the response.
-3. Click the green **Authorize** button at the top right and paste it in
-   (just the token — Swagger adds the word `Bearer` for you).
-4. Every endpoint below now sends the `Authorization` header.
-
-The raw OpenAPI 3 spec is at <http://localhost:8080/v3/api-docs> — you can import
-that straight into Postman or Insomnia.
-
-### 2. Frontend
+Once set up, one command brings up all three servers:
 
 ```bash
-cd frontend
-npm install     # only the first time
-npm run dev
+cp backend/.env.example backend/.env     # first time only — add your MySQL password
+./start.sh
 ```
 
-Open <http://localhost:5173>.
+It checks your tools, creates the database if missing, installs frontend
+dependencies on first run, waits for each server to actually answer, and prints
+the URLs. Ctrl+C stops everything. Logs land in `.logs/`.
 
-### 3. Website
+```
+Checking what you have
+  ✓ Java 21
+  ✓ Node v22.11.0
+
+Checking the database
+  ✓ MySQL is listening on 3306
+  ✓ backend/.env found
+  ✓ Database 'interview_mentor' ready (user: root)
+
+Starting
+  ✓ backend    http://localhost:8080
+  ✓ frontend   http://localhost:5173
+  ✓ website    http://localhost:3000
+```
+
+Or start one part at a time — easier when you are working on a single piece:
 
 ```bash
-cd website
-./serve.sh
+./start.sh backend        # or frontend, or website
 ```
 
-Open <http://localhost:3000>. The **Launch App →** button in the top-right corner
-takes you to the React app on `:5173`.
+Or by hand, a terminal each:
 
-It is one static HTML file with no build step and no dependencies. It works with
-the backend switched off — it just shows a "Backend offline" note instead of live
-numbers.
+```bash
+cd backend  && ./run.sh          # :8080
+cd frontend && npm install && npm run dev   # :5173
+cd website  && ./serve.sh        # :3000
+```
 
-> **Note:** if you change the entity classes, `ddl-auto=update` only *adds*
-> columns — it never drops or relaxes old ones. If startup fails on a stale
-> column, drop the schema and let it rebuild:
-> `mysql -u root -p -e "DROP DATABASE interview_mentor;"`
+### Where things are
+
+| | URL |
+| --- | --- |
+| The app | <http://localhost:5173> |
+| Marketing site | <http://localhost:3000> |
+| **API docs — all 60 endpoints** | <http://localhost:8080/swagger-ui.html> |
+| Raw OpenAPI spec | <http://localhost:8080/v3/api-docs> |
+
+To call a protected endpoint from Swagger: run `POST /api/auth/login` with a demo
+account, copy the `token` out of `data`, click **Authorize** top-right and paste it
+in (just the token — Swagger adds `Bearer`).
+
+You do **not** need to create the database by hand. `createDatabaseIfNotExist=true`
+in the JDBC URL plus `ddl-auto=update` means Hibernate builds every table on first
+boot, and a seeder inserts the demo accounts and four plans.
+
+> **If startup fails on a stale column:** `ddl-auto=update` only *adds* things — it
+> never drops or relaxes a column. Locally, throw the schema away and let the
+> seeder rebuild it: `mysql -u root -p -e "DROP DATABASE interview_mentor;"`
 
 ---
-
-## Session lifetime
-
-**Close the tab and you are logged out.** The token lives in `sessionStorage`,
-which the browser scopes to a single tab and wipes when that tab closes.
-
-Two consequences follow from that one mechanism:
-
-| Action | Still logged in? |
-| --- | --- |
-| Refresh (F5), navigate within the app | **Yes** — sessionStorage survives a reload |
-| Close the tab, then reopen the app | No |
-| Open the app in a second tab | No — each tab is its own session |
-| Quit and restart the browser | No |
-
-A `beforeunload` handler that clears storage would be the wrong tool: it fires on
-refresh too, and browsers do not guarantee it runs. Tab scoping is a property of
-the storage itself, so there is nothing to fire and nothing to miss.
-
-Anyone already logged in when this shipped is signed out once: `purgePersistedTokens()`
-in `api/client.js` clears the old `localStorage` token on load. Without that sweep
-the new rule would apply to new users only.
-
-The theme preference stays in `localStorage` on purpose — a preference should
-outlive a session.
 
 ## How the authentication works
 

@@ -4,6 +4,9 @@ backend/.env
 # uploaded payment screenshots and study material (user data)
 backend/uploads/
 
+# logs from start.sh
+.logs/
+
 # java
 backend/target/
 

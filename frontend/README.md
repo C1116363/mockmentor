@@ -1,5 +1,7 @@
 # 3. frontend — the React app
 
+> Setting up from scratch? → [SETUP.md](../SETUP.md). To start just this part: `./start.sh frontend` from the repo root.
+
 React 19 + Vite. Three roles, three experiences:
 
 - **Candidates** sign up, book a 1-hour slot, track their requests.

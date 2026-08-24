@@ -1,5 +1,7 @@
 # 1. website — the public marketing site
 
+> Setting up from scratch? → [SETUP.md](../SETUP.md). To start just this part: `./start.sh website` from the repo root.
+
 The page anyone lands on first. Plain HTML, CSS and JavaScript in **one single
 file**. No build step, no `npm install`, no dependencies.
 

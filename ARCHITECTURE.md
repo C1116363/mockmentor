@@ -6,6 +6,8 @@ A map of the codebase. If you are looking for where something is, start here.
 - 54 JS/JSX files across the same 5 layers
 - Both halves use the **same layering**, so what you learn on one side transfers
 
+**Just want to run it?** → [SETUP.md](SETUP.md)
+
 **Quick links:** [layers](#the-five-layers) · [backend map](#backend-map) ·
 [frontend map](#frontend-map) · [one request end to end](#one-request-end-to-end) ·
 [adding a feature](#adding-a-feature) · [naming](#naming-rules) ·
