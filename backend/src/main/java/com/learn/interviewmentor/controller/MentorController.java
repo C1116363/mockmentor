@@ -1,7 +1,9 @@
 package com.learn.interviewmentor.controller;
 
-import com.learn.interviewmentor.dto.MentorDto;
-import com.learn.interviewmentor.service.MentorService;
+import com.learn.interviewmentor.common.ApiResult;
+
+import com.learn.interviewmentor.vo.MentorVo;
+import com.learn.interviewmentor.facade.MentorFacade;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -25,10 +27,10 @@ import java.util.List;
 @Tag(name = "3. Mentors", description = "Browse the mentor directory. Any logged-in user can read this.")
 public class MentorController {
 
-    private final MentorService mentorService;
+    private final MentorFacade mentorFacade;
 
-    public MentorController(MentorService mentorService) {
-        this.mentorService = mentorService;
+    public MentorController(MentorFacade mentorFacade) {
+        this.mentorFacade = mentorFacade;
     }
 
     @GetMapping
@@ -39,10 +41,10 @@ public class MentorController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "The mentor directory"),
             @ApiResponse(responseCode = "401", description = "Not logged in",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class)))
+                    content = @Content(schema = @Schema(implementation = ApiResult.class)))
     })
-    public List<MentorDto> listMentors() {
-        return mentorService.findAll();
+    public ApiResult<List<MentorVo>> listMentors() {
+        return mentorFacade.approvedMentors();
     }
 
     @GetMapping("/{userId}")
@@ -52,12 +54,12 @@ public class MentorController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "The mentor"),
             @ApiResponse(responseCode = "401", description = "Not logged in",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class))),
+                    content = @Content(schema = @Schema(implementation = ApiResult.class))),
             @ApiResponse(responseCode = "404", description = "That user has no mentor profile",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class)))
+                    content = @Content(schema = @Schema(implementation = ApiResult.class)))
     })
-    public MentorDto getMentor(
+    public ApiResult<MentorVo> getMentor(
             @Parameter(description = "The mentor's user id", example = "2") @PathVariable Long userId) {
-        return mentorService.findByUserId(userId);
+        return mentorFacade.mentor(userId);
     }
 }

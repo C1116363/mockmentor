@@ -1274,3 +1274,296 @@
   .navmenu__current { display: none; }
   .navmenu__panel { min-width: 234px; }
 }
+
+/* ============================================================
+   Plans
+   ============================================================
+   A pricing grid rather than the stacked .card-list the rest of the app uses:
+   plans are compared side by side, and a vertical list makes that hard. It
+   collapses to one column on narrow screens, where comparing is a scroll
+   either way.
+*/
+.plan-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(258px, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+
+.plan {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  padding: 22px 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
+  transition: transform .16s var(--ease), box-shadow .16s var(--ease), border-color .16s var(--ease);
+}
+
+.plan:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--border-strong);
+}
+
+/* The featured plan is lifted with colour and a slightly heavier border, not
+   with scale - a transform here would fight the hover lift above. */
+.plan--featured {
+  border-color: color-mix(in srgb, var(--student) 42%, transparent);
+  box-shadow: var(--shadow-sm);
+}
+
+.plan--owned { border-color: color-mix(in srgb, var(--success) 45%, transparent); }
+
+.plan__ribbon {
+  position: absolute;
+  top: -10px;
+  left: 20px;
+  padding: 3px 10px;
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: #fff;
+  background: var(--student);
+  border-radius: 999px;
+  box-shadow: var(--shadow-xs);
+}
+
+.plan__head { display: flex; flex-direction: column; gap: 4px; }
+.plan__name { font-size: 1.06rem; line-height: 1.3; }
+.plan__tagline { font-size: .84rem; color: var(--muted); }
+
+.plan__price { display: flex; align-items: baseline; gap: 2px; margin-top: 4px; }
+.plan__rupee { font-size: 1.05rem; font-weight: 650; color: var(--muted); }
+.plan__amount { font-size: 1.95rem; font-weight: 800; line-height: 1; letter-spacing: -.02em; }
+.plan__duration { font-size: .78rem; color: var(--faint); margin-top: -6px; }
+
+.plan__desc { font-size: .85rem; color: var(--muted); }
+
+.plan__features { list-style: none; display: flex; flex-direction: column; gap: 7px; margin: 2px 0; }
+
+.plan__features li {
+  position: relative;
+  padding-left: 21px;
+  font-size: .85rem;
+}
+
+/* A tick drawn in CSS rather than an emoji or an icon font: it inherits the
+   accent colour, needs no network request, and never renders as a box. */
+.plan__features li::before {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: .42em;
+  width: 9px;
+  height: 5px;
+  border-left: 2px solid var(--student);
+  border-bottom: 2px solid var(--student);
+  transform: rotate(-45deg);
+}
+
+.plan__foot {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  /* Pushes the button to the bottom so a row of cards with different amounts
+     of text still lines its buttons up. */
+  margin-top: auto;
+  padding-top: 6px;
+}
+
+.plan__note { font-size: .76rem; color: var(--muted); }
+
+/* ---- admin: editing a price in place ---- */
+.price-cell { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+.price-edit { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.price-edit input {
+  width: 108px;
+  padding: 7px 9px;
+  font: inherit;
+  font-weight: 700;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  border-radius: 9px;
+}
+.price-edit input:focus {
+  outline: none;
+  border-color: var(--student);
+  box-shadow: 0 0 0 3px var(--student-soft);
+}
+
+.card--muted { opacity: .62; }
+.card--muted:hover { opacity: 1; }
+
+/* ============================================================
+   Study material
+   ============================================================ */
+.material {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  padding: 15px 17px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-xs);
+  transition: border-color .14s var(--ease), box-shadow .14s var(--ease);
+}
+
+.material:hover { border-color: var(--border-strong); box-shadow: var(--shadow-sm); }
+
+.material__icon {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  font-size: 1.15rem;
+  background: var(--bg-alt);
+  border-radius: 10px;
+}
+
+.material__body { flex: 1; min-width: 0; }
+.material__title { font-size: .95rem; }
+.material__desc { font-size: .84rem; color: var(--muted); margin-top: 3px; }
+
+.material__meta {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  font-size: .75rem;
+  color: var(--faint);
+}
+
+/* Says who the item was addressed to. Worth a chip rather than plain text:
+   "only you" versus "everyone" is the thing a student actually wants to know
+   at a glance. */
+.material__chip {
+  padding: 2px 8px;
+  font-size: .7rem;
+  font-weight: 700;
+  color: var(--student);
+  background: var(--student-soft);
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.material__action { flex-shrink: 0; }
+
+/* ============================================================
+   Shared odds and ends
+   ============================================================ */
+.check {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: .86rem;
+  font-weight: 500;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.check input { margin-top: 3px; flex-shrink: 0; accent-color: var(--student); }
+
+/* A fieldset carries a browser border and padding by default; this is a group
+   of radios, not a boxed section. */
+.audience { border: 0; padding: 0; margin: 0; gap: 9px; }
+.audience > span { margin-bottom: 2px; }
+
+.send-form {
+  padding: 18px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 24px;
+}
+
+.subhead {
+  font-size: .95rem;
+  margin: 6px 0 13px;
+  padding-top: 4px;
+  border-top: 1px solid var(--border);
+}
+
+.small { font-size: .75rem; }
+
+/* ============================================================
+   Session type — interview or mentoring
+   ============================================================ */
+
+/* The picker on the booking form. Same shape as the .portal chooser on the
+   login screen, deliberately: it is the same kind of decision, made once,
+   before anything below it makes sense. */
+.session-pick {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.session-pick__opt {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 13px 14px;
+  text-align: left;
+  font: inherit;
+  color: var(--muted);
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: border-color .14s var(--ease), background .14s var(--ease), color .14s var(--ease);
+}
+
+.session-pick__opt:hover { border-color: var(--border-strong); color: var(--text); }
+
+.session-pick__opt--on {
+  color: var(--text);
+  background: var(--student-soft);
+  border-color: var(--student);
+}
+
+.session-pick__icon { font-size: 1.2rem; line-height: 1; margin-bottom: 3px; }
+.session-pick__opt strong { font-size: .9rem; }
+.session-pick__opt small { font-size: .76rem; color: var(--muted); }
+
+.session-pick__outcome {
+  font-size: .81rem;
+  color: var(--muted);
+  padding: 9px 12px;
+  margin-bottom: 18px;
+  background: var(--bg-alt);
+  border-radius: 9px;
+}
+
+/* The chip on a booking card. Two colours so a queue of mixed bookings can be
+   read at a glance rather than word by word. */
+.kind {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 7px;
+  font-size: .71rem;
+  font-weight: 700;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.kind--interview { color: var(--student); background: var(--student-soft); }
+.kind--mentoring { color: var(--mentor); background: var(--mentor-soft); }
+
+.card__sub-sep { margin: 0 5px; opacity: .5; }
+
+@media (max-width: 520px) {
+  .session-pick { grid-template-columns: 1fr; }
+}

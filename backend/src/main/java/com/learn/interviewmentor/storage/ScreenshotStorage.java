@@ -1,6 +1,7 @@
 package com.learn.interviewmentor.storage;
 
 import com.learn.interviewmentor.exception.BadRequestException;
+import com.learn.interviewmentor.exception.StorageException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
@@ -78,7 +79,10 @@ public class ScreenshotStorage {
         try (InputStream in = file.getInputStream()) {
             Files.copy(in, target, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
-            throw new IllegalStateException("Could not save the screenshot", e);
+            // Disk full, directory deleted under us, permissions changed. The
+            // caller did nothing wrong, so this must not become a 400 that sends
+            // them off re-picking a perfectly good file.
+            throw new StorageException("Could not save screenshot to " + root, e);
         }
         return filename;
     }
@@ -103,11 +107,17 @@ public class ScreenshotStorage {
     private String detectType(MultipartFile file) {
         byte[] head = new byte[12];
         try (InputStream in = file.getInputStream()) {
-            int read = in.read(head);
-            if (read < 12) {
+            // read() is allowed to return fewer bytes than asked for even when
+            // more are coming, so a single call can under-fill the buffer and
+            // reject a valid image. readNBytes keeps reading until it has 12 or
+            // hits the real end of the stream.
+            if (in.readNBytes(head, 0, head.length) < head.length) {
                 return "unknown";
             }
         } catch (IOException e) {
+            // Nothing readable means nothing we can vouch for. Returning
+            // "unknown" turns into a 400 telling the caller to send a JPG, PNG
+            // or WebP, which is the useful answer either way.
             return "unknown";
         }
 

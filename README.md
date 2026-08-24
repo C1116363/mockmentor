@@ -16,6 +16,11 @@ Start at <http://localhost:3000> and click the corner button.
 
 ---
 
+> **Looking for where something is in the code?**
+> [**ARCHITECTURE.md**](ARCHITECTURE.md) is the map — every folder, which file
+> handles which feature, one request traced end to end, and a recipe for adding a
+> feature.
+
 ## Three roles, three screens
 
 | Role | Sign up? | What they see |
@@ -28,6 +33,89 @@ Admin accounts are **not** created through signup. The login page has an Admin
 option, but it only ever shows a login form — a public "make me an admin"
 endpoint would let anyone grant themselves full access. The first admin comes
 from the seeder and would promote others.
+
+## How the code is laid out
+
+```
+controller -> facade -> service -> repository -> model
+```
+
+Each layer talks only to the one below it. A controller never touches a service or
+a repository — `grep -rn "Service " backend/src/main/java/.../controller/` returns
+nothing, and that is the property the structure exists to keep.
+
+Requests coming in are `dto/` and end in **Dto**. Responses going out are `vo/`
+and end in **Vo**. `service/` and `facade/` hold interfaces; the implementations
+live in `service/impl/` and `facade/impl/`.
+
+**The frontend mirrors it**, using the equivalents that are idiomatic in React:
+
+| Backend | Frontend |
+| --- | --- |
+| `controller/` | `pages/` — the screen, renders and delegates |
+| `facade/` | `features/x/useX.js` — a hook: state + orchestration |
+| `service/` | `features/x/xRules.js` — pure functions, no React |
+| `repository/` | `api/xApi.js` — one module per backend controller |
+
+So `planApi.js` is `PlanController`, and if you know the endpoint you know the
+file. Details in the [frontend README](frontend/README.md#structure).
+
+**Every endpoint returns the same envelope:**
+
+```json
+{ "success": true,  "status": 200, "data": { ... } }
+{ "success": false, "status": 404, "message": "No plan with id 9", "path": "/api/plans/9" }
+```
+
+So a client checks one boolean for every call it ever makes. On the frontend the
+unwrapping is a single function in `api/client.js` — nothing above that line knows
+the envelope exists, and `api.plans()` still resolves to an array of plans.
+
+Full details are in [**ARCHITECTURE.md**](ARCHITECTURE.md) — the folder-by-folder
+map, the feature-to-file table, and one request traced through all eleven files it
+touches. Layer-specific notes are in the
+[backend](backend/README.md#structure) and [frontend](frontend/README.md#structure)
+READMEs.
+
+## Two kinds of booking
+
+A booked hour is either a **mock interview** or a **mentoring session**, set by
+`sessionType` on the booking:
+
+| | Mock interview | Mentoring session |
+| --- | --- | --- |
+| What it is | A real interview, under pressure | A discussion — career advice, a code review, working through a design |
+| Ends in | A scorecard: ratings per skill + a readiness verdict | Written notes. **No ratings** |
+| Slot, price, mentor pool | identical | identical |
+
+It is a **field on the booking, not a second entity**: picking a slot, paying,
+being assigned a mentor and being completed are the same for both. Only the
+mentor's write-up differs, and a parallel table to vary one screen would be two
+of everything for nothing.
+
+`sessionType` is optional when booking and absent means `MOCK_INTERVIEW`, so
+anything written before mentoring existed keeps working unchanged.
+
+**Ratings are required for an interview and refused for a discussion.** Bean
+validation can't express "required, but only for one type" — it never sees the
+booking — so `SessionType.isScored()` carries the answer and
+`InterviewRequestService.complete` enforces it. `InterviewRequest.complete` also
+nulls any ratings that arrive for an unscored session, so a client can't staple a
+fake scorecard onto a conversation.
+
+## Plans and study material
+
+Beyond one-off interviews, a student can buy a **plan** — Placement Guide, or a
+technology taught by one of our experts. Prices are set by an admin in the admin
+panel and stored in the database, so a change is live on the next page load with
+no redeploy. An enrollment copies the price when the student starts buying, so
+raising a price never rewrites what somebody already paid.
+
+Admins also **send study material** — a file or a link — to every student, to one
+named student, or to the members of one plan. Buying a plan unlocks its material
+the moment an admin confirms the payment.
+
+Both are documented in detail in the [backend README](backend/README.md#plans-and-study-material).
 
 ## Payment (v1: manual UPI)
 
@@ -204,27 +292,33 @@ interview-mentor/
 │   ├── run.sh                        loads .env, then `mvn spring-boot:run`
 │   ├── .env                          DB_USER / DB_PASSWORD (gitignored)
 │   └── src/main/java/com/learn/interviewmentor/
-│       ├── model/                    User, MentorProfile, InterviewRequest, Role, RequestStatus
+│       ├── controller/               HTTP only — calls a facade, returns what it gives back
+│       ├── facade/                   one method per use case (interface)
+│       │   └── impl/                 …and its implementation
+│       ├── service/                  business rules, one thing each (interface)
+│       │   └── impl/                 …and its implementation
 │       ├── repository/               Spring Data interfaces (no implementation needed)
-│       ├── dto/                      request/response records — the API's public shape
-│       │   └── auth/                 login, signup, token + user payloads
+│       ├── model/                    JPA entities — User, InterviewRequest, Plan, StudyMaterial
+│       ├── dto/                      requests coming IN — every class ends in Dto
+│       ├── vo/                       responses going OUT — every class ends in Vo
+│       ├── common/                   ApiResult, the envelope every endpoint returns
 │       ├── security/                 ← the whole auth system, see below
-│       ├── config/OpenApiConfig.java  Swagger metadata + the JWT "Authorize" button
-│       ├── service/                  business rules live here
-│       ├── controller/               thin REST layer
+│       ├── storage/                  file uploads — screenshots and study material
 │       ├── exception/                custom exceptions + @RestControllerAdvice
-│       └── config/                   demo data seeder
+│       └── config/                   Swagger metadata, demo data seeder
 ├── website/                          [README](website/README.md) — marketing site on :3000
 │   ├── index.html                    one self-contained file — HTML + CSS + JS
 │   └── serve.sh                      starts it on :3000
 └── frontend/                         [README](frontend/README.md) — React app on :5173
-    └── src/
-        ├── api/client.js             every fetch call + the token header
-        ├── auth/AuthContext.jsx      "who is logged in", shared via React Context
-        ├── pages/
-        │   ├── AuthPage.jsx          login + signup
-        │   └── StudentDashboard.jsx  book + track interviews
-        ├── components/               RequestCard, StatusBadge
+    └── src/                          mirrors the backend's layering — see below
+        ├── pages/                    the screens (controller)
+        ├── features/<x>/useX.js      use case: state + orchestration (facade)
+        ├── features/<x>/xRules.js    pure business rules (service)
+        ├── features/<x>/components/  UI that one feature owns
+        ├── api/<x>Api.js             one module per backend controller (repository)
+        ├── api/http.js               transport: fetch, auth header, envelope
+        ├── components/               shared UI only — StatusBadge, StarRating
+        ├── layout/SectionNav.jsx     the section menu in the header
         └── App.jsx                   loading / logged out / logged in
 ```
 
@@ -300,6 +394,31 @@ numbers.
 
 ---
 
+## Session lifetime
+
+**Close the tab and you are logged out.** The token lives in `sessionStorage`,
+which the browser scopes to a single tab and wipes when that tab closes.
+
+Two consequences follow from that one mechanism:
+
+| Action | Still logged in? |
+| --- | --- |
+| Refresh (F5), navigate within the app | **Yes** — sessionStorage survives a reload |
+| Close the tab, then reopen the app | No |
+| Open the app in a second tab | No — each tab is its own session |
+| Quit and restart the browser | No |
+
+A `beforeunload` handler that clears storage would be the wrong tool: it fires on
+refresh too, and browsers do not guarantee it runs. Tab scoping is a property of
+the storage itself, so there is nothing to fire and nothing to miss.
+
+Anyone already logged in when this shipped is signed out once: `purgePersistedTokens()`
+in `api/client.js` clears the old `localStorage` token on load. Without that sweep
+the new rule would apply to new users only.
+
+The theme preference stays in `localStorage` on purpose — a preference should
+outlive a session.
+
 ## How the authentication works
 
 ```
@@ -313,7 +432,7 @@ numbers.
    JwtService.generateToken()   signs header.payload.signature with a secret
         │
         ▼
-   { token, expiresInMs, user }          ── frontend stores token in localStorage
+   { token, expiresInMs, user }          ── frontend keeps token in sessionStorage
 
 
 2. Every later request:  Authorization: Bearer <token>
@@ -370,7 +489,7 @@ throw away a stale token.
 | Method | Path | Who |
 | --- | --- | --- |
 | `GET` | `/api/slots?date=2026-09-20` | any logged-in user — the 1-hour slot grid for that day |
-| `POST` | `/api/requests` | STUDENT — book a slot (starts AWAITING_PAYMENT) |
+| `POST` | `/api/requests` | STUDENT — book a slot (starts AWAITING_PAYMENT). `sessionType`: `MOCK_INTERVIEW` (default) or `MENTORING` |
 | `GET` | `/api/requests/mine` | STUDENT — your own requests |
 | `GET` | `/api/requests/pending` | MENTOR — the open queue |
 | `GET` | `/api/requests/assigned` | MENTOR — what you accepted |
@@ -423,6 +542,45 @@ readable by the whole internet.
 | `GET` | `/api/admin/requests` | ADMIN |
 | `PATCH` | `/api/admin/users/{id}/deactivate` | ADMIN |
 | `PATCH` | `/api/admin/users/{id}/activate` | ADMIN |
+
+### Plans — `/api/plans`
+
+| Method | Path | Who |
+| --- | --- | --- |
+| `GET` | `/api/public/plans` | **no token** — the price list, for the website |
+| `GET` | `/api/plans` | any logged-in user — active plans, live prices |
+| `GET` | `/api/plans/{id}` | any logged-in user |
+| `POST` | `/api/plans/{id}/enroll` | STUDENT — start buying; safe to call twice |
+| `GET` | `/api/plans/enrollments/mine` | STUDENT — my purchases |
+| `GET` | `/api/plans/enrollments/{id}/instructions` | owner or ADMIN — UPI details + the frozen price |
+| `POST` | `/api/plans/enrollments/{id}/proof` | STUDENT — multipart `upiReference` + `screenshot` |
+| `PATCH` | `/api/plans/enrollments/{id}/cancel` | STUDENT — back out before paying |
+| `GET` | `/api/plans/enrollments/{id}/screenshot` | owner or ADMIN |
+
+### Study material — `/api/materials`
+
+| Method | Path | Who |
+| --- | --- | --- |
+| `GET` | `/api/materials` | any logged-in user — **only what was addressed to you** |
+| `GET` | `/api/materials/{id}/file` | owner / plan member / ADMIN — re-checked, not assumed |
+
+### Admin — plans & material
+
+| Method | Path | Who |
+| --- | --- | --- |
+| `GET` | `/api/admin/plans` | ADMIN — retired plans included |
+| `POST` | `/api/admin/plans` | ADMIN — create |
+| `PUT` | `/api/admin/plans/{id}` | ADMIN — replace every field |
+| `PATCH` | `/api/admin/plans/{id}/price` | ADMIN — `{ price }`, live immediately |
+| `PATCH` | `/api/admin/plans/{id}/active?active=` | ADMIN — retire or revive |
+| `GET` | `/api/admin/plan-enrollments/pending` | ADMIN — plan payments to verify |
+| `GET` | `/api/admin/plan-enrollments` | ADMIN — all purchases |
+| `PATCH` | `/api/admin/plan-enrollments/{id}/activate` | ADMIN — grants access |
+| `PATCH` | `/api/admin/plan-enrollments/{id}/reject` | ADMIN — `{ reason }` |
+| `GET` | `/api/admin/materials` | ADMIN — everything ever sent |
+| `POST` | `/api/admin/materials` | ADMIN — multipart `title`, `file`, optional `targetStudentId` **or** `targetPlanId` |
+| `POST` | `/api/admin/materials/link` | ADMIN — `{ title, description, linkUrl }` + the same optional audience params |
+| `PATCH` | `/api/admin/materials/{id}/active?active=` | ADMIN — publish or hide |
 
 ### Try it from the terminal
 
@@ -535,12 +693,14 @@ accepted while `PENDING`, only a `SCHEDULED` one can be completed, and a
 
 ## Known rough edges (deliberate — good things to fix next)
 
-1. **Token in `localStorage`** is readable by any JS on the page, so it's exposed to
-   XSS. Production apps often use an httpOnly cookie. Fine for learning.
+1. **Token in `sessionStorage`** is readable by any JS on the page, so it's still
+   exposed to XSS. sessionStorage fixes how long a session lasts, not who can read
+   it — an httpOnly cookie is the stronger answer.
 2. **No refresh token.** After 24h you just log in again.
 3. **No logout on the server.** With JWTs the server keeps no session, so "logout"
-   only deletes the client's copy. A stolen token stays valid until it expires —
-   real systems keep a short expiry plus a denylist.
+   only deletes the client's copy. **Closing the tab is the same act** — the token
+   is discarded locally but stays valid server-side until it expires. If that
+   matters, shorten `app.jwt.expiration-ms` and add a denylist.
 4. **`ddl-auto=update`** instead of Flyway migrations.
 5. A harmless startup **warning** about `AuthenticationManager` / `UserDetailsService`
    — it's Spring telling you the explicit `DaoAuthenticationProvider` bean takes

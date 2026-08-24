@@ -4,10 +4,14 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -27,6 +31,8 @@ import java.io.IOException;
  */
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+    private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
     private static final String HEADER = "Authorization";
     private static final String PREFIX = "Bearer ";
@@ -57,13 +63,31 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // Only authenticate if the token was valid AND nobody has already
         // been authenticated earlier in the chain.
         if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+            try {
+                UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
-            if (userDetails.isEnabled()) {
-                var authentication = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities());
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                if (userDetails.isEnabled()) {
+                    var authentication = new UsernamePasswordAuthenticationToken(
+                            userDetails, null, userDetails.getAuthorities());
+                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                }
+            } catch (UsernameNotFoundException ex) {
+                // The token is signed and unexpired, but the account behind it is
+                // gone - deleted, or the database was rebuilt while a browser
+                // still held a token. Left uncaught this escapes the filter, and
+                // an exception thrown in a filter never reaches either the
+                // entry point or @RestControllerAdvice: the container turns it
+                // straight into a bare 500. Swallowing it leaves the request
+                // anonymous, so the entry point answers 401 and the frontend
+                // drops the dead token and shows the login screen.
+                log.debug("Token for unknown account '{}' on {}", email, request.getRequestURI());
+            } catch (DataAccessException ex) {
+                // Database unreachable. Same reasoning: don't let it out of the
+                // filter. Anonymous here means 401 rather than an HTML 500 page,
+                // and the failure is logged loudly for whoever is on call.
+                log.error("Could not load '{}' while authenticating {}",
+                        email, request.getRequestURI(), ex);
             }
         }
 

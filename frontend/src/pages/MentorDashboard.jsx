@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useState } from "react";
-import { api } from "../api/client";
-import RequestCard from "../components/RequestCard";
-import UpcomingInterviews, { selectUpcoming } from "../components/UpcomingInterviews";
-import FeedbackModal from "../components/FeedbackModal";
-import { useSectionNav } from "../nav/SectionNav";
+import { useEffect, useState } from "react";
+import RequestCard from "../features/sessions/components/RequestCard";
+import UpcomingInterviews from "../features/sessions/components/UpcomingInterviews";
+import FeedbackModal from "../features/sessions/components/FeedbackModal";
+import { useSectionNav } from "../layout/SectionNav";
+import { useMentorSessions } from "../features/sessions/useMentorSessions";
+import { selectUpcoming } from "../features/sessions/sessionRules";
 
 function defaultSlotFrom(preferred) {
   return preferred ? preferred.slice(0, 16) : "";
@@ -12,39 +13,27 @@ function defaultSlotFrom(preferred) {
 export default function MentorDashboard() {
   const { active: tab, register, go: setTab } = useSectionNav();
 
-  const [pending, setPending] = useState([]);
-  const [assigned, setAssigned] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState(null);
+  // The facade layer for this screen. Queue and accepted list reload together,
+  // because accepting moves a booking from one to the other.
+  const { queue: pending, assigned, loading, reload,
+          accept: acceptSession } = useMentorSessions();
 
+  const [message, setMessage] = useState(null);
   const [openId, setOpenId] = useState(null);
   const [slot, setSlot] = useState("");
   const [meetingLink, setMeetingLink] = useState("");
   const [reviewing, setReviewing] = useState(null);
 
-  const reload = useCallback(async () => {
-    const [p, a] = await Promise.all([api.pendingRequests(), api.assignedRequests()]);
-    setPending(p);
-    setAssigned(a);
-  }, []);
-
-  useEffect(() => {
-    reload()
-      .catch((error) => setMessage({ type: "error", text: error.message }))
-      .finally(() => setLoading(false));
-  }, [reload]);
-
   async function accept(id) {
     setMessage(null);
     try {
-      await api.acceptRequest(id, {
+      await acceptSession(id, {
         scheduledAt: `${slot}:00`,
         meetingLink: meetingLink.trim() || null,
       });
       setOpenId(null);
       setMeetingLink("");
       setMessage({ type: "success", text: "Scheduled. The candidate can see it now." });
-      await reload();
       setTab("mine");
     } catch (error) {
       setMessage({ type: "error", text: error.message });
@@ -97,7 +86,11 @@ export default function MentorDashboard() {
             <h2>
               Open queue <span className="count">{pending.length}</span>
             </h2>
-            <p>Pick one, confirm the slot, and share your meeting link — or leave it blank and we&apos;ll create a room.</p>
+            <p>
+              Mock interviews and mentoring discussions, mixed together — each card says
+              which. Pick one, confirm the slot, and share your meeting link, or leave it
+              blank and we&apos;ll create a room.
+            </p>
           </header>
 
           {loading && <p className="empty">Loading the queue...</p>}
@@ -143,7 +136,13 @@ export default function MentorDashboard() {
                       setSlot(defaultSlotFrom(r.preferredSlot));
                     }}
                   >
-                    Accept this interview
+                    {/* RequestCard already shows the kind as a chip, but the
+                        button is what gets clicked - a mentor accepting what
+                        they think is an interview and finding a discussion is
+                        the mistake worth spending three words to prevent. */}
+                    {r.sessionType === "MENTORING"
+                      ? "Accept this session"
+                      : "Accept this interview"}
                   </button>
                 )}
               </RequestCard>
@@ -159,7 +158,10 @@ export default function MentorDashboard() {
             <h2>
               My interviews <span className="count">{scheduled.length}</span>
             </h2>
-            <p>Accepted and coming up. Give feedback once you&apos;ve taken the call.</p>
+            <p>
+              Accepted and coming up. Write it up once you&apos;ve taken the call — a
+              scorecard for an interview, notes for a mentoring session.
+            </p>
           </header>
 
           {scheduled.length === 0 && (
@@ -190,7 +192,7 @@ export default function MentorDashboard() {
             <h2>
               History <span className="count">{past.length}</span>
             </h2>
-            <p>Interviews you&apos;ve completed, with the feedback you gave.</p>
+            <p>Sessions you&apos;ve completed, with what you wrote up.</p>
           </header>
 
           {past.length === 0 && <p className="empty">Nothing completed yet.</p>}

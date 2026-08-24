@@ -16,7 +16,8 @@ import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 
 /**
- * One mock-interview request.
+ * One booked hour with an expert - either a mock interview or a mentoring
+ * discussion. {@link SessionType} says which.
  *
  * Before we added login, this stored studentName / studentEmail as free text.
  * Now the student is a real account, so those fields are gone - we read the name
@@ -27,7 +28,7 @@ import java.time.LocalDateTime;
 @Table(name = "interview_requests")
 public class InterviewRequest {
 
-    /** Every interview is one hour. Change this in one place if that changes. */
+    /** Every session is one hour. Change this in one place if that changes. */
     public static final int SLOT_MINUTES = 60;
 
     @Id
@@ -39,7 +40,23 @@ public class InterviewRequest {
     @JoinColumn(name = "student_id", nullable = false)
     private User student;
 
-    /** What they want to be interviewed on, e.g. "Spring Boot backend". */
+    /**
+     * Interview or discussion.
+     *
+     * Deliberately nullable in the database even though the code always sets it.
+     * The column was added to a table that already had rows, and with
+     * ddl-auto=update there is no migration step to backfill them: MySQL fills a
+     * NOT NULL column with an implicit default, which for an enum stored as a
+     * string is the empty string - and that then fails to map back to any
+     * constant, so every old booking would throw on read. Nullable plus the
+     * coalescing getter below means old rows simply read as MOCK_INTERVIEW,
+     * which is what they were.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "session_type", length = 20)
+    private SessionType sessionType = SessionType.MOCK_INTERVIEW;
+
+    /** What they want to cover, e.g. "Spring Boot backend" or "career advice". */
     @Column(nullable = false)
     private String topic;
 
@@ -114,9 +131,10 @@ public class InterviewRequest {
         // JPA
     }
 
-    public InterviewRequest(User student, String topic, String experienceLevel,
-                            LocalDateTime preferredSlot, String notes) {
+    public InterviewRequest(User student, SessionType sessionType, String topic,
+                            String experienceLevel, LocalDateTime preferredSlot, String notes) {
         this.student = student;
+        this.sessionType = sessionType == null ? SessionType.MOCK_INTERVIEW : sessionType;
         this.topic = topic;
         this.experienceLevel = experienceLevel;
         this.preferredSlot = preferredSlot;
@@ -146,7 +164,15 @@ public class InterviewRequest {
         this.status = RequestStatus.SCHEDULED;
     }
 
-    /** The mentor's scorecard. Everything except the summary is optional. */
+    /**
+     * The mentor closes the session.
+     *
+     * For a mock interview this is the scorecard: everything except the summary
+     * is optional. For a mentoring session the ratings are dropped on the floor
+     * rather than stored - a client that sends them anyway must not be able to
+     * staple a fake scorecard onto a discussion, and this is the last place that
+     * can be guaranteed regardless of which caller got here.
+     */
     public void complete(String feedback, String strengths, String improvements,
                          Integer overallRating, Integer technicalRating,
                          Integer communicationRating, Integer problemSolvingRating,
@@ -154,11 +180,14 @@ public class InterviewRequest {
         this.feedback = feedback;
         this.strengths = strengths;
         this.improvements = improvements;
-        this.overallRating = overallRating;
-        this.technicalRating = technicalRating;
-        this.communicationRating = communicationRating;
-        this.problemSolvingRating = problemSolvingRating;
-        this.recommendation = recommendation;
+
+        boolean scored = getSessionType().isScored();
+        this.overallRating = scored ? overallRating : null;
+        this.technicalRating = scored ? technicalRating : null;
+        this.communicationRating = scored ? communicationRating : null;
+        this.problemSolvingRating = scored ? problemSolvingRating : null;
+        this.recommendation = scored ? recommendation : null;
+
         this.status = RequestStatus.COMPLETED;
     }
 
@@ -181,6 +210,14 @@ public class InterviewRequest {
 
     public User getStudent() {
         return student;
+    }
+
+    /**
+     * Never null, even for rows written before this column existed - see the
+     * field comment. Every read goes through here so no caller has to remember.
+     */
+    public SessionType getSessionType() {
+        return sessionType == null ? SessionType.MOCK_INTERVIEW : sessionType;
     }
 
     public String getTopic() {

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { api } from "../api/client";
+import { useMentorProfile } from "../features/mentors/useMentorProfile";
 
 const EMPTY = {
   expertise: "",
@@ -27,6 +27,9 @@ const EMPTY = {
  * so they can fix whatever the admin flagged.
  */
 export default function MentorProfileForm({ profile, onSubmitted }) {
+  // load:false - the profile arrives as a prop, so there is nothing to fetch.
+  const { submit: submitProfile } = useMentorProfile({ load: false });
+
   const [form, setForm] = useState({
     ...EMPTY,
     // Prefill anything already saved (i.e. after a rejection).
@@ -58,7 +61,7 @@ export default function MentorProfileForm({ profile, onSubmitted }) {
     setFieldErrors({});
 
     try {
-      const saved = await api.submitMentorProfile({
+      const saved = await submitProfile({
         ...form,
         yearsOfExperience: Number(form.yearsOfExperience),
         graduationYear: Number(form.graduationYear),

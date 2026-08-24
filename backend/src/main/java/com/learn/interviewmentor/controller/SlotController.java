@@ -1,7 +1,9 @@
 package com.learn.interviewmentor.controller;
 
-import com.learn.interviewmentor.dto.SlotDto;
-import com.learn.interviewmentor.service.SlotService;
+import com.learn.interviewmentor.common.ApiResult;
+
+import com.learn.interviewmentor.vo.SlotVo;
+import com.learn.interviewmentor.facade.SlotFacade;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -25,10 +27,10 @@ import java.util.List;
                 + "then a mentor picks it up and completes it with feedback.")
 public class SlotController {
 
-    private final SlotService slotService;
+    private final SlotFacade slotFacade;
 
-    public SlotController(SlotService slotService) {
-        this.slotService = slotService;
+    public SlotController(SlotFacade slotFacade) {
+        this.slotFacade = slotFacade;
     }
 
     @GetMapping
@@ -47,13 +49,13 @@ public class SlotController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "The slot grid for that day"),
             @ApiResponse(responseCode = "400", description = "Date is in the past or too far ahead",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class))),
+                    content = @Content(schema = @Schema(implementation = ApiResult.class))),
             @ApiResponse(responseCode = "401", description = "Not logged in",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class)))
+                    content = @Content(schema = @Schema(implementation = ApiResult.class)))
     })
-    public List<SlotDto> slots(
+    public ApiResult<List<SlotVo>> slots(
             @Parameter(description = "Day to show slots for, yyyy-MM-dd", example = "2026-09-20")
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        return slotService.slotsFor(date);
+        return slotFacade.slotsFor(date);
     }
 }

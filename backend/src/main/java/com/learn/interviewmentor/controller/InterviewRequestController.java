@@ -1,12 +1,14 @@
 package com.learn.interviewmentor.controller;
 
+import com.learn.interviewmentor.common.ApiResult;
+
 import com.learn.interviewmentor.dto.AcceptRequestDto;
 import com.learn.interviewmentor.dto.CompleteRequestDto;
 import com.learn.interviewmentor.dto.CreateRequestDto;
-import com.learn.interviewmentor.dto.InterviewRequestDto;
+import com.learn.interviewmentor.vo.InterviewRequestVo;
 import com.learn.interviewmentor.model.User;
 import com.learn.interviewmentor.security.CurrentUser;
-import com.learn.interviewmentor.service.InterviewRequestService;
+import com.learn.interviewmentor.facade.SessionFacade;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -34,10 +36,10 @@ import java.util.List;
                 + "then completes it with feedback.")
 public class InterviewRequestController {
 
-    private final InterviewRequestService requestService;
+    private final SessionFacade sessionFacade;
 
-    public InterviewRequestController(InterviewRequestService requestService) {
-        this.requestService = requestService;
+    public InterviewRequestController(SessionFacade sessionFacade) {
+        this.sessionFacade = sessionFacade;
     }
 
     @PostMapping
@@ -52,15 +54,15 @@ public class InterviewRequestController {
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Request created with status PENDING"),
             @ApiResponse(responseCode = "400", description = "Validation failed (e.g. date in the past)",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class))),
+                    content = @Content(schema = @Schema(implementation = ApiResult.class))),
             @ApiResponse(responseCode = "401", description = "Not logged in",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class))),
+                    content = @Content(schema = @Schema(implementation = ApiResult.class))),
             @ApiResponse(responseCode = "403", description = "You are not a STUDENT",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class)))
+                    content = @Content(schema = @Schema(implementation = ApiResult.class)))
     })
-    public ResponseEntity<InterviewRequestDto> createRequest(@Valid @RequestBody CreateRequestDto dto,
+    public ApiResult<InterviewRequestVo> createRequest(@Valid @RequestBody CreateRequestDto dto,
                                                              @CurrentUser User student) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(requestService.create(dto, student));
+        return sessionFacade.book(dto, student);
     }
 
     @GetMapping("/mine")
@@ -71,10 +73,10 @@ public class InterviewRequestController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Your requests"),
             @ApiResponse(responseCode = "401", description = "Not logged in",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class)))
+                    content = @Content(schema = @Schema(implementation = ApiResult.class)))
     })
-    public List<InterviewRequestDto> myRequests(@CurrentUser User student) {
-        return requestService.findMyRequests(student);
+    public ApiResult<List<InterviewRequestVo>> myRequests(@CurrentUser User student) {
+        return sessionFacade.mine(student);
     }
 
     @GetMapping("/pending")
@@ -84,12 +86,12 @@ public class InterviewRequestController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Unclaimed requests"),
             @ApiResponse(responseCode = "401", description = "Not logged in",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class))),
+                    content = @Content(schema = @Schema(implementation = ApiResult.class))),
             @ApiResponse(responseCode = "403", description = "You are not a MENTOR",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class)))
+                    content = @Content(schema = @Schema(implementation = ApiResult.class)))
     })
-    public List<InterviewRequestDto> pendingRequests(@CurrentUser User mentor) {
-        return requestService.findPending(mentor);
+    public ApiResult<List<InterviewRequestVo>> pendingRequests(@CurrentUser User mentor) {
+        return sessionFacade.openQueue(mentor);
     }
 
     @GetMapping("/assigned")
@@ -99,10 +101,10 @@ public class InterviewRequestController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Your accepted interviews"),
             @ApiResponse(responseCode = "401", description = "Not logged in",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class)))
+                    content = @Content(schema = @Schema(implementation = ApiResult.class)))
     })
-    public List<InterviewRequestDto> myInterviews(@CurrentUser User mentor) {
-        return requestService.findMyInterviews(mentor);
+    public ApiResult<List<InterviewRequestVo>> myInterviews(@CurrentUser User mentor) {
+        return sessionFacade.assignedTo(mentor);
     }
 
     @PatchMapping("/{id}/accept")
@@ -119,19 +121,19 @@ public class InterviewRequestController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Scheduled"),
             @ApiResponse(responseCode = "400", description = "Already accepted, or the slot is not in the future",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class))),
+                    content = @Content(schema = @Schema(implementation = ApiResult.class))),
             @ApiResponse(responseCode = "401", description = "Not logged in",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class))),
+                    content = @Content(schema = @Schema(implementation = ApiResult.class))),
             @ApiResponse(responseCode = "403", description = "You are not a MENTOR",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class))),
+                    content = @Content(schema = @Schema(implementation = ApiResult.class))),
             @ApiResponse(responseCode = "404", description = "No request with that id",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class)))
+                    content = @Content(schema = @Schema(implementation = ApiResult.class)))
     })
-    public InterviewRequestDto acceptRequest(
+    public ApiResult<InterviewRequestVo> acceptRequest(
             @Parameter(description = "Id of the interview request", example = "1") @PathVariable Long id,
             @Valid @RequestBody AcceptRequestDto dto,
             @CurrentUser User mentor) {
-        return requestService.accept(id, dto, mentor);
+        return sessionFacade.accept(id, dto, mentor);
     }
 
     @PatchMapping("/{id}/complete")
@@ -146,19 +148,19 @@ public class InterviewRequestController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Completed"),
             @ApiResponse(responseCode = "400", description = "The request is not SCHEDULED",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class))),
+                    content = @Content(schema = @Schema(implementation = ApiResult.class))),
             @ApiResponse(responseCode = "401", description = "Not logged in",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class))),
+                    content = @Content(schema = @Schema(implementation = ApiResult.class))),
             @ApiResponse(responseCode = "403", description = "Not a mentor, or another mentor accepted it",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class))),
+                    content = @Content(schema = @Schema(implementation = ApiResult.class))),
             @ApiResponse(responseCode = "404", description = "No request with that id",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class)))
+                    content = @Content(schema = @Schema(implementation = ApiResult.class)))
     })
-    public InterviewRequestDto completeRequest(
+    public ApiResult<InterviewRequestVo> completeRequest(
             @Parameter(description = "Id of the interview request", example = "1") @PathVariable Long id,
             @Valid @RequestBody CompleteRequestDto dto,
             @CurrentUser User mentor) {
-        return requestService.complete(id, dto, mentor);
+        return sessionFacade.complete(id, dto, mentor);
     }
 
     @PatchMapping("/{id}/cancel")
@@ -170,17 +172,17 @@ public class InterviewRequestController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Cancelled"),
             @ApiResponse(responseCode = "400", description = "Already completed",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class))),
+                    content = @Content(schema = @Schema(implementation = ApiResult.class))),
             @ApiResponse(responseCode = "401", description = "Not logged in",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class))),
+                    content = @Content(schema = @Schema(implementation = ApiResult.class))),
             @ApiResponse(responseCode = "403", description = "Not yours to cancel",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class))),
+                    content = @Content(schema = @Schema(implementation = ApiResult.class))),
             @ApiResponse(responseCode = "404", description = "No request with that id",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class)))
+                    content = @Content(schema = @Schema(implementation = ApiResult.class)))
     })
-    public InterviewRequestDto cancelRequest(
+    public ApiResult<InterviewRequestVo> cancelRequest(
             @Parameter(description = "Id of the interview request", example = "1") @PathVariable Long id,
             @CurrentUser User actor) {
-        return requestService.cancel(id, actor);
+        return sessionFacade.cancel(id, actor);
     }
 }

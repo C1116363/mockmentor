@@ -1,5 +1,6 @@
 package com.learn.interviewmentor.dto;
 
+import com.learn.interviewmentor.model.SessionType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotBlank;
@@ -13,12 +14,26 @@ import java.time.LocalDateTime;
  *
  * The student is taken from the token, which is why there is no name or email.
  */
-@Schema(description = "Book a mock interview in a one-hour slot.")
+@Schema(description = "Book a one-hour slot with an expert - a mock interview, or a mentoring "
+        + "discussion.")
 public record CreateRequestDto(
 
-        @Schema(description = "What the interview should cover",
+        /*
+         * Optional, and absent means MOCK_INTERVIEW. That default is what keeps
+         * this a backwards-compatible addition: every client written before
+         * mentoring existed sends no sessionType and keeps booking interviews,
+         * exactly as it did.
+         */
+        @Schema(description = "MOCK_INTERVIEW for a real interview ending in a scorecard, or "
+                + "MENTORING for a discussion - career advice, a code review, working through a "
+                + "design. Defaults to MOCK_INTERVIEW when omitted.",
+                example = "MENTORING",
+                allowableValues = {"MOCK_INTERVIEW", "MENTORING"})
+        SessionType sessionType,
+
+        @Schema(description = "What the session should cover",
                 example = "Spring Boot backend round", maxLength = 150)
-        @NotBlank(message = "Tell us what you want to be interviewed on")
+        @NotBlank(message = "Tell us what you'd like to cover")
         @Size(max = 150)
         String topic,
 
@@ -35,9 +50,13 @@ public record CreateRequestDto(
         @Future(message = "Pick a slot in the future")
         LocalDateTime preferredSlot,
 
-        @Schema(description = "Anything the interviewer should know beforehand (optional)",
+        @Schema(description = "Anything the expert should know beforehand (optional)",
                 example = "Final year student, weak on JPA relationships.", maxLength = 1000)
         @Size(max = 1000)
         String notes
 ) {
+    /** Absent means a mock interview - see the field comment. */
+    public SessionType sessionTypeOrDefault() {
+        return sessionType == null ? SessionType.MOCK_INTERVIEW : sessionType;
+    }
 }

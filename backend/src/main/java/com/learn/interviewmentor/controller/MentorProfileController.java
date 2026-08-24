@@ -1,10 +1,12 @@
 package com.learn.interviewmentor.controller;
 
-import com.learn.interviewmentor.dto.mentor.MentorProfileDto;
-import com.learn.interviewmentor.dto.mentor.MentorProfileRequest;
+import com.learn.interviewmentor.common.ApiResult;
+
+import com.learn.interviewmentor.vo.mentor.MentorProfileVo;
+import com.learn.interviewmentor.dto.mentor.MentorProfileRequestDto;
 import com.learn.interviewmentor.model.User;
 import com.learn.interviewmentor.security.CurrentUser;
-import com.learn.interviewmentor.service.MentorProfileService;
+import com.learn.interviewmentor.facade.MentorFacade;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -31,10 +33,10 @@ import org.springframework.web.bind.annotation.RestController;
                 + "You cannot see the interview queue until you are APPROVED.")
 public class MentorProfileController {
 
-    private final MentorProfileService profileService;
+    private final MentorFacade mentorFacade;
 
-    public MentorProfileController(MentorProfileService profileService) {
-        this.profileService = profileService;
+    public MentorProfileController(MentorFacade mentorFacade) {
+        this.mentorFacade = mentorFacade;
     }
 
     @GetMapping
@@ -53,12 +55,12 @@ public class MentorProfileController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Your profile"),
             @ApiResponse(responseCode = "401", description = "Not logged in",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class))),
+                    content = @Content(schema = @Schema(implementation = ApiResult.class))),
             @ApiResponse(responseCode = "403", description = "You are not a MENTOR",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class)))
+                    content = @Content(schema = @Schema(implementation = ApiResult.class)))
     })
-    public MentorProfileDto myProfile(@CurrentUser User mentor) {
-        return profileService.myProfile(mentor);
+    public ApiResult<MentorProfileVo> myProfile(@CurrentUser User mentor) {
+        return mentorFacade.myProfile(mentor);
     }
 
     @PutMapping
@@ -74,13 +76,13 @@ public class MentorProfileController {
             @ApiResponse(responseCode = "200", description = "Submitted, now PENDING"),
             @ApiResponse(responseCode = "400",
                     description = "Already approved or already under review, or validation failed",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class))),
+                    content = @Content(schema = @Schema(implementation = ApiResult.class))),
             @ApiResponse(responseCode = "401", description = "Not logged in",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class))),
+                    content = @Content(schema = @Schema(implementation = ApiResult.class))),
             @ApiResponse(responseCode = "403", description = "You are not a MENTOR",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class)))
+                    content = @Content(schema = @Schema(implementation = ApiResult.class)))
     })
-    public MentorProfileDto submit(@Valid @RequestBody MentorProfileRequest dto, @CurrentUser User mentor) {
-        return profileService.submit(dto, mentor);
+    public ApiResult<MentorProfileVo> submit(@Valid @RequestBody MentorProfileRequestDto dto, @CurrentUser User mentor) {
+        return mentorFacade.submitProfile(dto, mentor);
     }
 }

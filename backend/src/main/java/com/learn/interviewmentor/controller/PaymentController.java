@@ -1,10 +1,12 @@
 package com.learn.interviewmentor.controller;
 
-import com.learn.interviewmentor.dto.payment.PaymentDto;
-import com.learn.interviewmentor.dto.payment.PaymentInstructionsDto;
+import com.learn.interviewmentor.common.ApiResult;
+
+import com.learn.interviewmentor.vo.payment.PaymentVo;
+import com.learn.interviewmentor.vo.payment.PaymentInstructionsVo;
 import com.learn.interviewmentor.model.User;
 import com.learn.interviewmentor.security.CurrentUser;
-import com.learn.interviewmentor.service.PaymentService;
+import com.learn.interviewmentor.facade.PaymentFacade;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -35,10 +37,10 @@ import java.nio.file.Path;
                 + "involved in this version.")
 public class PaymentController {
 
-    private final PaymentService paymentService;
+    private final PaymentFacade paymentFacade;
 
-    public PaymentController(PaymentService paymentService) {
-        this.paymentService = paymentService;
+    public PaymentController(PaymentFacade paymentFacade) {
+        this.paymentFacade = paymentFacade;
     }
 
     @GetMapping("/instructions")
@@ -53,10 +55,10 @@ public class PaymentController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Payment instructions"),
             @ApiResponse(responseCode = "401", description = "Not logged in",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class)))
+                    content = @Content(schema = @Schema(implementation = ApiResult.class)))
     })
-    public PaymentInstructionsDto instructions() {
-        return paymentService.instructions();
+    public ApiResult<PaymentInstructionsVo> instructions() {
+        return paymentFacade.instructions();
     }
 
     @GetMapping("/by-request/{requestId}")
@@ -66,14 +68,14 @@ public class PaymentController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "The payment"),
             @ApiResponse(responseCode = "403", description = "Not your booking",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class))),
+                    content = @Content(schema = @Schema(implementation = ApiResult.class))),
             @ApiResponse(responseCode = "404", description = "No payment for that request",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class)))
+                    content = @Content(schema = @Schema(implementation = ApiResult.class)))
     })
-    public PaymentDto byRequest(
+    public ApiResult<PaymentVo> byRequest(
             @Parameter(description = "Interview request id", example = "12") @PathVariable Long requestId,
             @CurrentUser User caller) {
-        return paymentService.forRequest(requestId, caller);
+        return paymentFacade.forRequest(requestId, caller);
     }
 
     @PostMapping(value = "/by-request/{requestId}/proof",
@@ -89,16 +91,16 @@ public class PaymentController {
             @ApiResponse(responseCode = "200", description = "Proof received, now SUBMITTED"),
             @ApiResponse(responseCode = "400",
                     description = "Already paid, already under review, or the file was rejected",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class))),
+                    content = @Content(schema = @Schema(implementation = ApiResult.class))),
             @ApiResponse(responseCode = "403", description = "Not your booking",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class)))
+                    content = @Content(schema = @Schema(implementation = ApiResult.class)))
     })
-    public PaymentDto submitProof(
+    public ApiResult<PaymentVo> submitProof(
             @Parameter(description = "Interview request id", example = "12") @PathVariable Long requestId,
             @Parameter(description = "UPI transaction / UTR number") @RequestParam String upiReference,
             @Parameter(description = "Screenshot from the UPI app") @RequestParam MultipartFile screenshot,
             @CurrentUser User student) {
-        return paymentService.submitProof(requestId, upiReference, screenshot, student);
+        return paymentFacade.submitProof(requestId, upiReference, screenshot, student);
     }
 
     @GetMapping("/{id}/screenshot")
@@ -109,13 +111,13 @@ public class PaymentController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "The image"),
             @ApiResponse(responseCode = "403", description = "Not yours to view",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class))),
+                    content = @Content(schema = @Schema(implementation = ApiResult.class))),
             @ApiResponse(responseCode = "404", description = "No screenshot uploaded",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class)))
+                    content = @Content(schema = @Schema(implementation = ApiResult.class)))
     })
     public ResponseEntity<Resource> screenshot(@PathVariable Long id, @CurrentUser User caller) {
-        Path path = paymentService.screenshotPath(id, caller);
-        String type = paymentService.screenshotContentType(id);
+        Path path = paymentFacade.screenshotPath(id, caller);
+        String type = paymentFacade.screenshotContentType(id);
 
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(type == null ? "application/octet-stream" : type))

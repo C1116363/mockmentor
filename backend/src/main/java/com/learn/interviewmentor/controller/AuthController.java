@@ -1,12 +1,14 @@
 package com.learn.interviewmentor.controller;
 
-import com.learn.interviewmentor.dto.auth.AuthResponse;
-import com.learn.interviewmentor.dto.auth.LoginRequest;
-import com.learn.interviewmentor.dto.auth.SignupRequest;
-import com.learn.interviewmentor.dto.auth.UserDto;
+import com.learn.interviewmentor.common.ApiResult;
+
+import com.learn.interviewmentor.vo.auth.AuthVo;
+import com.learn.interviewmentor.dto.auth.LoginRequestDto;
+import com.learn.interviewmentor.dto.auth.SignupRequestDto;
+import com.learn.interviewmentor.vo.auth.UserVo;
 import com.learn.interviewmentor.model.User;
 import com.learn.interviewmentor.security.CurrentUser;
-import com.learn.interviewmentor.service.AuthService;
+import com.learn.interviewmentor.facade.AuthFacade;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -28,10 +30,10 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "1. Authentication", description = "Signup, login, and 'who am I'. Start here.")
 public class AuthController {
 
-    private final AuthService authService;
+    private final AuthFacade authFacade;
 
-    public AuthController(AuthService authService) {
-        this.authService = authService;
+    public AuthController(AuthFacade authFacade) {
+        this.authFacade = authFacade;
     }
 
     @PostMapping("/signup/student")
@@ -44,10 +46,10 @@ public class AuthController {
             @ApiResponse(responseCode = "201", description = "Account created, token issued"),
             @ApiResponse(responseCode = "400",
                     description = "Email already taken, or validation failed (see `fieldErrors`)",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class)))
+                    content = @Content(schema = @Schema(implementation = ApiResult.class)))
     })
-    public ResponseEntity<AuthResponse> signupStudent(@Valid @RequestBody SignupRequest dto) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(authService.signupStudent(dto));
+    public ApiResult<AuthVo> signupStudent(@Valid @RequestBody SignupRequestDto dto) {
+        return authFacade.signupStudent(dto);
     }
 
     @PostMapping("/signup/mentor")
@@ -63,10 +65,10 @@ public class AuthController {
             @ApiResponse(responseCode = "201", description = "Account created (status INCOMPLETE), token issued"),
             @ApiResponse(responseCode = "400",
                     description = "Email already taken, or validation failed",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class)))
+                    content = @Content(schema = @Schema(implementation = ApiResult.class)))
     })
-    public ResponseEntity<AuthResponse> signupMentor(@Valid @RequestBody SignupRequest dto) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(authService.signupMentor(dto));
+    public ApiResult<AuthVo> signupMentor(@Valid @RequestBody SignupRequestDto dto) {
+        return authFacade.signupMentor(dto);
     }
 
     @PostMapping("/login")
@@ -86,14 +88,14 @@ public class AuthController {
             @ApiResponse(responseCode = "200", description = "Logged in, token issued"),
             @ApiResponse(responseCode = "400",
                     description = "The account has been deactivated by an admin",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class))),
+                    content = @Content(schema = @Schema(implementation = ApiResult.class))),
             @ApiResponse(responseCode = "401",
                     description = "Wrong email or password. The message is deliberately vague so "
                             + "an attacker cannot discover which emails are registered.",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class)))
+                    content = @Content(schema = @Schema(implementation = ApiResult.class)))
     })
-    public AuthResponse login(@Valid @RequestBody LoginRequest dto) {
-        return authService.login(dto);
+    public ApiResult<AuthVo> login(@Valid @RequestBody LoginRequestDto dto) {
+        return authFacade.login(dto);
     }
 
     @GetMapping("/me")
@@ -104,9 +106,9 @@ public class AuthController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "The logged-in user"),
             @ApiResponse(responseCode = "401", description = "Missing, expired or tampered token",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class)))
+                    content = @Content(schema = @Schema(implementation = ApiResult.class)))
     })
-    public UserDto me(@CurrentUser User user) {
-        return UserDto.from(user);
+    public ApiResult<UserVo> me(@CurrentUser User user) {
+        return authFacade.me(user);
     }
 }

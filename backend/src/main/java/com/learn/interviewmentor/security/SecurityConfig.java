@@ -115,6 +115,20 @@ public class SecurityConfig {
                         // Anyone logged in can browse the mentor list.
                         .requestMatchers(HttpMethod.GET, "/api/mentors/**").authenticated()
 
+                        // Reading the price list needs only a token - a mentor
+                        // or admin looking at the plans page is harmless, and
+                        // the marketing site reads /api/public/plans anyway.
+                        // BUYING one is students only.
+                        .requestMatchers(HttpMethod.POST, "/api/plans/*/enroll").hasRole(Role.STUDENT.name())
+                        .requestMatchers("/api/plans/enrollments/*/proof").hasRole(Role.STUDENT.name())
+                        .requestMatchers("/api/plans/enrollments/*/cancel").hasRole(Role.STUDENT.name())
+                        .requestMatchers(HttpMethod.GET, "/api/plans/**").authenticated()
+
+                        // Study material is addressed to students, and the
+                        // service filters each list by who is asking. Admins
+                        // reach their own view under /api/admin/materials.
+                        .requestMatchers(HttpMethod.GET, "/api/materials/**").authenticated()
+
                         .requestMatchers("/api/admin/**").hasRole(Role.ADMIN.name())
 
                         // Only students raise requests.

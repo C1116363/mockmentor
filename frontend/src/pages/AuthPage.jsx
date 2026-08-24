@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useAuth } from "../auth/AuthContext";
+import { useAuth } from "../features/auth/AuthContext";
 import ThemeToggle from "../components/ThemeToggle";
 
 const EMPTY = { fullName: "", email: "", password: "" };
@@ -57,8 +57,25 @@ export default function AuthPage() {
     setFieldErrors({});
   }
 
+  /**
+   * Switching portal starts a fresh login.
+   *
+   * The typed credentials have to go with it. An admin email and password left
+   * sitting in the Mentor form is wrong three ways: it is a different account so
+   * the values are useless, the next failed attempt looks like the *mentor*
+   * password is wrong, and a password typed for one account stays on screen
+   * while somebody logs into another.
+   *
+   * The early return matters - clicking the portal you are already on must not
+   * wipe what you just typed.
+   */
   function choosePortal(key) {
+    if (key === portal) return;
+
     setPortal(key);
+    setForm(EMPTY);
+    // A revealed password must not stay revealed for the next account.
+    setShowPassword(false);
     reset();
     if (!PORTALS.find((p) => p.key === key).canSignup) setMode("login");
   }

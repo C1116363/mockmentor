@@ -1,46 +1,122 @@
 import { useEffect, useState } from "react";
-import { api } from "../api/client";
-import RequestCard from "../components/RequestCard";
-import SlotPicker from "../components/SlotPicker";
-import UpcomingInterviews, { selectUpcoming } from "../components/UpcomingInterviews";
-import PayModal from "../components/PayModal";
-import { useSectionNav } from "../nav/SectionNav";
+import { useSessions } from "../features/sessions/useSessions";
+import { usePlans } from "../features/plans/usePlans";
+import { useMaterials } from "../features/materials/useMaterials";
+import { LIVE_STATUSES } from "../features/sessions/sessionRules";
+import RequestCard from "../features/sessions/components/RequestCard";
+import SlotPicker from "../features/sessions/components/SlotPicker";
+import UpcomingInterviews from "../features/sessions/components/UpcomingInterviews";
+import PayModal from "../features/payments/components/PayModal";
+import PlanCard from "../features/plans/components/PlanCard";
+import PlanPayModal from "../features/plans/components/PlanPayModal";
+import MaterialCard from "../features/materials/components/MaterialCard";
+import { useSectionNav } from "../layout/SectionNav";
 
 const EXPERIENCE_LEVELS = ["Fresher", "0-1 years", "1-3 years", "3-5 years", "5+ years"];
 
+/**
+ * The two kinds of hour you can book.
+ *
+ * Same slot, same price, same mentor pool - what differs is what you get at the
+ * end, so the copy on the form changes with it rather than staying generic and
+ * leaving the student to guess which one they want.
+ */
+const SESSION_TYPES = [
+  {
+    key: "MOCK_INTERVIEW",
+    label: "Mock interview",
+    sub: "Interviewed under real pressure",
+    icon: "🎙️",
+    heading: "What do you want to practise?",
+    lede: "Tell us the round you're preparing for, then pick an hour that suits you.",
+    topicLabel: "Topic",
+    topicHint: "Spring Boot backend round",
+    notesLabel: "Anything the interviewer should know? (optional)",
+    notesHint: "Final year student, weak on JPA relationships.",
+    outcome: "You'll get a written scorecard afterwards — ratings per skill and what to fix.",
+    submit: "Book interview & pay",
+  },
+  {
+    key: "MENTORING",
+    label: "Mentoring session",
+    sub: "Just talk it through with an expert",
+    icon: "💬",
+    heading: "What do you want to talk about?",
+    lede: "Not an interview — an hour to discuss whatever you're stuck on with a senior engineer.",
+    topicLabel: "What do you need help with?",
+    topicHint: "Which stack should I specialise in?",
+    notesLabel: "Give them some context (optional)",
+    notesHint: "Two offers on the table and I can't decide. Happy to share both.",
+    outcome: "No ratings and no scorecard — you'll get written notes from the discussion.",
+    submit: "Book session & pay",
+  },
+];
+
 const EMPTY_FORM = {
+  sessionType: "MOCK_INTERVIEW",
   topic: "",
   experienceLevel: "Fresher",
   preferredSlot: "",
   notes: "",
 };
 
-/** Still in play vs finished - drives the two list tabs. */
-const LIVE = ["AWAITING_PAYMENT", "PENDING", "SCHEDULED"];
-const DONE = ["COMPLETED", "CANCELLED"];
-
 export default function StudentDashboard() {
   const { active: tab, register, go: setTab } = useSectionNav();
+
+  // Three hooks, one per feature - this is the facade layer. Each loads and
+  // fails on its own, so a broken plans call cannot blank out the interview list.
+  const { live, done, unpaidCount, upcoming, loading, book, cancel } = useSessions();
+  const plansFeature = usePlans();
+  const { materials } = useMaterials();
 
   const [form, setForm] = useState(EMPTY_FORM);
   const [date, setDate] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const [message, setMessage] = useState(null);
   const [submitting, setSubmitting] = useState(false);
-
-  const [requests, setRequests] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [payingFor, setPayingFor] = useState(null);
+  const [gettingPlan, setGettingPlan] = useState(null);
+  const [payingPlan, setPayingPlan] = useState(null);
 
-  useEffect(() => {
-    api
-      .myRequests()
-      .then(setRequests)
-      .catch((error) => setMessage({ type: "error", text: error.message }))
-      .finally(() => setLoading(false));
-  }, []);
+  async function getPlan(plan) {
+    setGettingPlan(plan.id);
+    setMessage(null);
+    try {
+      // Straight into the payment modal - choosing a plan and paying for it is
+      // one intention, and a student who has to hunt for a second button leaves.
+      setPayingPlan(await plansFeature.enroll(plan.id));
+    } catch (error) {
+      setMessage({ type: "error", text: error.message });
+    } finally {
+      setGettingPlan(null);
+    }
+  }
+
+  async function afterPlanPayment() {
+    setPayingPlan(null);
+    setMessage({
+      type: "success",
+      text: "Thanks! We're checking your payment. Your plan unlocks as soon as an admin confirms it.",
+    });
+    await plansFeature.reload();
+  }
 
   const updateField = (e) => setForm((c) => ({ ...c, [e.target.name]: e.target.value }));
+
+  const session = SESSION_TYPES.find((t) => t.key === form.sessionType) ?? SESSION_TYPES[0];
+
+  /**
+   * Switching kind clears the topic and notes.
+   *
+   * "Spring Boot backend round" is a sensible interview topic and a strange
+   * thing to want to discuss. Carrying it over would leave a half-wrong booking
+   * that reads as if it were deliberate.
+   */
+  function chooseSessionType(key) {
+    if (key === form.sessionType) return;
+    setForm((c) => ({ ...c, sessionType: key, topic: "", notes: "" }));
+    setFieldErrors({});
+  }
 
   async function submitRequest(event) {
     event.preventDefault();
@@ -55,10 +131,9 @@ export default function StudentDashboard() {
     }
 
     try {
-      const created = await api.createRequest(form);
+      const created = await book(form);
       setForm(EMPTY_FORM);
       setDate("");
-      setRequests(await api.myRequests());
       setPayingFor(created);
     } catch (error) {
       setFieldErrors(error.fieldErrors);
@@ -71,8 +146,7 @@ export default function StudentDashboard() {
   async function cancelRequest(id) {
     if (!window.confirm("Cancel this request?")) return;
     try {
-      await api.cancelRequest(id);
-      setRequests(await api.myRequests());
+      await cancel(id);
     } catch (error) {
       setMessage({ type: "error", text: error.message });
     }
@@ -84,28 +158,25 @@ export default function StudentDashboard() {
       type: "success",
       text: "Thanks! We're checking your payment. Your slot is held in the meantime.",
     });
-    setRequests(await api.myRequests());
-    // Send them to the list, so they can see what state it's in.
     setTab("active");
   }
 
-  const upcoming = selectUpcoming(requests);
-  const live = requests.filter((r) => LIVE.includes(r.status));
-  const done = requests.filter((r) => DONE.includes(r.status));
-  const unpaid = requests.filter((r) => r.status === "AWAITING_PAYMENT").length;
 
   // Re-registering with the same values is a no-op, so this is safe to run
   // whenever the counts change.
+
   useEffect(() => {
     register(
       [
         { key: "book", label: "Book an interview", icon: "＋" },
-        { key: "active", label: "My interviews", icon: "📅", count: live.length, alert: unpaid > 0 },
+        { key: "active", label: "My interviews", icon: "📅", count: live.length, alert: unpaidCount > 0 },
+        { key: "plans", label: "Plans", icon: "🎯", count: plansFeature.activeCount, alert: plansFeature.needsPaymentCount > 0 },
+        { key: "material", label: "Study material", icon: "📚", count: materials.length },
         { key: "history", label: "History", icon: "🗂", count: done.length },
       ],
       "book"
     );
-  }, [register, live.length, done.length, unpaid]);
+  }, [register, live.length, done.length, unpaidCount, plansFeature.activeCount, plansFeature.needsPaymentCount, materials.length]);
 
   const actions = (request) => (
     <>
@@ -114,7 +185,7 @@ export default function StudentDashboard() {
           Pay now
         </button>
       )}
-      {LIVE.includes(request.status) && (
+      {LIVE_STATUSES.includes(request.status) && (
         <button className="btn btn--ghost" onClick={() => cancelRequest(request.id)}>
           Cancel request
         </button>
@@ -139,6 +210,21 @@ export default function StudentDashboard() {
         />
       )}
 
+      {payingPlan && (
+        <PlanPayModal
+          enrollment={payingPlan}
+          onDone={afterPlanPayment}
+          onClose={() => {
+            setPayingPlan(null);
+            setTab("plans");
+            setMessage({
+              type: "error",
+              text: "Your plan isn't active yet. Use “Finish payment” on the card when you're ready.",
+            });
+          }}
+        />
+      )}
+
       <UpcomingInterviews
         interviews={upcoming}
         otherPartyLabel="Interviewer"
@@ -151,18 +237,38 @@ export default function StudentDashboard() {
         <section className="panel panel--student">
           <header className="panel__head">
             <span className="panel__tag">New booking</span>
-            <h2>What do you want to practise?</h2>
-            <p>Tell us the round you&apos;re preparing for, then pick an hour that suits you.</p>
+            <h2>{session.heading}</h2>
+            <p>{session.lede}</p>
           </header>
+
+          <div className="session-pick">
+            {SESSION_TYPES.map((t) => (
+              <button
+                key={t.key}
+                type="button"
+                className={`session-pick__opt ${
+                  form.sessionType === t.key ? "session-pick__opt--on" : ""
+                }`}
+                onClick={() => chooseSessionType(t.key)}
+                aria-pressed={form.sessionType === t.key}
+              >
+                <span className="session-pick__icon">{t.icon}</span>
+                <strong>{t.label}</strong>
+                <small>{t.sub}</small>
+              </button>
+            ))}
+          </div>
+
+          <p className="session-pick__outcome">{session.outcome}</p>
 
           <form className="form" onSubmit={submitRequest}>
             <label className="field">
-              <span>Topic</span>
+              <span>{session.topicLabel}</span>
               <input
                 name="topic"
                 value={form.topic}
                 onChange={updateField}
-                placeholder="Spring Boot backend round"
+                placeholder={session.topicHint}
                 required
               />
               {fieldErrors.topic && <small className="field__error">{fieldErrors.topic}</small>}
@@ -188,13 +294,13 @@ export default function StudentDashboard() {
             />
 
             <label className="field">
-              <span>Anything we should know? (optional)</span>
+              <span>{session.notesLabel}</span>
               <textarea
                 name="notes"
                 value={form.notes}
                 onChange={updateField}
                 rows={3}
-                placeholder="Final year student, weak on JPA relationships."
+                placeholder={session.notesHint}
               />
             </label>
 
@@ -208,7 +314,7 @@ export default function StudentDashboard() {
                   <span className="spinner" /> Booking
                 </>
               ) : (
-                "Book slot & pay"
+                session.submit
               )}
             </button>
           </form>
@@ -240,6 +346,66 @@ export default function StudentDashboard() {
               <RequestCard key={r.id} request={r}>
                 {actions(r)}
               </RequestCard>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {tab === "plans" && (
+        <section className="panel panel--student">
+          <header className="panel__head">
+            <span className="panel__tag">Learn with us</span>
+            <h2>
+              Plans <span className="count">{plansFeature.plans.length}</span>
+            </h2>
+            <p>
+              Longer tracks with our experts — placement prep, or a technology taught
+              properly. Pick one, pay by UPI, and it unlocks once an admin confirms.
+            </p>
+          </header>
+
+          {plansFeature.plans.length === 0 && <p className="empty">No plans on sale right now.</p>}
+
+          <div className="plan-grid">
+            {plansFeature.plans.map((plan) => (
+              <PlanCard
+                key={plan.id}
+                plan={plan}
+                enrollment={plansFeature.enrollmentOf(plan.id)}
+                onGet={getPlan}
+                onPay={setPayingPlan}
+                busy={gettingPlan === plan.id}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {tab === "material" && (
+        <section className="panel panel--mentor">
+          <header className="panel__head">
+            <span className="panel__tag">From our experts</span>
+            <h2>
+              Study material <span className="count">{materials.length}</span>
+            </h2>
+            <p>
+              Notes, PDFs and links sent to you by an admin — some to every student,
+              some just for you, some unlocked by a plan you hold.
+            </p>
+          </header>
+
+          {materials.length === 0 && (
+            <div className="empty">
+              <p>Nothing shared with you yet.</p>
+              <button className="btn btn--primary" onClick={() => setTab("plans")}>
+                See the plans
+              </button>
+            </div>
+          )}
+
+          <div className="card-list">
+            {materials.map((m) => (
+              <MaterialCard key={m.id} material={m} />
             ))}
           </div>
         </section>

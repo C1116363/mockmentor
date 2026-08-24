@@ -5,17 +5,24 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 /**
- * The mentor's scorecard, filled in when they close an interview.
+ * What the mentor writes when they close a session.
  *
- * The summary and the overall rating are required - a scorecard with neither
- * tells the candidate nothing. Everything else is optional, because not every
- * round covers every dimension.
+ * The summary is always required - a completed session with nothing written
+ * tells the student nothing.
+ *
+ * <b>The overall rating and the verdict are required for a mock interview and
+ * meaningless for a mentoring session</b>, so they carry no @NotNull here.
+ * Bean validation never sees the booking, so it cannot express "required, but
+ * only for one session type" - {@code InterviewRequestService.complete} enforces
+ * it instead, reading {@code SessionType.isScored()}. Dropping the annotation
+ * without that check would have quietly made scorecards optional for interviews
+ * too.
  */
-@Schema(description = "Scorecard for a completed interview.")
+@Schema(description = "The mentor's write-up. Ratings and a verdict are required for a "
+        + "MOCK_INTERVIEW and ignored for a MENTORING session.")
 public record CompleteRequestDto(
 
         @Schema(description = "Overall summary the candidate reads first",
@@ -36,8 +43,9 @@ public record CompleteRequestDto(
         @Size(max = 2000)
         String improvements,
 
-        @Schema(description = "Overall score out of 5", example = "4", minimum = "1", maximum = "5")
-        @NotNull(message = "Give an overall rating")
+        @Schema(description = "Overall score out of 5. Required for a MOCK_INTERVIEW, ignored "
+                + "for a MENTORING session.",
+                example = "4", minimum = "1", maximum = "5")
         @Min(value = 1, message = "Rating is out of 5")
         @Max(value = 5, message = "Rating is out of 5")
         Integer overallRating,
@@ -57,9 +65,10 @@ public record CompleteRequestDto(
         @Max(value = 5, message = "Rating is out of 5")
         Integer problemSolvingRating,
 
-        @Schema(description = "Overall verdict", example = "ALMOST_READY",
+        @Schema(description = "Overall verdict. Required for a MOCK_INTERVIEW, ignored for a "
+                + "MENTORING session.",
+                example = "ALMOST_READY",
                 allowableValues = {"READY", "ALMOST_READY", "NEEDS_WORK"})
-        @NotNull(message = "Pick a verdict")
         Recommendation recommendation
 ) {
 }

@@ -1,5 +1,5 @@
-import { AuthProvider, useAuth } from "./auth/AuthContext";
-import { SectionNavProvider, SectionMenu } from "./nav/SectionNav";
+import { AuthProvider, useAuth } from "./features/auth/AuthContext";
+import { SectionNavProvider, SectionMenu } from "./layout/SectionNav";
 import AuthPage from "./pages/AuthPage";
 import StudentDashboard from "./pages/StudentDashboard";
 import MentorGate from "./pages/MentorGate";

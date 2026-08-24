@@ -1,0 +1,137 @@
+package com.learn.interviewmentor.service.impl;
+
+import com.learn.interviewmentor.service.InterviewRequestService;
+import com.learn.interviewmentor.service.SlotService;
+
+import com.learn.interviewmentor.vo.SlotVo;
+import com.learn.interviewmentor.exception.BadRequestException;
+import com.learn.interviewmentor.exception.ConflictException;
+import com.learn.interviewmentor.model.InterviewRequest;
+import com.learn.interviewmentor.model.RequestStatus;
+import com.learn.interviewmentor.model.VerificationStatus;
+import com.learn.interviewmentor.repository.InterviewRequestRepository;
+import com.learn.interviewmentor.repository.MentorProfileRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+
+/**
+ * Works out which one-hour slots a candidate can book on a given day.
+ *
+ * The rules live here rather than in the browser, because the frontend can be
+ * bypassed. Whatever the slot grid shows, createRequest() re-checks the same
+ * rules server-side before saving anything.
+ */
+@Service
+@Transactional(readOnly = true)
+public class SlotServiceImpl implements SlotService {
+
+    /** Bookable window: 09:00 up to (but not including) 21:00. */
+    public static final LocalTime DAY_START = LocalTime.of(9, 0);
+    public static final LocalTime DAY_END = LocalTime.of(21, 0);
+
+    /** How far ahead someone can book. */
+    public static final int MAX_DAYS_AHEAD = 30;
+
+    private static final DateTimeFormatter LABEL =
+            DateTimeFormatter.ofPattern("h:mm a", Locale.ENGLISH);
+
+    /** Statuses that still occupy a slot. Cancelled ones free it up again. */
+    private static final List<RequestStatus> ACTIVE = List.of(
+            // An unpaid booking still holds its slot. Without this a student
+            // could pay and then find somebody else had taken the time.
+            RequestStatus.AWAITING_PAYMENT,
+            RequestStatus.PENDING,
+            RequestStatus.SCHEDULED,
+            RequestStatus.COMPLETED);
+
+    private final InterviewRequestRepository requestRepository;
+    private final MentorProfileRepository mentorProfileRepository;
+
+    public SlotServiceImpl(InterviewRequestRepository requestRepository,
+                       MentorProfileRepository mentorProfileRepository) {
+        this.requestRepository = requestRepository;
+        this.mentorProfileRepository = mentorProfileRepository;
+    }
+
+    private long approvedMentorCount() {
+        return Math.max(mentorProfileRepository.countByVerificationStatus(VerificationStatus.APPROVED), 1);
+    }
+
+    /** The grid the candidate sees for one day. */
+    @Override
+    public List<SlotVo> slotsFor(LocalDate date) {
+        if (date == null) {
+            throw new BadRequestException("Pick a date first");
+        }
+        LocalDate today = LocalDate.now();
+        if (date.isBefore(today)) {
+            throw new BadRequestException("That date has already passed");
+        }
+        if (date.isAfter(today.plusDays(MAX_DAYS_AHEAD))) {
+            throw new BadRequestException("You can only book up to " + MAX_DAYS_AHEAD + " days ahead");
+        }
+
+        // Capacity is how many VERIFIED mentors exist - an unapproved mentor
+        // cannot take an interview, so they must not inflate availability.
+        long capacity = approvedMentorCount();
+        LocalDateTime now = LocalDateTime.now();
+
+        List<SlotVo> slots = new ArrayList<>();
+        for (LocalTime t = DAY_START; t.isBefore(DAY_END); t = t.plusMinutes(InterviewRequest.SLOT_MINUTES)) {
+            LocalDateTime start = LocalDateTime.of(date, t);
+            LocalDateTime end = start.plusMinutes(InterviewRequest.SLOT_MINUTES);
+
+            String reason = null;
+            if (!start.isAfter(now)) {
+                reason = "Already passed";
+            } else if (requestRepository.countByPreferredSlotAndStatusIn(start, ACTIVE) >= capacity) {
+                reason = "Fully booked";
+            }
+
+            slots.add(new SlotVo(start, end, start.format(LABEL), reason == null, reason));
+        }
+        return slots;
+    }
+
+    /**
+     * Re-validates a slot at booking time. Called by InterviewRequestService, so
+     * a hand-crafted request cannot book 3am or a slot that filled up while the
+     * candidate was deciding.
+     */
+    @Override
+    public void assertBookable(LocalDateTime slot) {
+        if (slot == null) {
+            throw new BadRequestException("Pick a slot");
+        }
+        if (slot.getMinute() != 0 || slot.getSecond() != 0 || slot.getNano() != 0) {
+            throw new BadRequestException("Slots start on the hour");
+        }
+        if (!slot.isAfter(LocalDateTime.now())) {
+            throw new BadRequestException("That slot has already passed");
+        }
+        if (slot.toLocalDate().isAfter(LocalDate.now().plusDays(MAX_DAYS_AHEAD))) {
+            throw new BadRequestException("You can only book up to " + MAX_DAYS_AHEAD + " days ahead");
+        }
+
+        LocalTime time = slot.toLocalTime();
+        if (time.isBefore(DAY_START) || !time.isBefore(DAY_END)) {
+            throw new BadRequestException(
+                    "Interviews run between " + DAY_START.format(LABEL) + " and " + DAY_END.format(LABEL));
+        }
+
+        // 409, not 400: every field the candidate sent was valid, somebody else
+        // simply got there first while they were deciding. Nothing to "fix" in
+        // the request - the answer is to reload the slot list and pick again.
+        if (requestRepository.countByPreferredSlotAndStatusIn(slot, ACTIVE) >= approvedMentorCount()) {
+            throw new ConflictException("That slot just filled up. Please pick another one.");
+        }
+    }
+}

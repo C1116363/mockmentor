@@ -1,7 +1,7 @@
 # secrets
 backend/.env
 
-# uploaded payment screenshots (user data)
+# uploaded payment screenshots and study material (user data)
 backend/uploads/
 
 # java

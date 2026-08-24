@@ -76,3 +76,85 @@ Nothing was removed from the backend — every endpoint still works. To add a
 mentor dashboard again you'd add the calls back to `api/client.js`
 (`/requests/pending`, `/requests/{id}/accept`, …), create the page, and branch
 on `user.role` in `App.jsx`.
+
+## Structure
+
+The same four layers as the backend, using the frontend's honest equivalents.
+
+```
+pages/                 the screen. Renders and delegates - no fetch calls here.
+  features/x/useX.js   the use case: state + orchestration        (facade)
+  features/x/xRules.js pure rules over data - no React, no fetch  (service)
+    api/xApi.js        URLs only, one module per backend controller (repository)
+      api/http.js      transport: fetch, auth header, envelope, token
+```
+
+| Backend | Frontend | Holds |
+| --- | --- | --- |
+| `controller/` | `pages/` | the screen |
+| `facade/` | `features/x/useX.js` | orchestration + state |
+| `service/` | `features/x/xRules.js` | business rules, pure functions |
+| `repository/` | `api/xApi.js` | data access |
+| — | `api/http.js` | the transport everything sits on |
+
+### Naming
+
+| Kind | Pattern | Example |
+| --- | --- | --- |
+| Screen | `*Dashboard.jsx` / `*Page.jsx` | `AdminDashboard.jsx` |
+| Use case | `use*.js` | `usePlans.js`, `useAdminDashboard.js` |
+| Rules | `*Rules.js` | `planRules.js`, `sessionRules.js` |
+| Data access | `*Api.js` | `planApi.js`, `adminApi.js` |
+| Feature UI | `features/x/components/` | `features/plans/components/PlanCard.jsx` |
+| Shared UI | `components/` | `StatusBadge.jsx`, `StarRating.jsx` |
+
+`api/` module names line up 1:1 with backend controllers, so `planApi.js` is
+`PlanController` and `adminApi.js` is `AdminController` + `AdminPlanController`.
+If you know the endpoint you know the file.
+
+A component lives under `features/x/components/` when one feature owns it, and in
+`components/` only when it is feature-agnostic. Three qualify: `StatusBadge`,
+`StarRating`, `ThemeToggle`.
+
+### One hook per feature, not one per screen
+
+`StudentDashboard` calls `useSessions()`, `usePlans()` and `useMaterials()`
+separately. That is deliberate: each loads and fails on its own, so a broken
+plans call cannot blank out the interview list.
+
+`useAdminDashboard` is the exception, and for the same reason `AdminFacade`
+exists on the backend - one admin screen genuinely needs users, mentor profiles,
+sessions, two payment queues, plans and material at once, and verifying a payment
+changes half of them. Reloading only one list would leave the rest quietly wrong.
+
+### Where the layers earn it
+
+Before: `AdminDashboard.jsx` was 606 lines with 16 `useState` and ten fetch calls
+inline. `api/client.js` was one 345-line file covering eleven feature areas.
+
+After: the screens are 446 and 435 lines of mostly JSX, the fetch calls live in
+nine focused `api/` modules, and the rules are pure functions you can read on
+their own.
+
+### What is NOT here
+
+No separate "dto/vo" on the frontend - the JSON is the contract, and mirroring the
+backend's records in JS would be two definitions to keep in step with no type
+checker to catch the drift. If this ever moves to TypeScript, that is when types
+for the envelope and the VOs earn their place.
+
+## Session lifetime
+
+The JWT lives in **`sessionStorage`**, so closing the tab logs you out. Refreshing
+does not — sessionStorage survives a reload and is cleared when the tab closes.
+A second tab is a second session, because nothing is shared between them.
+
+All of that lives in `tokenStore` in `api/client.js`. Every call is wrapped in
+try/catch: storage access itself throws in some private-browsing modes, and a
+login screen that white-screens is worse than one that cannot remember you.
+
+`purgePersistedTokens()` runs on load and clears any token left in `localStorage`,
+where the token used to be kept. Without it, anyone already logged in would keep a
+session that outlives the tab and the new rule would apply to nobody.
+
+The theme preference is still in `localStorage` — that should outlive a session.

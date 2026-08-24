@@ -1,18 +1,17 @@
 package com.learn.interviewmentor.controller;
 
-import com.learn.interviewmentor.dto.AssignMentorRequest;
-import com.learn.interviewmentor.dto.InterviewRequestDto;
-import com.learn.interviewmentor.dto.auth.UserDto;
-import com.learn.interviewmentor.dto.mentor.MentorProfileDto;
-import com.learn.interviewmentor.dto.mentor.RejectProfileRequest;
-import com.learn.interviewmentor.dto.payment.PaymentDto;
-import com.learn.interviewmentor.dto.payment.RejectPaymentRequest;
+import com.learn.interviewmentor.common.ApiResult;
+
+import com.learn.interviewmentor.dto.AssignMentorRequestDto;
+import com.learn.interviewmentor.vo.InterviewRequestVo;
+import com.learn.interviewmentor.vo.auth.UserVo;
+import com.learn.interviewmentor.vo.mentor.MentorProfileVo;
+import com.learn.interviewmentor.dto.mentor.RejectProfileRequestDto;
+import com.learn.interviewmentor.vo.payment.PaymentVo;
+import com.learn.interviewmentor.dto.payment.RejectPaymentRequestDto;
+import com.learn.interviewmentor.facade.AdminFacade;
 import com.learn.interviewmentor.model.User;
 import com.learn.interviewmentor.security.CurrentUser;
-import com.learn.interviewmentor.service.AdminService;
-import com.learn.interviewmentor.service.InterviewRequestService;
-import com.learn.interviewmentor.service.MentorProfileService;
-import com.learn.interviewmentor.service.PaymentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -42,19 +41,10 @@ import java.util.Map;
 @Tag(name = "4. Admin", description = "**ADMIN only.** Every endpoint here returns 403 for anyone else.")
 public class AdminController {
 
-    private final AdminService adminService;
-    private final InterviewRequestService requestService;
-    private final MentorProfileService profileService;
-    private final PaymentService paymentService;
+    private final AdminFacade adminFacade;
 
-    public AdminController(AdminService adminService,
-                           InterviewRequestService requestService,
-                           MentorProfileService profileService,
-                           PaymentService paymentService) {
-        this.adminService = adminService;
-        this.requestService = requestService;
-        this.profileService = profileService;
-        this.paymentService = paymentService;
+    public AdminController(AdminFacade adminFacade) {
+        this.adminFacade = adminFacade;
     }
 
     // ---------------- mentor verification ----------------
@@ -68,10 +58,10 @@ public class AdminController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Profiles awaiting review"),
             @ApiResponse(responseCode = "403", description = "You are not an ADMIN",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class)))
+                    content = @Content(schema = @Schema(implementation = ApiResult.class)))
     })
-    public List<MentorProfileDto> pendingProfiles() {
-        return profileService.awaitingReview();
+    public ApiResult<List<MentorProfileVo>> pendingProfiles() {
+        return adminFacade.pendingProfiles();
     }
 
     @GetMapping("/mentor-profiles")
@@ -79,10 +69,10 @@ public class AdminController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "All profiles"),
             @ApiResponse(responseCode = "403", description = "You are not an ADMIN",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class)))
+                    content = @Content(schema = @Schema(implementation = ApiResult.class)))
     })
-    public List<MentorProfileDto> allProfiles() {
-        return profileService.allProfiles();
+    public ApiResult<List<MentorProfileVo>> allProfiles() {
+        return adminFacade.allProfiles();
     }
 
     @PatchMapping("/mentor-profiles/{id}/approve")
@@ -93,14 +83,14 @@ public class AdminController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Approved"),
             @ApiResponse(responseCode = "400", description = "The profile is not PENDING",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class))),
+                    content = @Content(schema = @Schema(implementation = ApiResult.class))),
             @ApiResponse(responseCode = "404", description = "No profile with that id",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class)))
+                    content = @Content(schema = @Schema(implementation = ApiResult.class)))
     })
-    public MentorProfileDto approveProfile(
+    public ApiResult<MentorProfileVo> approveProfile(
             @Parameter(description = "Mentor profile id", example = "1") @PathVariable Long id,
             @CurrentUser User admin) {
-        return profileService.approve(id, admin);
+        return adminFacade.approveProfile(id, admin);
     }
 
     @PatchMapping("/mentor-profiles/{id}/reject")
@@ -110,15 +100,15 @@ public class AdminController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Rejected"),
             @ApiResponse(responseCode = "400", description = "Not PENDING, or no reason given",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class))),
+                    content = @Content(schema = @Schema(implementation = ApiResult.class))),
             @ApiResponse(responseCode = "404", description = "No profile with that id",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class)))
+                    content = @Content(schema = @Schema(implementation = ApiResult.class)))
     })
-    public MentorProfileDto rejectProfile(
+    public ApiResult<MentorProfileVo> rejectProfile(
             @Parameter(description = "Mentor profile id", example = "1") @PathVariable Long id,
-            @Valid @RequestBody RejectProfileRequest dto,
+            @Valid @RequestBody RejectProfileRequestDto dto,
             @CurrentUser User admin) {
-        return profileService.reject(id, dto.reason(), admin);
+        return adminFacade.rejectProfile(id, dto.reason(), admin);
     }
 
     @GetMapping("/stats")
@@ -131,27 +121,27 @@ public class AdminController {
                             "{\"students\":3,\"mentors\":5,\"admins\":1,\"totalRequests\":4,"
                           + "\"pending\":2,\"scheduled\":1,\"completed\":1,\"cancelled\":0}"))),
             @ApiResponse(responseCode = "401", description = "Not logged in",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class))),
+                    content = @Content(schema = @Schema(implementation = ApiResult.class))),
             @ApiResponse(responseCode = "403", description = "You are not an ADMIN",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class)))
+                    content = @Content(schema = @Schema(implementation = ApiResult.class)))
     })
-    public Map<String, Long> stats() {
-        return adminService.stats();
+    public ApiResult<Map<String, Long>> stats() {
+        return adminFacade.stats();
     }
 
     @GetMapping("/users")
     @Operation(
             summary = "List every user",
-            description = "All three roles. Passwords are never included - `UserDto` has no such field.")
+            description = "All three roles. Passwords are never included - `UserVo` has no such field.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Every account"),
             @ApiResponse(responseCode = "401", description = "Not logged in",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class))),
+                    content = @Content(schema = @Schema(implementation = ApiResult.class))),
             @ApiResponse(responseCode = "403", description = "You are not an ADMIN",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class)))
+                    content = @Content(schema = @Schema(implementation = ApiResult.class)))
     })
-    public List<UserDto> allUsers() {
-        return adminService.findAllUsers();
+    public ApiResult<List<UserVo>> allUsers() {
+        return adminFacade.allUsers();
     }
 
     // ---------------- payments ----------------
@@ -164,10 +154,10 @@ public class AdminController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Payments awaiting review"),
             @ApiResponse(responseCode = "403", description = "You are not an ADMIN",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class)))
+                    content = @Content(schema = @Schema(implementation = ApiResult.class)))
     })
-    public List<PaymentDto> pendingPayments() {
-        return paymentService.awaitingReview();
+    public ApiResult<List<PaymentVo>> pendingPayments() {
+        return adminFacade.pendingPayments();
     }
 
     @PatchMapping("/payments/{id}/verify")
@@ -179,14 +169,14 @@ public class AdminController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Verified, booking released"),
             @ApiResponse(responseCode = "400", description = "The payment is not SUBMITTED",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class))),
+                    content = @Content(schema = @Schema(implementation = ApiResult.class))),
             @ApiResponse(responseCode = "404", description = "No payment with that id",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class)))
+                    content = @Content(schema = @Schema(implementation = ApiResult.class)))
     })
-    public PaymentDto verifyPayment(
+    public ApiResult<PaymentVo> verifyPayment(
             @Parameter(description = "Payment id", example = "1") @PathVariable Long id,
             @CurrentUser User admin) {
-        return paymentService.verify(id, admin);
+        return adminFacade.verifyPayment(id, admin);
     }
 
     @PatchMapping("/payments/{id}/reject")
@@ -196,15 +186,15 @@ public class AdminController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Rejected"),
             @ApiResponse(responseCode = "400", description = "Not SUBMITTED, or no reason given",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class))),
+                    content = @Content(schema = @Schema(implementation = ApiResult.class))),
             @ApiResponse(responseCode = "404", description = "No payment with that id",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class)))
+                    content = @Content(schema = @Schema(implementation = ApiResult.class)))
     })
-    public PaymentDto rejectPayment(
+    public ApiResult<PaymentVo> rejectPayment(
             @Parameter(description = "Payment id", example = "1") @PathVariable Long id,
-            @Valid @RequestBody RejectPaymentRequest dto,
+            @Valid @RequestBody RejectPaymentRequestDto dto,
             @CurrentUser User admin) {
-        return paymentService.reject(id, dto.reason(), admin);
+        return adminFacade.rejectPayment(id, dto.reason(), admin);
     }
 
     // ---------------- interview requests ----------------
@@ -217,10 +207,10 @@ public class AdminController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Unassigned requests"),
             @ApiResponse(responseCode = "403", description = "You are not an ADMIN",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class)))
+                    content = @Content(schema = @Schema(implementation = ApiResult.class)))
     })
-    public List<InterviewRequestDto> pendingRequests() {
-        return requestService.findPendingForAdmin();
+    public ApiResult<List<InterviewRequestVo>> pendingRequests() {
+        return adminFacade.unassignedRequests();
     }
 
     @PatchMapping("/requests/{id}/assign")
@@ -237,17 +227,17 @@ public class AdminController {
             @ApiResponse(responseCode = "200", description = "Assigned and scheduled"),
             @ApiResponse(responseCode = "400",
                     description = "Request is not PENDING, or that user is not a verified, active mentor",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class))),
+                    content = @Content(schema = @Schema(implementation = ApiResult.class))),
             @ApiResponse(responseCode = "403", description = "You are not an ADMIN",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class))),
+                    content = @Content(schema = @Schema(implementation = ApiResult.class))),
             @ApiResponse(responseCode = "404", description = "No request or no such user",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class)))
+                    content = @Content(schema = @Schema(implementation = ApiResult.class)))
     })
-    public InterviewRequestDto assignMentor(
+    public ApiResult<InterviewRequestVo> assignMentor(
             @Parameter(description = "Interview request id", example = "1") @PathVariable Long id,
-            @Valid @RequestBody AssignMentorRequest dto,
+            @Valid @RequestBody AssignMentorRequestDto dto,
             @CurrentUser User admin) {
-        return requestService.assignMentor(id, dto, admin);
+        return adminFacade.assignMentor(id, dto, admin);
     }
 
     @GetMapping("/requests")
@@ -257,12 +247,12 @@ public class AdminController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Every request"),
             @ApiResponse(responseCode = "401", description = "Not logged in",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class))),
+                    content = @Content(schema = @Schema(implementation = ApiResult.class))),
             @ApiResponse(responseCode = "403", description = "You are not an ADMIN",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class)))
+                    content = @Content(schema = @Schema(implementation = ApiResult.class)))
     })
-    public List<InterviewRequestDto> allRequests() {
-        return requestService.findAll();
+    public ApiResult<List<InterviewRequestVo>> allRequests() {
+        return adminFacade.allRequests();
     }
 
     @PatchMapping("/users/{id}/deactivate")
@@ -273,18 +263,18 @@ public class AdminController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Account blocked"),
             @ApiResponse(responseCode = "400", description = "You tried to deactivate your own admin account",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class))),
+                    content = @Content(schema = @Schema(implementation = ApiResult.class))),
             @ApiResponse(responseCode = "401", description = "Not logged in",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class))),
+                    content = @Content(schema = @Schema(implementation = ApiResult.class))),
             @ApiResponse(responseCode = "403", description = "You are not an ADMIN",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class))),
+                    content = @Content(schema = @Schema(implementation = ApiResult.class))),
             @ApiResponse(responseCode = "404", description = "No user with that id",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class)))
+                    content = @Content(schema = @Schema(implementation = ApiResult.class)))
     })
-    public UserDto deactivate(
+    public ApiResult<UserVo> deactivate(
             @Parameter(description = "Id of the user to block", example = "5") @PathVariable Long id,
             @CurrentUser User admin) {
-        return adminService.setActive(id, false, admin);
+        return adminFacade.setUserActive(id, false, admin);
     }
 
     @PatchMapping("/users/{id}/activate")
@@ -294,15 +284,15 @@ public class AdminController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Account unblocked"),
             @ApiResponse(responseCode = "401", description = "Not logged in",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class))),
+                    content = @Content(schema = @Schema(implementation = ApiResult.class))),
             @ApiResponse(responseCode = "403", description = "You are not an ADMIN",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class))),
+                    content = @Content(schema = @Schema(implementation = ApiResult.class))),
             @ApiResponse(responseCode = "404", description = "No user with that id",
-                    content = @Content(schema = @Schema(implementation = ApiErrorSchema.class)))
+                    content = @Content(schema = @Schema(implementation = ApiResult.class)))
     })
-    public UserDto activate(
+    public ApiResult<UserVo> activate(
             @Parameter(description = "Id of the user to unblock", example = "5") @PathVariable Long id,
             @CurrentUser User admin) {
-        return adminService.setActive(id, true, admin);
+        return adminFacade.setUserActive(id, true, admin);
     }
 }

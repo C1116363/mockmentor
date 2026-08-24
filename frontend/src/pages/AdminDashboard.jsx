@@ -1,11 +1,15 @@
-import { useCallback, useEffect, useState } from "react";
-import { api } from "../api/client";
+import { useEffect, useState } from "react";
+import { useAdminDashboard } from "../features/admin/useAdminDashboard";
 import StatusBadge from "../components/StatusBadge";
-import RequestCard from "../components/RequestCard";
-import AssignMentorForm from "../components/AssignMentorForm";
-import MentorProfileCard from "../components/MentorProfileCard";
-import PaymentReviewCard from "../components/PaymentReviewCard";
-import { useSectionNav } from "../nav/SectionNav";
+import RequestCard from "../features/sessions/components/RequestCard";
+import AssignMentorForm from "../features/mentors/components/AssignMentorForm";
+import MentorProfileCard from "../features/mentors/components/MentorProfileCard";
+import PaymentReviewCard from "../features/payments/components/PaymentReviewCard";
+import PlanAdminCard from "../features/plans/components/PlanAdminCard";
+import PlanEditor from "../features/plans/components/PlanEditor";
+import EnrollmentReviewCard from "../features/plans/components/EnrollmentReviewCard";
+import MaterialSendForm from "../features/materials/components/MaterialSendForm";
+import { useSectionNav } from "../layout/SectionNav";
 
 const STAT_LABELS = {
   awaitingPayment: "Unpaid",
@@ -18,117 +22,62 @@ const STAT_LABELS = {
   scheduled: "Scheduled",
   completed: "Completed",
   cancelled: "Cancelled",
+  activePlans: "Plans",
+  planPaymentsToCheck: "Plan pay",
+  activeEnrollments: "Enrolled",
+  materials: "Material",
 };
 
 /** Everything an admin does: verify mentors, and match students to mentors. */
 export default function AdminDashboard() {
-  const { active: tab, register, go: setTab } = useSectionNav();
-  const [stats, setStats] = useState({});
-  const [profiles, setProfiles] = useState([]);  // every mentor profile, all statuses
-  const [payments, setPayments] = useState([]);  // payments awaiting verification
+  const { active: tab, register } = useSectionNav();
+  // One hook for this screen - the facade layer. An admin genuinely needs users,
+  // mentor profiles, sessions, two payment queues, plans and material at once, so
+  // something has to compose them; better there, once, than sixteen useState here.
+  const {
+    stats, profiles, unassigned, mentors, users, requests,
+    payments, plans, planPayments, materials,
+    loading, message,
+    verifyPayment, rejectPayment: doRejectPayment,
+    approveMentor, rejectMentor: doRejectMentor,
+    assignMentor, toggleUser,
+    savePlanPrice, savePlan: doSavePlan, togglePlan,
+    activateEnrollment, rejectEnrollment: doRejectEnrollment,
+    uploadMaterial, shareMaterialLink, toggleMaterial,
+  } = useAdminDashboard();
+
   const [mentorFilter, setMentorFilter] = useState("PENDING");
-  const [unassigned, setUnassigned] = useState([]); // student requests with no mentor
-  const [mentors, setMentors] = useState([]);    // verified mentors, for the dropdown
-  const [users, setUsers] = useState([]);
-  const [requests, setRequests] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState(null);
   const [assigning, setAssigning] = useState(null);
+  // null = closed, "new" = creating, a plan object = editing that one.
+  const [editingPlan, setEditingPlan] = useState(null);
 
-  const reload = useCallback(async () => {
-    const [s, q, p, m, u, r, pay] = await Promise.all([
-      api.adminStats(),
-      api.allMentorProfiles(),
-      api.adminPendingRequests(),
-      api.listMentors(),
-      api.adminUsers(),
-      api.adminRequests(),
-      api.pendingPayments(),
-    ]);
-    setStats(s);
-    setProfiles(q);
-    setUnassigned(p);
-    setMentors(m);
-    setUsers(u);
-    setRequests(r);
-    setPayments(pay);
-  }, []);
-
-  useEffect(() => {
-    reload()
-      .catch((error) => setMessage({ type: "error", text: error.message }))
-      .finally(() => setLoading(false));
-  }, [reload]);
-
-  async function assign(requestId, payload) {
-    try {
-      const updated = await api.assignMentor(requestId, payload);
-      setAssigning(null);
-      setMessage({
-        type: "success",
-        text: `Assigned to ${updated.mentor.name}. The student can see it now.`,
-      });
-      await reload();
-    } catch (error) {
-      setMessage({ type: "error", text: error.message });
-    }
-  }
-
-  async function verifyPayment(payment) {
-    try {
-      await api.verifyPayment(payment.id);
-      setMessage({
-        type: "success",
-        text: `Payment confirmed. ${payment.studentName}'s interview is now open to mentors.`,
-      });
-      await reload();
-    } catch (error) {
-      setMessage({ type: "error", text: error.message });
-    }
+  // The prompts stay in the screen: asking the user a question is a UI concern,
+  // and a hook that popped a window.prompt() could not be used headlessly.
+  async function reject(profile) {
+    const reason = window.prompt(`Why are you rejecting ${profile.fullName}?`);
+    if (reason) await doRejectMentor(profile, reason);
   }
 
   async function rejectPayment(payment) {
     const reason = window.prompt(`Why are you rejecting this payment from ${payment.studentName}?`);
-    if (!reason) return;
-    try {
-      await api.rejectPayment(payment.id, reason);
-      setMessage({ type: "success", text: "Payment rejected. The student can send new proof." });
-      await reload();
-    } catch (error) {
-      setMessage({ type: "error", text: error.message });
-    }
+    if (reason) await doRejectPayment(payment, reason);
   }
 
-  async function approve(profile) {
-    try {
-      await api.approveMentor(profile.id);
-      setMessage({ type: "success", text: `${profile.fullName} is now verified.` });
-      await reload();
-    } catch (error) {
-      setMessage({ type: "error", text: error.message });
-    }
+  async function rejectEnrollment(enrollment) {
+    const reason = window.prompt(
+      `Why are you rejecting ${enrollment.studentName}'s payment for ${enrollment.planName}?`
+    );
+    if (reason) await doRejectEnrollment(enrollment, reason);
   }
 
-  async function reject(profile) {
-    const reason = window.prompt(`Why are you rejecting ${profile.fullName}?`);
-    if (!reason) return;
-    try {
-      await api.rejectMentor(profile.id, reason);
-      setMessage({ type: "success", text: `${profile.fullName} was rejected.` });
-      await reload();
-    } catch (error) {
-      setMessage({ type: "error", text: error.message });
-    }
+  async function assign(requestId, payload) {
+    await assignMentor(requestId, payload);
+    setAssigning(null);
   }
 
-  async function toggleActive(user) {
-    try {
-      if (user.active) await api.deactivateUser(user.id);
-      else await api.activateUser(user.id);
-      await reload();
-    } catch (error) {
-      setMessage({ type: "error", text: error.message });
-    }
+  async function savePlan(payload) {
+    await doSavePlan(editingPlan, payload);
+    setEditingPlan(null);
   }
 
   const pendingCount = profiles.filter((p) => p.verificationStatus === "PENDING").length;
@@ -139,14 +88,18 @@ export default function AdminDashboard() {
     register(
       [
         { key: "payments", label: "Payments", icon: "💳", count: payments.length, alert: true },
+        { key: "planpay", label: "Plan payments", icon: "🧾", count: planPayments.length, alert: true },
         { key: "requests", label: "Assign", icon: "🔗", count: unassigned.length, alert: true },
         { key: "verify", label: "Mentors", icon: "🧭", count: pendingCount, alert: true },
+        { key: "plans", label: "Plans & prices", icon: "🎯", count: plans.length },
+        { key: "material", label: "Study material", icon: "📚", count: materials.length },
         { key: "users", label: "Users", icon: "👥" },
         { key: "all", label: "All requests", icon: "🗂" },
       ],
       "payments"
     );
-  }, [register, payments.length, unassigned.length, pendingCount]);
+  }, [register, payments.length, unassigned.length, pendingCount, planPayments.length,
+      plans.length, materials.length]);
 
   if (loading) return <p className="empty">Loading admin data...</p>;
 
@@ -159,8 +112,18 @@ export default function AdminDashboard() {
     { key: "INCOMPLETE", label: "Not submitted" },
   ];
 
+  const students = users.filter((u) => u.role === "STUDENT" && u.active);
+
   return (
     <div className="admin">
+      {editingPlan && (
+        <PlanEditor
+          plan={editingPlan === "new" ? null : editingPlan}
+          onSave={savePlan}
+          onCancel={() => setEditingPlan(null)}
+        />
+      )}
+
       {message && <p className={`notice notice--${message.type}`}>{message.text}</p>}
 
       <div className="stat-grid">
@@ -281,12 +244,141 @@ export default function AdminDashboard() {
               <MentorProfileCard key={p.id} profile={p}>
                 {p.verificationStatus === "PENDING" && (
                   <div className="accept-form__actions">
-                    <button className="btn btn--primary" onClick={() => approve(p)}>Approve</button>
+                    <button className="btn btn--primary" onClick={() => approveMentor(p)}>Approve</button>
                     <button className="btn btn--ghost" onClick={() => reject(p)}>Reject</button>
                   </div>
                 )}
               </MentorProfileCard>
             ))}
+          </div>
+        </section>
+      )}
+
+      {tab === "planpay" && (
+        <section className="panel">
+          <header className="panel__head">
+            <span className="panel__tag">Money in</span>
+            <h2>
+              Plan payments to verify <span className="count">{planPayments.length}</span>
+            </h2>
+            <p>
+              Students who have paid for a plan. Check the UTR against your bank, then
+              confirm — that is what starts their access and unlocks anything shared
+              with that plan&apos;s members.
+            </p>
+          </header>
+
+          {planPayments.length === 0 && (
+            <p className="empty">No plan payments waiting to be checked.</p>
+          )}
+
+          <div className="card-list">
+            {planPayments.map((e) => (
+              <EnrollmentReviewCard
+                key={e.id}
+                enrollment={e}
+                onActivate={activateEnrollment}
+                onReject={rejectEnrollment}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {tab === "plans" && (
+        <section className="panel">
+          <header className="panel__head">
+            <span className="panel__tag">Price list</span>
+            <h2>
+              Plans &amp; prices <span className="count">{plans.length}</span>
+            </h2>
+            <p>
+              Change a price and students see the new number on their next page load —
+              no deploy, no restart. Anyone who already bought a plan keeps the price
+              they paid.
+            </p>
+          </header>
+
+          <div className="chips-row">
+            <button className="btn btn--primary btn--sm" onClick={() => setEditingPlan("new")}>
+              + New plan
+            </button>
+          </div>
+
+          {plans.length === 0 && <p className="empty">No plans yet. Create the first one.</p>}
+
+          <div className="card-list">
+            {plans.map((plan) => (
+              <PlanAdminCard
+                key={plan.id}
+                plan={plan}
+                onSavePrice={savePlanPrice}
+                onToggleActive={togglePlan}
+                onEdit={setEditingPlan}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {tab === "material" && (
+        <section className="panel">
+          <header className="panel__head">
+            <span className="panel__tag">Send to students</span>
+            <h2>
+              Study material <span className="count">{materials.length}</span>
+            </h2>
+            <p>
+              Upload a file or share a link, and choose who gets it: every student, one
+              student, or the members of a plan. Students only ever see what was
+              addressed to them.
+            </p>
+          </header>
+
+          <MaterialSendForm
+            students={students}
+            plans={plans}
+            onUpload={uploadMaterial}
+            onShareLink={shareMaterialLink}
+          />
+
+          <h3 className="subhead">Already sent</h3>
+
+          {materials.length === 0 && <p className="empty">Nothing sent yet.</p>}
+
+          <div className="table-wrap">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Title</th><th>Kind</th><th>Who sees it</th><th>Sent</th><th>Status</th><th />
+                </tr>
+              </thead>
+              <tbody>
+                {materials.map((m) => (
+                  <tr key={m.id}>
+                    <td>
+                      {m.title}
+                      {m.fileName && <div className="muted mono small">{m.fileName}</div>}
+                    </td>
+                    <td className="muted">{m.kind}</td>
+                    <td>
+                      <span className="material__chip">{m.audienceLabel}</span>
+                    </td>
+                    <td className="muted">{new Date(m.createdAt).toLocaleDateString()}</td>
+                    <td>
+                      <span className={`badge ${m.active ? "badge--completed" : "badge--cancelled"}`}>
+                        {m.active ? "LIVE" : "HIDDEN"}
+                      </span>
+                    </td>
+                    <td>
+                      <button className="btn btn--ghost btn--sm" onClick={() => toggleMaterial(m)}>
+                        {m.active ? "Hide" : "Publish"}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </section>
       )}
@@ -310,7 +402,7 @@ export default function AdminDashboard() {
                     <td><span className={`role role--${u.role.toLowerCase()}`}>{u.role}</span></td>
                     <td>{u.active ? "Active" : "Deactivated"}</td>
                     <td>
-                      <button className="btn btn--ghost btn--sm" onClick={() => toggleActive(u)}>
+                      <button className="btn btn--ghost btn--sm" onClick={() => toggleUser(u)}>
                         {u.active ? "Deactivate" : "Activate"}
                       </button>
                     </td>
