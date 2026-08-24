@@ -1,5 +1,10 @@
 # secrets
+# Every .env variant - not just the exact name. A backup like
+# .env.backup-2026-08 holds the same passwords the real one does, and matching
+# only "backend/.env" quietly lets it through.
 backend/.env
+backend/.env.*
+!backend/.env.example
 
 # uploaded payment screenshots and study material (user data)
 backend/uploads/

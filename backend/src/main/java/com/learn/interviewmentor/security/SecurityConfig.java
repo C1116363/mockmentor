@@ -97,6 +97,15 @@ public class SecurityConfig {
                         // otherwise nobody could ever get one.
                         .requestMatchers("/api/auth/signup/**", "/api/auth/login").permitAll()
 
+                        // Forgotten passwords. Necessarily open - somebody who
+                        // cannot log in cannot present a token. What protects
+                        // these instead: the reset endpoint needs a 256-bit
+                        // single-use token, and the request endpoint answers
+                        // identically for every address so it cannot be used to
+                        // find out who has an account.
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/auth/forgot-password", "/api/auth/reset-password").permitAll()
+
                         // The website has no login, so its stats endpoint
                         // must be open. It returns counts only, never people.
                         .requestMatchers("/api/public/**").permitAll()

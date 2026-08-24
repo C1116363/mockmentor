@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "../features/auth/AuthContext";
 import ThemeToggle from "../components/ThemeToggle";
+import ForgotPasswordForm from "../features/auth/components/ForgotPasswordForm";
 
 const EMPTY = { fullName: "", email: "", password: "" };
 
@@ -48,6 +49,7 @@ export default function AuthPage() {
 
   const current = PORTALS.find((p) => p.key === portal);
   const isSignup = mode === "signup" && current.canSignup;
+  const isForgot = mode === "forgot";
 
   const updateField = (e) =>
     setForm((c) => ({ ...c, [e.target.name]: e.target.value }));
@@ -77,7 +79,10 @@ export default function AuthPage() {
     // A revealed password must not stay revealed for the next account.
     setShowPassword(false);
     reset();
-    if (!PORTALS.find((p) => p.key === key).canSignup) setMode("login");
+    // Forgot-password is not portal-specific - one email is one account,
+    // whatever its role - so switching portal is a signal they meant to log in.
+    if (mode === "forgot") setMode("login");
+    else if (!PORTALS.find((p) => p.key === key).canSignup) setMode("login");
   }
 
   async function submit(event) {
@@ -175,6 +180,10 @@ export default function AuthPage() {
           )}
         </div>
 
+        {isForgot ? (
+          <ForgotPasswordForm onBack={() => { setMode("login"); reset(); }} />
+        ) : (
+        <>
         <p className="auth__hint">{HINTS[portal]}</p>
 
         <form className="form" onSubmit={submit}>
@@ -247,12 +256,26 @@ export default function AuthPage() {
           {error && <p className="notice notice--error">{error}</p>}
 
           {!isSignup && (
-            <p className="auth__footnote">
-              Sure your password is right? Check you&apos;ve picked the correct
-              option at the top.
-            </p>
+            <>
+              {/* Under the button rather than beside the password field: it is
+                  the thing you want after the login failed, not while typing. */}
+              <button
+                type="button"
+                className="linkish"
+                onClick={() => { setMode("forgot"); reset(); }}
+              >
+                Forgot your password?
+              </button>
+
+              <p className="auth__footnote">
+                Sure your password is right? Check you&apos;ve picked the correct
+                option at the top.
+              </p>
+            </>
           )}
         </form>
+        </>
+        )}
       </section>
     </div>
   );

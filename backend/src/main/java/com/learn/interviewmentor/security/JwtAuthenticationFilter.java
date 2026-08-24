@@ -17,6 +17,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 
 /**
  * Runs once per request, before the controller.
@@ -66,7 +67,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             try {
                 UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
-                if (userDetails.isEnabled()) {
+                if (userDetails.isEnabled() && issuedAfterLastPasswordChange(token, userDetails)) {
                     var authentication = new UsernamePasswordAuthenticationToken(
                             userDetails, null, userDetails.getAuthorities());
                     authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
@@ -92,5 +93,61 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         chain.doFilter(request, response);
+    }
+
+    /**
+     * Refuse a token that predates the account's last password reset.
+     *
+     * This is what makes "reset your password" mean something. The JWT is
+     * stateless and lives 24 hours, so a token an attacker already holds keeps
+     * working for a day after the victim resets - the victim does everything
+     * right, sees a success message, and is still compromised. There is no
+     * server-side session to delete, so the check has to be this: was this
+     * token minted before the password changed?
+     *
+     * <h2>Ties are refused, and that is the safe direction</h2>
+     * A JWT's "iat" is whole seconds while the column has millisecond
+     * precision, so "issued at 20:55:58" really means "somewhere in
+     * [58.000, 58.999]". The only safe reading is the earliest instant in that
+     * range - which is what comparing the untruncated values does.
+     *
+     * The cost is that a token minted in the same second as the reset is
+     * refused even though it came after. That is a sub-second window, it can
+     * only be hit by logging in the instant the reset completes, and it costs
+     * one retry. The alternative - truncating both sides to the second so ties
+     * pass - buys that away by accepting every stale token issued in the same
+     * second as the reset. An earlier version of this method did exactly that,
+     * and a test whose steps all ran inside one second caught it: the old token
+     * sailed through a completed password reset.
+     *
+     * Given a choice between "log in again" and "the attacker stays in", this
+     * one is not close.
+     */
+    private boolean issuedAfterLastPasswordChange(String token, UserDetails userDetails) {
+        if (!(userDetails instanceof AppUserDetails details)) {
+            return true;
+        }
+        LocalDateTime changedAt = details.getUser().getPasswordChangedAt();
+        if (changedAt == null) {
+            // Never reset, so nothing to be older than.
+            return true;
+        }
+
+        LocalDateTime issuedAt = jwtService.extractIssuedAt(token);
+        if (issuedAt == null) {
+            // Signed and unexpired but carrying no iat - not something this app
+            // issues. Refused rather than trusted: the whole point of the check
+            // is that a token cannot opt out of it.
+            log.debug("Token for '{}' has no issued-at claim - refusing", details.getUsername());
+            return false;
+        }
+
+        boolean stale = issuedAt.isBefore(changedAt);
+
+        if (stale) {
+            log.info("Refused a token for '{}' issued before their password was reset",
+                    details.getUsername());
+        }
+        return !stale;
     }
 }

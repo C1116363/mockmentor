@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Date;
 import java.util.Map;
 
@@ -55,19 +57,46 @@ public class JwtService {
                 .compact();
     }
 
-    /** Returns the email inside the token, or null if it is invalid/expired. */
-    public String extractEmail(String token) {
+    /**
+     * The verified claims, or null if the token is invalid, expired or forged.
+     *
+     * Returned whole rather than one field at a time so a caller that needs two
+     * of them - the filter needs the subject and the issued-at - parses and
+     * verifies the signature once instead of twice.
+     */
+    public Claims parseClaims(String token) {
         try {
-            Claims claims = Jwts.parser()
+            return Jwts.parser()
                     .verifyWith(signingKey)
                     .build()
                     .parseSignedClaims(token)
                     .getPayload();
-            return claims.getSubject();
         } catch (JwtException | IllegalArgumentException ex) {
             // Bad signature, expired, malformed - all mean "not authenticated".
             return null;
         }
+    }
+
+    /** Returns the email inside the token, or null if it is invalid/expired. */
+    public String extractEmail(String token) {
+        Claims claims = parseClaims(token);
+        return claims == null ? null : claims.getSubject();
+    }
+
+    /**
+     * When the token was issued, as local time, or null if unreadable.
+     *
+     * Used to refuse tokens older than the account's last password change.
+     * "iat" is seconds since the epoch in UTC, so it has to come back through
+     * the system zone to be comparable with the LocalDateTime columns the rest
+     * of this app stores.
+     */
+    public LocalDateTime extractIssuedAt(String token) {
+        Claims claims = parseClaims(token);
+        if (claims == null || claims.getIssuedAt() == null) {
+            return null;
+        }
+        return LocalDateTime.ofInstant(claims.getIssuedAt().toInstant(), ZoneId.systemDefault());
     }
 
     public long getExpirationMillis() {

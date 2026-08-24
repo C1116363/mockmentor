@@ -305,6 +305,34 @@ Plans are seeded only when the `plans` table is empty, so a database created
 before that feature existed has none. Either add one through the admin panel
 (*Plans & prices* → **+ New plan**), or drop the schema and let the seeder run.
 
+### The password-reset email never arrives
+
+By default it is not sent. `app.mail.provider=log` writes it to the backend
+console instead, so a fresh clone works with no email setup at all — the reset
+link is in the terminal running the backend:
+
+```
+================= EMAIL (not sent - console only) =================
+To:      rahul@example.com
+Subject: Reset your ConfirmPlacement password
+...
+http://localhost:5173/?reset=jSBRgyKcnG-_mwAirNN81yoWQXp2bqiRi5yafgQ1590
+```
+
+To send real email through Gmail, put this in `backend/.env`:
+
+```ini
+MAIL_PROVIDER=smtp
+MAIL_USERNAME=youraddress@gmail.com
+MAIL_PASSWORD=your-16-char-app-password
+MAIL_FROM=youraddress@gmail.com
+```
+
+`MAIL_PASSWORD` is an **App Password**, not your Google password — Google
+removed plain-password SMTP in 2022, so the real one is simply rejected. Turn on
+2-Step Verification first (App Passwords do not exist without it), then
+myaccount.google.com → Security → App passwords.
+
 ### Logged out every time I switch tabs
 
 Working as intended. The token lives in `sessionStorage`, so each tab is its own

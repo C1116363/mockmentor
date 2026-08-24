@@ -2404,3 +2404,77 @@
   color: #fff;
   font-weight: 800;
 }
+
+/* ---------------------------------------------------------------------------
+   Forgotten passwords
+   The request form replaces the login form in place; the reset page is its own
+   single-column screen reached from the emailed link.
+   --------------------------------------------------------------------------- */
+
+/* The reset page has no marketing column to sit beside, so the card centres
+   instead of taking the right-hand track of the two-column auth grid. */
+.auth--single {
+  grid-template-columns: min(460px, 100%);
+  justify-content: center;
+}
+
+.brand--center { justify-content: center; margin-bottom: 18px; }
+
+.auth__title {
+  margin: 0 0 4px;
+  font-size: 1.3rem;
+  text-align: center;
+}
+
+.reset-done {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0 4px;
+  text-align: center;
+  /* Grid and flex children default to min-width:auto, so a long server message
+     would push the card wider than the viewport rather than wrapping. */
+  min-width: 0;
+}
+
+.reset-done h3 { margin: 0; font-size: 1.12rem; }
+
+.reset-done p {
+  margin: 0;
+  font-size: .87rem;
+  color: var(--muted);
+  line-height: 1.55;
+  /* The message comes from the server and can be two sentences. Capped so it
+     wraps into a readable column instead of one long line edge to edge. */
+  max-width: 34ch;
+}
+
+.reset-done__icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: var(--success-soft);
+  color: var(--success);
+  font-size: 1.35rem;
+  font-weight: 800;
+}
+
+.reset-done__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  margin-top: 6px;
+}
+
+/* Centred here, unlike the left-aligned .linkish used inside forms - on these
+   screens it is the only thing on its row. */
+.reset-done .linkish,
+.auth--single .linkish { align-self: center; text-align: center; }
+
+@media (max-width: 880px) {
+  .auth--single { grid-template-columns: 1fr; }
+}

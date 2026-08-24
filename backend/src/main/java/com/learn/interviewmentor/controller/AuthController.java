@@ -3,7 +3,9 @@ package com.learn.interviewmentor.controller;
 import com.learn.interviewmentor.common.ApiResult;
 
 import com.learn.interviewmentor.vo.auth.AuthVo;
+import com.learn.interviewmentor.dto.auth.ForgotPasswordDto;
 import com.learn.interviewmentor.dto.auth.LoginRequestDto;
+import com.learn.interviewmentor.dto.auth.ResetPasswordDto;
 import com.learn.interviewmentor.dto.auth.SignupRequestDto;
 import com.learn.interviewmentor.vo.auth.UserVo;
 import com.learn.interviewmentor.model.User;
@@ -110,5 +112,60 @@ public class AuthController {
     })
     public ApiResult<UserVo> me(@CurrentUser User user) {
         return authFacade.me(user);
+    }
+
+    // ------------------------------------------------------------------
+    // Forgotten passwords
+    // ------------------------------------------------------------------
+
+    @PostMapping("/forgot-password")
+    @Operation(
+            summary = "Send me a password-reset link",
+            description = """
+                    Emails a one-time link that expires in 30 minutes.
+
+                    **This always answers 200 with the same message**, whether or not the
+                    address has an account. That is deliberate, not a missing error case: an
+                    endpoint that says "no account with that email" is a free membership
+                    checker, and for this app it would tell an employer which of their staff
+                    are practising for interviews.
+
+                    Rate limited to 5 requests per account per hour, so it cannot be used to
+                    flood somebody's inbox. Asking again invalidates any previous link.
+                    """)
+    @ApiResponses({
+            @ApiResponse(responseCode = "200",
+                    description = "Accepted - says nothing about whether the account exists"),
+            @ApiResponse(responseCode = "400", description = "Not a valid email address",
+                    content = @Content(schema = @Schema(implementation = ApiResult.class)))
+    })
+    public ApiResult<Void> forgotPassword(@Valid @RequestBody ForgotPasswordDto dto) {
+        return authFacade.forgotPassword(dto);
+    }
+
+    @PostMapping("/reset-password")
+    @Operation(
+            summary = "Set a new password using a reset link",
+            description = """
+                    Takes the token from the emailed link and the new password.
+
+                    The token is single-use and identifies the account by itself, so no email
+                    address is sent or accepted. Unknown, expired, already-used and superseded
+                    tokens all return the same 400 - distinguishing them would confirm to
+                    somebody guessing that a token was real.
+
+                    **Every existing session is signed out.** Setting a new password stamps the
+                    account, and any JWT issued before that moment stops being accepted - so a
+                    reset genuinely locks out whoever prompted it, rather than leaving their
+                    token working for the rest of its 24 hours.
+                    """)
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Password changed - log in again"),
+            @ApiResponse(responseCode = "400",
+                    description = "Link expired, already used, or not valid; or the password is too short",
+                    content = @Content(schema = @Schema(implementation = ApiResult.class)))
+    })
+    public ApiResult<Void> resetPassword(@Valid @RequestBody ResetPasswordDto dto) {
+        return authFacade.resetPassword(dto);
     }
 }

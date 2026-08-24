@@ -85,6 +85,40 @@ public class User {
         return password;
     }
 
+    /**
+     * When the password was last changed by a reset.
+     *
+     * Exists so that resetting a password actually logs other sessions out.
+     * The JWT is stateless and lives 24 hours, so without this a stolen token
+     * keeps working for a day after the victim has changed their password -
+     * which makes the reset feel like it worked while the attacker is still
+     * inside. JwtAuthenticationFilter refuses any token issued before this
+     * moment.
+     *
+     * Null for accounts that have never reset, which is why the check is
+     * null-tolerant rather than defaulting this to the creation time: setting
+     * it at signup would risk rejecting the token issued moments later by the
+     * signup's own auto-login.
+     */
+    @Column(name = "password_changed_at")
+    private LocalDateTime passwordChangedAt;
+
+    public LocalDateTime getPasswordChangedAt() {
+        return passwordChangedAt;
+    }
+
+    /**
+     * Change the password and cut every existing session loose.
+     *
+     * Used by the reset flow instead of setPassword, so the two halves cannot
+     * drift apart - a reset that forgot to stamp the time would silently leave
+     * old tokens valid, and nothing would look wrong.
+     */
+    public void changePassword(String encodedPassword) {
+        this.password = encodedPassword;
+        this.passwordChangedAt = LocalDateTime.now();
+    }
+
     public void setPassword(String password) {
         this.password = password;
     }
