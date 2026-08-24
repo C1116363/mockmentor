@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>ConfirmPlacement — Mock interviews with senior engineers</title>
-<meta name="description" content="Practise real interviews with senior engineers from top product companies. Get honest feedback and know exactly what to fix." />
+<title>ConfirmPlacement — Mock interviews, mentoring and real project experience</title>
+<meta name="description" content="Practise real interviews with senior engineers and get a written scorecard. Then keep going: mentoring sessions, study plans, and contributor access to private codebases where your pull requests get reviewed." />
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>" />
 <style>
   *, *::before, *::after { box-sizing: border-box; }
@@ -409,15 +409,28 @@
       </p>
 
       <div class="hero__cta">
+        <!--
+          The primary action stays an interview: it is the flagship, and a sharp
+          specific call to action converts better than a vague broad one.
+          The secondary used to be "Meet the mentors", which the nav already
+          links to - so it now points at the section that shows the other three
+          things, giving somebody who did not come for an interview a path.
+        -->
         <a class="cta cta--lg app-link" href="#">Book a mock interview <span class="cta__arrow">→</span></a>
-        <a class="btn-2" href="#mentors">Meet the mentors</a>
+        <a class="btn-2" href="#more">See everything you get</a>
       </div>
 
-      <p class="microcopy">Free to start · Pick your own slot · Feedback within 24 hours</p>
+      <p class="microcopy">Free to start · Interviews, mentoring, plans and real projects · Pick your own slot</p>
 
+      <!--
+        Three of these four used to count interviews - "Per interview",
+        "Interviewers", "Feedback turnaround" - which quietly told a visitor
+        that interviews were the whole product before they had read a word of
+        the page. Two now describe the rest of it.
+      -->
       <div class="proof">
-        <div class="proof__item"><div class="proof__value">1 hr</div><div class="proof__label">Per interview</div></div>
-        <div class="proof__item"><div class="proof__value">3</div><div class="proof__label">Interviewers</div></div>
+        <div class="proof__item"><div class="proof__value">1 hr</div><div class="proof__label">Per session</div></div>
+        <div class="proof__item"><div class="proof__value">4</div><div class="proof__label">Ways to use it</div></div>
         <div class="proof__item"><div class="proof__value">24 hr</div><div class="proof__label">Feedback turnaround</div></div>
         <div class="proof__item"><div class="proof__value">&#8377;0</div><div class="proof__label">To get started</div></div>
       </div>
@@ -570,6 +583,19 @@
           <button class="qa__q">What can I be interviewed on? <span class="qa__sign">+</span></button>
           <div class="qa__a"><p>Python, SQL, AI and ML, and embedded systems are what this team covers. When you book you describe the round you're preparing for, and an interviewer who works in that area picks it up.</p></div>
         </div>
+        <!--
+          Added because every other question here assumes an interview. Somebody
+          who came for mentoring or project experience had no question that was
+          about them, which reads as "this is not for you".
+        -->
+        <div class="qa">
+          <button class="qa__q">Is it only mock interviews? <span class="qa__sign">+</span></button>
+          <div class="qa__a"><p>No — that is the flagship, not the whole thing. You can book a <strong>mentoring session</strong> instead when you are not preparing for a round and just want to talk something through. There are <strong>study plans</strong> put together by the same engineers who take the interviews. And you can get <strong>contributor access to private codebases we actually run</strong>, where your pull requests are reviewed by the senior developers who own them — which is the part a folder of tutorial projects can never show a hiring manager.</p></div>
+        </div>
+        <div class="qa">
+          <button class="qa__q">What is a mentoring session, exactly? <span class="qa__sign">+</span></button>
+          <div class="qa__a"><p>An hour with a senior engineer that is not an interview. Career advice, a code review, working through a problem you are stuck on, or deciding between two offers. No ratings and no scorecard — you get written notes from the discussion instead.</p></div>
+        </div>
         <div class="qa">
           <button class="qa__q">I'm a fresher — is this for me? <span class="qa__sign">+</span></button>
           <div class="qa__a"><p>Yes. You choose your experience level when booking, and mentors pitch the difficulty to match. Plenty of people book their first mock before they've ever sat a real interview.</p></div>
@@ -588,8 +614,11 @@
 
   <div class="wrap">
     <section class="final reveal">
+      <!-- The headline stays: it is the sharpest line on the page and the
+           closing pitch is the wrong place to hedge. The line under it carries
+           the breadth instead. -->
       <h2>Your next interview is the real one</h2>
-      <p>Practise it first with someone who has been on both sides of the table.</p>
+      <p>Practise it first with someone who has been on both sides of the table &mdash; then stay for the mentoring, the study plans and the real code.</p>
       <a class="cta cta--lg app-link" href="#">Book a mock interview <span class="cta__arrow">→</span></a>
     </section>
   </div>
@@ -601,7 +630,7 @@
     <div class="foot__grid">
       <div class="foot__brand">
         <a class="logo" href="#top"><span class="logo__mark">🎯</span> ConfirmPlacement</a>
-        <p>Mock interviews with senior engineers, so the real one is never the first time.</p>
+        <p>Mock interviews, mentoring, study plans and real project experience &mdash; with engineers who take the real ones.</p>
       </div>
 
       <div class="foot__cols">
