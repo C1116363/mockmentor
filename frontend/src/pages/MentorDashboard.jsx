@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import Notice from "../components/Notice";
 import RequestCard from "../features/sessions/components/RequestCard";
 import UpcomingInterviews from "../features/sessions/components/UpcomingInterviews";
 import FeedbackModal from "../features/sessions/components/FeedbackModal";
@@ -89,7 +90,11 @@ export default function MentorDashboard() {
         otherParty={(r) => r.student?.fullName ?? "—"}
       />
 
-      {message && <p className={`notice notice--${message.type}`}>{message.text}</p>}
+      {message && (
+        <Notice tone={message.type} onDismiss={() => setMessage(null)}>
+          {message.text}
+        </Notice>
+      )}
 
       {tab === "queue" && (
         <section className="panel panel--student">

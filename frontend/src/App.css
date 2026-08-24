@@ -503,11 +503,53 @@
    ============================================================ */
 
 .notice {
+  /* flex so the dismiss button can sit at the end without the text having to
+     leave room for it. min-width:0 on the text so a long URL wraps instead of
+     stretching the panel past the viewport. */
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
   font-size: .85rem;
   padding: 10px 13px;
   border-radius: 10px;
   border: 1px solid transparent;
   animation: rise .3s var(--ease) both;
+}
+
+.notice__text { flex: 1; min-width: 0; line-height: 1.5; overflow-wrap: anywhere; }
+
+/* Inherits the notice's colour so it reads as part of the message rather than
+   a stray blue link on a green background. */
+.notice__link { color: inherit; font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
+
+.notice__x {
+  flex: none;
+  background: none;
+  border: none;
+  padding: 0 2px;
+  color: inherit;
+  opacity: .55;
+  font-size: 1.15rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.notice__x:hover { opacity: 1; }
+
+/* The fade-out. Notice waits 260ms after adding this before unmounting, so the
+   message slides away instead of blinking out. */
+.notice--leaving {
+  animation: notice-leave .26s var(--ease) both;
+}
+
+@keyframes notice-leave {
+  to { opacity: 0; transform: translateY(-4px); max-height: 0; padding-block: 0; margin-block: 0; }
+}
+
+/* Somebody who has asked for less movement still needs the message to go - it
+   just goes without the slide. */
+@media (prefers-reduced-motion: reduce) {
+  .notice { animation: none; }
+  .notice--leaving { animation: none; opacity: 0; }
 }
 
 .notice--success { background: var(--success-soft); color: var(--success); border-color: color-mix(in srgb, var(--success) 25%, transparent); }

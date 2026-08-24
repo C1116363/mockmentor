@@ -5,6 +5,7 @@ import { useAllAvailability } from "../features/mentors/useAllAvailability";
 import ProjectAdminCard from "../features/projects/components/ProjectAdminCard";
 import ProjectEditor from "../features/projects/components/ProjectEditor";
 import ConfirmDialog from "../components/ConfirmDialog";
+import Notice from "../components/Notice";
 import PayrollSection from "../features/payroll/components/PayrollSection";
 import { usePayroll } from "../features/payroll/usePayroll";
 import Skeleton from "../components/Skeleton";
@@ -30,7 +31,7 @@ export default function AdminDashboard() {
   const {
     profiles, unassigned, mentors, users, requests,
     payments, plans, planPayments, materials,
-    loading, message,
+    loading, message, setMessage,
     verifyPayment, rejectPayment: doRejectPayment,
     approveMentor, rejectMentor: doRejectMentor,
     assignMentor, toggleUser,
@@ -273,11 +274,18 @@ export default function AdminDashboard() {
         </ConfirmDialog>
       )}
 
-      {message && <p className={`notice notice--${message.type}`}>{message.text}</p>}
+      {message && (
+        <Notice tone={message.type} onDismiss={() => setMessage(null)}>
+          {message.text}
+        </Notice>
+      )}
       {projectsAdmin.message && (
-        <p className={`notice notice--${projectsAdmin.message.type}`}>
+        <Notice
+          tone={projectsAdmin.message.type}
+          onDismiss={() => projectsAdmin.setMessage(null)}
+        >
           {projectsAdmin.message.text}
-        </p>
+        </Notice>
       )}
 
       {tab === "payments" && (

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import Notice from "../components/Notice";
 import { useSessions } from "../features/sessions/useSessions";
 import { usePlans } from "../features/plans/usePlans";
 import { useMaterials } from "../features/materials/useMaterials";
@@ -342,7 +343,11 @@ export default function StudentDashboard() {
         otherParty={(r) => r.mentor?.name ?? "—"}
       />
 
-      {message && <p className={`notice notice--${message.type}`}>{message.text}</p>}
+      {message && (
+        <Notice tone={message.type} onDismiss={() => setMessage(null)}>
+          {message.text}
+        </Notice>
+      )}
 
       {tab === "book" && (
         <section className="panel panel--student">

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Notice from "../../../components/Notice";
 import MentorPayrollCard from "./MentorPayrollCard";
 import PayoutList from "./PayoutList";
 import { money, sortForPayroll } from "../payrollRules";
@@ -57,12 +58,11 @@ export default function PayrollSection({ payroll }) {
         </button>
       </div>
 
-      {message && (
-        <p className="notice notice--success" onAnimationEnd={() => setMessage(null)}>{message}</p>
-      )}
-      {error && (
-        <p className="notice notice--error" onClick={() => setError(null)}>{error}</p>
-      )}
+      {/* onAnimationEnd used to clear this, which fired when the 0.3s entry
+          animation finished - so every payroll confirmation vanished before it
+          could be read. Notice owns the timing now. */}
+      {message && <Notice tone="success" onDismiss={() => setMessage(null)}>{message}</Notice>}
+      {error && <Notice tone="error" onDismiss={() => setError(null)}>{error}</Notice>}
 
       {view === "mentors" ? (
         <>
