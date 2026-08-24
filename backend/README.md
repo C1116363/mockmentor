@@ -451,3 +451,100 @@ pass in between and the last seat can go.
 > at repositories you actually own before selling access — nothing here can check
 > whether a repo exists, and the invite simply fails on GitHub's side after
 > somebody has paid.
+
+## Mentor availability — where slots come from
+
+**A slot exists because a verified mentor declared that hour.** Nothing is
+generated.
+
+This replaced a fixed 09:00–21:00 grid whose capacity was "how many verified
+mentors exist" — which meant the app would sell 7 AM on a Sunday to a student
+because five mentors existed *somewhere*, leaving an admin to find one afterwards.
+
+```
+mentor declares hours  →  admin sees them  →  students see only those hours
+                                                      ↓
+                                         student books (24h+ ahead)
+                                                      ↓
+                              admin maps a mentor who offered that exact hour
+```
+
+### Both sides need a day's notice
+
+`SlotService.MIN_LEAD_HOURS = 24`, used by **both** halves — a mentor declares at
+least a day ahead, and a student books at least a day ahead. One constant, because
+it is one requirement seen from two ends: an admin needs a day in hand to map an
+interviewer onto a booking.
+
+`earliestBookableSlot()` rounds **up** to the next whole hour. At 14:30 the raw
+cutoff is tomorrow 14:30, which no slot matches — comparing against it would
+silently make tomorrow 14:00 look bookable.
+
+The grid distinguishes two kinds of unavailable, and the difference matters:
+
+| Reason | Means |
+| --- | --- |
+| `Needs 24 hours' notice` | It hasn't passed — it's inside the notice period. Try **sooner** next time |
+| `Fully booked` | Every mentor who offered that hour is taken. Try **another** time |
+
+### Two booleans, not a session-type enum
+
+`forInterviews` / `forMentoring`. A mentor may run mock interviews but not career
+discussions, or the reverse, and plenty do both. Two flags say that directly; an
+enum would need a `BOTH` member, and a third session type later turns three
+members into seven. The two grids genuinely differ as a result.
+
+### Partial success is the design
+
+A mentor ticking a whole afternoon must not lose the lot because one hour is
+already booked or now too close. `declare()` returns
+`DeclareResult(saved, skipped)`, and the skipped list carries a reason per hour —
+surfaced in the response `message`:
+
+```
+2 hour(s) offered. Skipped: 3:00 AM - outside 9:00 AM and 9:00 PM;
+                            25:00 - not a real hour
+```
+
+Re-sending an hour you already offered **updates** it rather than duplicating it —
+the unique constraint on `(mentor_id, slot_start)` means inserting would fail, and
+changing your mind about interviews vs mentoring is the same call.
+
+### The admin maps from people who said yes
+
+`GET /api/admin/requests/{id}/available-mentors` returns mentors who declared
+**that booking's exact hour** for **that kind of session**. Assigning anyone else
+is a **409**:
+
+```
+Neha Gupta has not offered 30 Aug, 3:00 PM. Pick a mentor who has, or resend
+with override=true to assign them anyway - check with them first.
+```
+
+`override=true` exists because reality intrudes — someone agrees over the phone. It
+defaults to false, which is the safe direction: an assignment that skips the check
+has to be asked for, and it is logged at warn when used.
+
+The same rule applies to a mentor self-accepting from the open queue. Without it
+the grid would be advisory only: a mentor could grab any slot, and the hours
+students were shown would stop meaning anything.
+
+### The lifecycle nobody thinks about until it breaks
+
+- **Assigning** claims the mentor's hour → `BOOKED`, linked to the booking.
+- **Cancelling** releases it → back to `OPEN`. Without this, a cancelled session
+  would leave that hour dark to every student forever.
+- **Withdrawing** is refused once somebody is booked in, and refused inside the
+  24-hour window — a mentor pulling out then leaves a student with a session and
+  no interviewer, and no time to reassign.
+- **`WITHDRAWN` rather than deleting the row:** "I was free and pulled out" and "I
+  was never free" are different things, and only one is worth an admin knowing.
+
+### Where to change things
+
+| I want to… | Where |
+| --- | --- |
+| Change the notice period | `service/SlotService.java` → `MIN_LEAD_HOURS` |
+| Change bookable hours | `service/SlotService.java` → `DAY_START` / `DAY_END` |
+| Change how far ahead | `service/SlotService.java` → `MAX_DAYS_AHEAD` |
+| Change the seeded demo hours | `config/DataSeeder.java` → `seedAvailability()` |

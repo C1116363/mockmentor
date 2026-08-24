@@ -2,6 +2,7 @@ package com.learn.interviewmentor.facade.impl;
 
 import com.learn.interviewmentor.common.ApiResult;
 import com.learn.interviewmentor.facade.SlotFacade;
+import com.learn.interviewmentor.model.SessionType;
 import com.learn.interviewmentor.service.SlotService;
 import com.learn.interviewmentor.vo.SlotVo;
 import org.springframework.stereotype.Component;
@@ -12,11 +13,9 @@ import java.util.List;
 /**
  * A one-method facade, and yes it only delegates.
  *
- * Kept for the same reason a table has four legs: every controller reaching for
- * a facade, with no exceptions, is what makes the layering something you can
- * trust without reading each class. The day slots need a second source - a
- * mentor's own availability, a holiday calendar - this is where that goes, and
- * nothing above has to change.
+ * Worth noting: the comment here used to say "the day slots need a second source -
+ * a mentor's own availability - this is where that goes". That day came, and the
+ * change landed entirely inside SlotService. Nothing above this line moved.
  */
 @Component
 public class SlotFacadeImpl implements SlotFacade {
@@ -28,7 +27,7 @@ public class SlotFacadeImpl implements SlotFacade {
     }
 
     @Override
-    public ApiResult<List<SlotVo>> slotsFor(LocalDate date) {
-        return ApiResult.ok(slotService.slotsFor(date));
+    public ApiResult<List<SlotVo>> slotsFor(LocalDate date, SessionType sessionType) {
+        return ApiResult.ok(slotService.slotsFor(date, sessionType));
     }
 }

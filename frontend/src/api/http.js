@@ -125,7 +125,28 @@ function unwrap(body, status) {
   return body.data ?? null;
 }
 
-export async function request(path, options = {}) {
+/**
+ * Like {@link request}, but returns the whole envelope: `{ data, message, status }`.
+ *
+ * Some endpoints put the important part in `message` rather than `data` - the
+ * project-access grant returns "Add @user to owner/repo: <link>", and a mentor
+ * declaring six hours gets told which two were skipped and why. `request()`
+ * hands back only `data`, so those messages were being dropped on the floor.
+ *
+ * Use this wherever the server has something to say; `request()` everywhere else.
+ */
+export async function requestEnvelope(path, options = {}) {
+  const envelope = await rawRequest(path, options);
+  if (envelope === null || typeof envelope.success !== "boolean") {
+    // Not an enveloped endpoint - hand back something with the same shape so
+    // callers do not need to branch.
+    return { data: envelope, message: null, status: 200 };
+  }
+  return { data: envelope.data ?? null, message: envelope.message ?? null,
+           status: envelope.status };
+}
+
+async function rawRequest(path, options = {}) {
   const token = tokenStore.get();
   const isFormData = options.body instanceof FormData;
 
@@ -150,7 +171,21 @@ export async function request(path, options = {}) {
     }
     throw new ApiError(body, response.status);
   }
-  return unwrap(body, response.status);
+  // The envelope, intact. request() and requestEnvelope() decide what to keep.
+  if (body !== null && typeof body?.success === "boolean" && !body.success) {
+    throw new ApiError(body, response.status);
+  }
+  return body;
+}
+
+/**
+ * The everyday call: resolves to the payload, throws an ApiError on failure.
+ *
+ * Nothing above this line knows the envelope exists - `planApi.all()` gives you
+ * an array of plans.
+ */
+export async function request(path, options = {}) {
+  return unwrap(await rawRequest(path, options), null);
 }
 
 /**

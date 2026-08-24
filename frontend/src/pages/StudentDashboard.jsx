@@ -344,6 +344,7 @@ export default function StudentDashboard() {
               value={form.preferredSlot}
               onChange={(slot) => setForm((c) => ({ ...c, preferredSlot: slot }))}
               error={fieldErrors.preferredSlot}
+              sessionType={form.sessionType}
             />
 
             <label className="field">

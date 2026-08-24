@@ -1,4 +1,4 @@
-import { request } from "./http";
+import { request, requestEnvelope } from "./http";
 
 /**
  * Backend: AdminProjectController -> /api/admin/projects
@@ -31,16 +31,22 @@ export const adminProjectApi = {
   pastExpiry: () => request("/admin/projects/access/past-expiry"),
   allAccess: () => request("/admin/projects/access"),
 
-  approve: (id) => request(`/admin/projects/access/${id}/approve`, { method: "PATCH" }),
+  /**
+   * requestEnvelope, not request: with the manual provider the response message
+   * carries the exact next step - "Add @user to owner/repo: <settings link>" -
+   * and dropping it would leave an admin with nothing to act on.
+   */
+  approve: (id) => requestEnvelope(`/admin/projects/access/${id}/approve`, { method: "PATCH" }),
   /** Click once you have actually added them on GitHub. */
-  confirmInvite: (id) => request(`/admin/projects/access/${id}/confirm-invite`, { method: "PATCH" }),
+  confirmInvite: (id) =>
+    requestEnvelope(`/admin/projects/access/${id}/confirm-invite`, { method: "PATCH" }),
   reject: (id, reason) =>
     request(`/admin/projects/access/${id}/reject`, {
       method: "PATCH",
       body: JSON.stringify({ reason }),
     }),
   revoke: (id, reason) =>
-    request(`/admin/projects/access/${id}/revoke`, {
+    requestEnvelope(`/admin/projects/access/${id}/revoke`, {
       method: "PATCH",
       body: JSON.stringify({ reason }),
     }),

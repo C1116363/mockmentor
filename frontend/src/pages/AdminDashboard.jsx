@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAdminDashboard } from "../features/admin/useAdminDashboard";
 import { useAdminProjects } from "../features/projects/useAdminProjects";
+import { useAllAvailability } from "../features/mentors/useAllAvailability";
 import ProjectAdminCard from "../features/projects/components/ProjectAdminCard";
 import ProjectEditor from "../features/projects/components/ProjectEditor";
 import AccessReviewCard from "../features/projects/components/AccessReviewCard";
@@ -34,6 +35,7 @@ const STAT_LABELS = {
   projectAccessToCheck: "Proj pay",
   contributors: "Contribs",
   awaitingRepoInvite: "To invite",
+  openSlots: "Open hours",
 };
 
 /** Everything an admin does: verify mentors, and match students to mentors. */
@@ -57,6 +59,8 @@ export default function AdminDashboard() {
   // Its own hook: live projects are a separate feature with their own queues, and
   // a failure loading them should not blank the payments screen.
   const projectsAdmin = useAdminProjects();
+  // Read-only reference: who is free, when, and what took the hours that are gone.
+  const availability = useAllAvailability(14);
   const [editingProject, setEditingProject] = useState(null);
   const [contributorsOf, setContributorsOf] = useState(null);
 
@@ -137,6 +141,8 @@ export default function AdminDashboard() {
           count: projectsAdmin.pending.length + projectsAdmin.awaitingInvite.length
                  + projectsAdmin.pastExpiry.length, alert: true },
         { key: "projects", label: "Live projects", icon: "🛠", count: projectsAdmin.projects.length },
+        { key: "availability", label: "Mentor availability", icon: "🗓",
+          count: availability.openCount, alert: availability.openCount === 0 },
         { key: "users", label: "Users", icon: "👥" },
         { key: "all", label: "All requests", icon: "🗂" },
       ],
@@ -145,7 +151,7 @@ export default function AdminDashboard() {
   }, [register, payments.length, unassigned.length, pendingCount, planPayments.length,
       plans.length, materials.length, projectsAdmin.pending.length,
       projectsAdmin.awaitingInvite.length, projectsAdmin.pastExpiry.length,
-      projectsAdmin.projects.length]);
+      projectsAdmin.projects.length, availability.openCount]);
 
   if (loading) return <p className="empty">Loading admin data...</p>;
 
@@ -600,6 +606,71 @@ export default function AdminDashboard() {
               )}
             </>
           )}
+        </section>
+      )}
+
+      {tab === "availability" && (
+        <section className="panel">
+          <header className="panel__head">
+            <span className="panel__tag">For reference</span>
+            <h2>
+              Mentor availability <span className="count">{availability.openCount}</span>
+            </h2>
+            <p>
+              What mentors have offered over the next fortnight. <strong>These are the
+              only hours students can book</strong> — the slot grid is built from
+              this, so an hour nobody offers is an hour nobody can book.
+              {availability.bookedCount > 0
+                && ` ${availability.bookedCount} already booked.`}
+            </p>
+          </header>
+
+          {availability.loading && <p className="empty">Loading availability...</p>}
+          {availability.error && (
+            <p className="notice notice--error">{availability.error}</p>
+          )}
+
+          {!availability.loading && availability.rows.length === 0 && (
+            <p className="notice notice--error">
+              No mentor has offered any hours. Students cannot book anything at all
+              until somebody does — worth chasing.
+            </p>
+          )}
+
+          {availability.byDay.map(([day, hours]) => (
+            <div className="avail-day" key={day}>
+              <h3 className="subhead">
+                {new Date(`${day}T00:00:00`).toLocaleDateString(undefined,
+                  { weekday: "long", day: "numeric", month: "short" })}
+                <span className="count">{hours.filter((h) => h.status === "OPEN").length} open</span>
+              </h3>
+              <div className="avail-row">
+                {hours.map((h) => (
+                  <div
+                    key={h.id}
+                    className={`avail ${h.status === "BOOKED" ? "avail--booked" : ""}`}
+                    title={h.bookedFor
+                      ? `${h.bookedFor} — ${h.bookedTopic}`
+                      : h.note ?? "Open"}
+                  >
+                    <strong>{h.label}</strong>
+                    <span className="avail__who">{h.mentorName}</span>
+                    <span className="avail__kinds">
+                      {h.forInterviews && h.forMentoring
+                        ? "interview + mentoring"
+                        : h.forInterviews ? "interview only" : "mentoring only"}
+                    </span>
+                    {h.status === "BOOKED" && (
+                      <span className="avail__booked">→ {h.bookedFor}</span>
+                    )}
+                    {h.note && h.status === "OPEN" && (
+                      <span className="avail__note">{h.note}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
         </section>
       )}
 

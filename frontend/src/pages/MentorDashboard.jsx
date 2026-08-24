@@ -4,6 +4,8 @@ import UpcomingInterviews from "../features/sessions/components/UpcomingIntervie
 import FeedbackModal from "../features/sessions/components/FeedbackModal";
 import { useSectionNav } from "../layout/SectionNav";
 import { useMentorSessions } from "../features/sessions/useMentorSessions";
+import { useAvailability } from "../features/mentors/useAvailability";
+import AvailabilityPlanner from "../features/mentors/components/AvailabilityPlanner";
 import { selectUpcoming } from "../features/sessions/sessionRules";
 
 function defaultSlotFrom(preferred) {
@@ -17,6 +19,10 @@ export default function MentorDashboard() {
   // because accepting moves a booking from one to the other.
   const { queue: pending, assigned, loading, reload,
           accept: acceptSession } = useMentorSessions();
+
+  // Its own hook: availability is a separate feature, and a failure loading it
+  // should not blank out the interview queue.
+  const availability = useAvailability();
 
   const [message, setMessage] = useState(null);
   const [openId, setOpenId] = useState(null);
@@ -47,6 +53,9 @@ export default function MentorDashboard() {
   }
 
   const upcoming = selectUpcoming(assigned);
+  // Zero open hours is worth flagging in the nav: it means this mentor is
+  // invisible to every student, which is easy to not notice.
+  const openHours = availability.hours.filter((a) => a.status === "OPEN").length;
   const scheduled = assigned.filter((r) => r.status === "SCHEDULED");
   const past = assigned.filter((r) => r.status === "COMPLETED" || r.status === "CANCELLED");
 
@@ -56,10 +65,12 @@ export default function MentorDashboard() {
         { key: "queue", label: "Open queue", icon: "📥", count: pending.length, alert: pending.length > 0 },
         { key: "mine", label: "My interviews", icon: "📅", count: scheduled.length },
         { key: "history", label: "History", icon: "🗂", count: past.length },
+        { key: "availability", label: "My availability", icon: "🗓",
+          count: openHours, alert: openHours === 0 },
       ],
       "queue"
     );
-  }, [register, pending.length, scheduled.length, past.length]);
+  }, [register, pending.length, scheduled.length, past.length, openHours]);
 
   return (
     <>
@@ -182,6 +193,102 @@ export default function MentorDashboard() {
               </RequestCard>
             ))}
           </div>
+        </section>
+      )}
+
+      {tab === "availability" && (
+        <section className="panel panel--mentor">
+          <header className="panel__head">
+            <span className="panel__tag">When you&apos;re free</span>
+            <h2>
+              My availability <span className="count">{openHours}</span>
+            </h2>
+            <p>
+              <strong>This is what students see.</strong> The booking grid is built
+              from the hours mentors offer — nothing is generated — so an hour you
+              don&apos;t offer is an hour nobody can book. Sessions need a
+              day&apos;s notice, so add hours a little ahead.
+            </p>
+          </header>
+
+          {openHours === 0 && (
+            <p className="notice notice--error">
+              You have no open hours, so no student can book you. Add some below.
+            </p>
+          )}
+
+          <AvailabilityPlanner
+            onDeclare={availability.declare}
+            existing={availability.hours}
+          />
+
+          <h3 className="subhead">
+            Offered <span className="count">{availability.hours.length}</span>
+          </h3>
+
+          {availability.loading && <p className="empty">Loading your hours...</p>}
+          {availability.error && (
+            <p className="notice notice--error">{availability.error}</p>
+          )}
+          {!availability.loading && availability.hours.length === 0 && (
+            <p className="empty">Nothing offered yet.</p>
+          )}
+
+          {availability.hours.length > 0 && (
+            <div className="table-wrap">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>When</th><th>Taking</th><th>Status</th><th>Booked by</th><th />
+                  </tr>
+                </thead>
+                <tbody>
+                  {availability.hours.map((a) => (
+                    <tr key={a.id}>
+                      <td>
+                        {new Date(a.slotStart).toLocaleDateString(undefined, { dateStyle: "medium" })}
+                        <div className="muted small">{a.label}</div>
+                      </td>
+                      <td className="muted small">
+                        {a.forInterviews && a.forMentoring
+                          ? "Interviews + mentoring"
+                          : a.forInterviews ? "Interviews only" : "Mentoring only"}
+                      </td>
+                      <td>
+                        <span className={`badge ${
+                          a.status === "BOOKED" ? "badge--scheduled"
+                          : a.status === "OPEN" ? "badge--completed"
+                          : "badge--cancelled"}`}>
+                          {a.status}
+                        </span>
+                      </td>
+                      <td className="muted small">
+                        {a.bookedFor
+                          ? <>{a.bookedFor}<div className="muted">{a.bookedTopic}</div></>
+                          : "—"}
+                      </td>
+                      <td>
+                        {a.status === "OPEN" && (
+                          <button className="btn btn--ghost btn--sm"
+                                  onClick={async () => {
+                                    try {
+                                      await availability.withdraw(a.id);
+                                      setMessage({ type: "success",
+                                        text: `${a.label} withdrawn.` });
+                                    } catch (e) {
+                                      setMessage({ type: "error", text: e.message });
+                                    }
+                                  }}>
+                            Withdraw
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </section>
       )}
 

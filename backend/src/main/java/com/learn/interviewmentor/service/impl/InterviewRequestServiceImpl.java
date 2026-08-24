@@ -3,6 +3,7 @@ package com.learn.interviewmentor.service.impl;
 import com.learn.interviewmentor.service.InterviewRequestService;
 import com.learn.interviewmentor.service.MentorProfileService;
 import com.learn.interviewmentor.service.PaymentService;
+import com.learn.interviewmentor.service.AvailabilityService;
 import com.learn.interviewmentor.service.SlotService;
 
 import com.learn.interviewmentor.dto.AcceptRequestDto;
@@ -11,6 +12,7 @@ import com.learn.interviewmentor.dto.CompleteRequestDto;
 import com.learn.interviewmentor.dto.CreateRequestDto;
 import com.learn.interviewmentor.vo.InterviewRequestVo;
 import com.learn.interviewmentor.exception.BadRequestException;
+import com.learn.interviewmentor.exception.ConflictException;
 import com.learn.interviewmentor.exception.ForbiddenException;
 import com.learn.interviewmentor.exception.NotFoundException;
 import com.learn.interviewmentor.meeting.MeetingLinkGenerator;
@@ -20,6 +22,8 @@ import com.learn.interviewmentor.model.Role;
 import com.learn.interviewmentor.model.User;
 import com.learn.interviewmentor.repository.InterviewRequestRepository;
 import com.learn.interviewmentor.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,8 +43,12 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class InterviewRequestServiceImpl implements InterviewRequestService {
 
+    private static final Logger log =
+            LoggerFactory.getLogger(InterviewRequestServiceImpl.class);
+
     private final InterviewRequestRepository requestRepository;
     private final SlotService slotService;
+    private final AvailabilityService availabilityService;
     private final MentorProfileService mentorProfileService;
     private final UserRepository userRepository;
     private final MeetingLinkGenerator meetingLinkGenerator;
@@ -51,9 +59,11 @@ public class InterviewRequestServiceImpl implements InterviewRequestService {
                                    MentorProfileService mentorProfileService,
                                    UserRepository userRepository,
                                    MeetingLinkGenerator meetingLinkGenerator,
-                                   PaymentService paymentService) {
+                                   PaymentService paymentService,
+                                      AvailabilityService availabilityService) {
         this.requestRepository = requestRepository;
         this.slotService = slotService;
+        this.availabilityService = availabilityService;
         this.mentorProfileService = mentorProfileService;
         this.userRepository = userRepository;
         this.meetingLinkGenerator = meetingLinkGenerator;
@@ -81,7 +91,7 @@ public class InterviewRequestServiceImpl implements InterviewRequestService {
         // Never trust the slot the browser sent - re-check it here. The grid the
         // candidate saw may be stale, or the request may not have come from our
         // frontend at all.
-        slotService.assertBookable(dto.preferredSlot());
+        slotService.assertBookable(dto.preferredSlot(), dto.sessionTypeOrDefault());
 
         InterviewRequest request = new InterviewRequest(
                 student,
@@ -136,6 +146,20 @@ public class InterviewRequestServiceImpl implements InterviewRequestService {
         if (request.getStatus() != RequestStatus.PENDING) {
             throw new BadRequestException(
                     "Request " + requestId + " is already " + request.getStatus() + ", it cannot be accepted again");
+        }
+
+        // A mentor may only take an hour they declared. Without this the
+        // availability grid would be advisory only: a mentor could grab any slot
+        // from the open queue, and the hours students were shown would stop
+        // meaning anything.
+        boolean claimed = availabilityService.claimFor(
+                mentor, request.getPreferredSlot(), request);
+        if (!claimed) {
+            throw new ConflictException(
+                    "You haven't declared availability for "
+                            + request.getPreferredSlot().format(SlotService.FULL_LABEL)
+                            + ", or somebody already took that hour. Add it under "
+                            + "My availability first.");
         }
 
         request.assignTo(mentor, dto.scheduledAt(), resolveMeetingLink(dto.meetingLink(), request));
@@ -207,6 +231,10 @@ public class InterviewRequestServiceImpl implements InterviewRequestService {
         }
 
         request.cancel();
+        // The mentor is free again, so their hour goes back on the market. Without
+        // this a cancelled session would leave that slot dark to every student for
+        // no reason.
+        availabilityService.releaseFor(request);
         return InterviewRequestVo.from(request);
     }
 
@@ -250,6 +278,24 @@ public class InterviewRequestServiceImpl implements InterviewRequestService {
         // Default to the slot the student actually asked for.
         LocalDateTime when = dto.scheduledAt() != null ? dto.scheduledAt() : request.getPreferredSlot();
 
+        // Claim the mentor's declared hour. If they never declared it, the admin
+        // has to say so explicitly - the whole point of availability is that the
+        // person being assigned agreed to the time, and an assignment that skips
+        // that quietly is how somebody finds an interview on their calendar they
+        // never said yes to.
+        boolean claimed = availabilityService.claimFor(mentor, when, request);
+        if (!claimed && !dto.override()) {
+            throw new ConflictException(
+                    mentor.getFullName() + " has not offered "
+                            + when.format(SlotService.FULL_LABEL)
+                            + ". Pick a mentor who has, or resend with override=true to assign "
+                            + "them anyway - check with them first.");
+        }
+        if (!claimed) {
+            log.warn("Admin {} assigned {} to {} without declared availability (override)",
+                    admin.getEmail(), mentor.getEmail(), when);
+        }
+
         request.assignTo(mentor, when, resolveMeetingLink(dto.meetingLink(), request));
         return InterviewRequestVo.from(request);
     }
@@ -260,6 +306,11 @@ public class InterviewRequestServiceImpl implements InterviewRequestService {
         return requestRepository.findByStatusOrderByCreatedAtAsc(RequestStatus.PENDING).stream()
                 .map(InterviewRequestVo::from)
                 .toList();
+    }
+
+    @Override
+    public InterviewRequestVo findOne(Long requestId) {
+        return InterviewRequestVo.from(getRequestOrThrow(requestId));
     }
 
     @Override

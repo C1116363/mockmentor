@@ -1,6 +1,7 @@
 package com.learn.interviewmentor.service.impl;
 
 import com.learn.interviewmentor.service.AdminService;
+import com.learn.interviewmentor.service.AvailabilityService;
 import com.learn.interviewmentor.service.LiveProjectService;
 import com.learn.interviewmentor.service.ProjectAccessService;
 import com.learn.interviewmentor.service.InterviewRequestService;
@@ -36,6 +37,7 @@ public class AdminServiceImpl implements AdminService {
     private final StudyMaterialService materialService;
     private final LiveProjectService projectService;
     private final ProjectAccessService projectAccessService;
+    private final AvailabilityService availabilityService;
 
     public AdminServiceImpl(UserRepository userRepository,
                         InterviewRequestService requestService,
@@ -44,7 +46,8 @@ public class AdminServiceImpl implements AdminService {
                         PlanEnrollmentService enrollmentService,
                         StudyMaterialService materialService,
                         LiveProjectService projectService,
-                        ProjectAccessService projectAccessService) {
+                        ProjectAccessService projectAccessService,
+                        AvailabilityService availabilityService) {
         this.userRepository = userRepository;
         this.requestService = requestService;
         this.paymentService = paymentService;
@@ -53,6 +56,7 @@ public class AdminServiceImpl implements AdminService {
         this.materialService = materialService;
         this.projectService = projectService;
         this.projectAccessService = projectAccessService;
+        this.availabilityService = availabilityService;
     }
 
     @Override
@@ -87,6 +91,10 @@ public class AdminServiceImpl implements AdminService {
         // tiles because every one of these is somebody locked out of what they
         // paid for.
         stats.put("awaitingRepoInvite", projectAccessService.countAwaitingInvite());
+        // Hours mentors have offered that nobody is booked into. When this hits
+        // zero there is nothing for a student to book, which is worth seeing
+        // before they tell you.
+        stats.put("openSlots", availabilityService.countOpen());
         return stats;
     }
 

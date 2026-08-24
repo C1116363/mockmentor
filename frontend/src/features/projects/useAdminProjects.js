@@ -44,15 +44,22 @@ export function useAdminProjects() {
       .finally(() => setLoading(false));
   }, [reload]);
 
-  /** Run, reload, report. Keeps fourteen actions from repeating the same try/catch. */
+  /**
+   * Run, reload, report. Keeps fourteen actions from repeating the same try/catch.
+   *
+   * Actions that go through requestEnvelope resolve to `{ data, message }`, and
+   * that message is passed straight through - the backend already writes the
+   * sentence worth showing, including the GitHub next step, and a second one
+   * written here could only disagree with it.
+   */
   const run = useCallback(async (action, fallbackText) => {
     try {
       const result = await action();
       await reload();
-      // The backend already writes a sentence worth showing for most of these -
-      // including the GitHub next step - so pass its message through rather than
-      // inventing a second one that could disagree with it.
-      setMessage({ type: "success", text: result?.message ?? fallbackText });
+      const message = result && typeof result === "object" && "message" in result
+        ? result.message
+        : null;
+      setMessage({ type: "success", text: message ?? fallbackText });
       return result;
     } catch (e) {
       setMessage({ type: "error", text: e.message });

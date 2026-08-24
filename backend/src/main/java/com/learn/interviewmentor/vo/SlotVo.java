@@ -4,8 +4,14 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.LocalDateTime;
 
-/** One bookable 1-hour slot, as offered to the candidate. */
-@Schema(description = "A one-hour slot the candidate can pick.")
+/**
+ * One hour a mentor offered, as shown to the student.
+ *
+ * These are not generated. A slot appears in the grid because a verified mentor
+ * declared that hour for this kind of session - so `mentorsOffering` is always at
+ * least 1, and an empty grid means nobody has put their hand up for that day.
+ */
+@Schema(description = "A one-hour slot a mentor has offered.")
 public record SlotVo(
 
         @Schema(description = "Start of the slot", example = "2026-09-20T15:00:00")
@@ -21,8 +27,17 @@ public record SlotVo(
         @Schema(description = "false when the slot has passed or is fully booked", example = "true")
         boolean available,
 
-        @Schema(description = "Why it is unavailable, or null when it is bookable",
+        @Schema(description = "Why it is unavailable, or null when it is bookable. "
+                + "\"Needs 24 hours' notice\" is different from \"Fully booked\" - one means "
+                + "try sooner, the other means try another time.",
                 example = "Fully booked")
-        String unavailableReason
+        String unavailableReason,
+
+        @Schema(description = "How many more students could book this hour", example = "2")
+        long remaining,
+
+        @Schema(description = "How many verified mentors offered this hour for this kind of "
+                + "session. A slot only exists because at least one did.", example = "3")
+        int mentorsOffering
 ) {
 }

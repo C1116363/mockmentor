@@ -5,11 +5,13 @@ import com.learn.interviewmentor.common.ApiResult;
 import com.learn.interviewmentor.dto.AssignMentorRequestDto;
 import com.learn.interviewmentor.vo.InterviewRequestVo;
 import com.learn.interviewmentor.vo.auth.UserVo;
+import com.learn.interviewmentor.vo.mentor.MentorAvailabilityVo;
 import com.learn.interviewmentor.vo.mentor.MentorProfileVo;
 import com.learn.interviewmentor.dto.mentor.RejectProfileRequestDto;
 import com.learn.interviewmentor.vo.payment.PaymentVo;
 import com.learn.interviewmentor.dto.payment.RejectPaymentRequestDto;
 import com.learn.interviewmentor.facade.AdminFacade;
+import com.learn.interviewmentor.facade.MentorFacade;
 import com.learn.interviewmentor.model.User;
 import com.learn.interviewmentor.security.CurrentUser;
 import io.swagger.v3.oas.annotations.Operation;
@@ -26,6 +28,9 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.web.bind.annotation.RequestParam;
+import java.time.LocalDate;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -42,9 +47,11 @@ import java.util.Map;
 public class AdminController {
 
     private final AdminFacade adminFacade;
+    private final MentorFacade mentorFacade;
 
-    public AdminController(AdminFacade adminFacade) {
+    public AdminController(AdminFacade adminFacade, MentorFacade mentorFacade) {
         this.adminFacade = adminFacade;
+        this.mentorFacade = mentorFacade;
     }
 
     // ---------------- mentor verification ----------------
@@ -294,5 +301,48 @@ public class AdminController {
             @Parameter(description = "Id of the user to unblock", example = "5") @PathVariable Long id,
             @CurrentUser User admin) {
         return adminFacade.setUserActive(id, true, admin);
+    }
+
+    // ---------------- mentor availability ----------------
+
+    @GetMapping("/availability")
+    @Operation(
+            summary = "What every mentor has offered",
+            description = "The reference view: who is free, when, and for which kind of session. "
+                    + "Verified mentors only - an unverified one cannot take a session, so their "
+                    + "hours never reach a student either.\n\n"
+                    + "`status` shows OPEN, or BOOKED with the student and topic that took it.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Declared hours in the window"),
+            @ApiResponse(responseCode = "403", description = "You are not an ADMIN",
+                    content = @Content(schema = @Schema(implementation = ApiResult.class)))
+    })
+    public ApiResult<List<MentorAvailabilityVo>> availability(
+            @Parameter(description = "First day of the window. Defaults to today.",
+                    example = "2026-09-22")
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+
+            @Parameter(description = "How many days to show. Defaults to 7.", example = "7")
+            @RequestParam(defaultValue = "7") int days) {
+        return mentorFacade.allAvailability(from, days);
+    }
+
+    @GetMapping("/requests/{id}/available-mentors")
+    @Operation(
+            summary = "Who is free for this booking",
+            description = "Mentors who declared **this booking's exact hour** for **this kind of "
+                    + "session**. This is the list to assign from - it means the person you pick "
+                    + "already agreed to the time, rather than being told about it afterwards.\n\n"
+                    + "An empty list means nobody offered that hour. You can still assign "
+                    + "somebody with `override=true`, but check with them first.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Mentors free for that slot"),
+            @ApiResponse(responseCode = "404", description = "No such request",
+                    content = @Content(schema = @Schema(implementation = ApiResult.class)))
+    })
+    public ApiResult<List<MentorAvailabilityVo>> availableMentors(
+            @Parameter(description = "Interview request id", example = "1") @PathVariable Long id) {
+        return mentorFacade.availableForRequest(id);
     }
 }

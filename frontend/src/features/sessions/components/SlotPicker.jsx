@@ -10,17 +10,20 @@ const TODAY = toDateInput(new Date());
 const MAX_DATE = toDateInput(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
 
 /**
- * Pick a date, then a one-hour slot on that date.
+ * Pick a date, then an hour a mentor has offered on it.
  *
- * Availability comes from the server, not from the browser - it knows which
- * slots have passed and which are full. The server re-checks the choice on
- * submit anyway, so a stale grid can never book a bad slot.
+ * The grid is **not** generated - every button is an hour a verified mentor
+ * declared for this kind of session. So an empty grid is a real answer, and the
+ * copy says so rather than implying something failed.
+ *
+ * The server re-checks the choice on submit, so a stale grid can never book a
+ * slot that has since been taken.
  */
-export default function SlotPicker({ date, onDateChange, value, onChange, error }) {
-  const { slots, loading, error: loadError } = useSlots(date);
-
+export default function SlotPicker({ date, onDateChange, value, onChange, error, sessionType }) {
+  const { slots, loading, error: loadError } = useSlots(date, sessionType);
 
   const anyAvailable = slots.some((s) => s.available);
+  const mentoring = sessionType === "MENTORING";
 
   return (
     <div className="slotpick">
@@ -40,11 +43,25 @@ export default function SlotPicker({ date, onDateChange, value, onChange, error 
       </label>
 
       <div className="field">
-        <span>Pick a time — each interview runs for 1 hour</span>
+        <span>
+          Pick a time — each {mentoring ? "session" : "interview"} runs for 1 hour
+        </span>
+        <small className="field__hint">
+          Only hours a mentor has offered appear here, and bookings need a
+          day&apos;s notice.
+        </small>
 
         {!date && <p className="empty">Choose a date first.</p>}
         {date && loading && <p className="empty">Loading slots...</p>}
         {date && loadError && <p className="notice notice--error">{loadError}</p>}
+
+        {date && !loading && !loadError && slots.length === 0 && (
+          <p className="empty">
+            No mentor has offered {mentoring ? "mentoring" : "interview"} hours on this
+            day yet. Try another date — or check back, mentors add their hours as they
+            go.
+          </p>
+        )}
 
         {date && !loading && !loadError && slots.length > 0 && (
           <>
@@ -57,7 +74,8 @@ export default function SlotPicker({ date, onDateChange, value, onChange, error 
                     type="button"
                     className={`slot ${selected ? "slot--on" : ""} ${slot.available ? "" : "slot--off"}`}
                     disabled={!slot.available}
-                    title={slot.unavailableReason ?? `${slot.label} – 1 hour`}
+                    title={slot.unavailableReason
+                      ?? `${slot.label} – 1 hour · ${slot.remaining} place(s) left`}
                     aria-pressed={selected}
                     onClick={() => onChange(slot.start)}
                   >
@@ -68,7 +86,10 @@ export default function SlotPicker({ date, onDateChange, value, onChange, error 
             </div>
 
             {!anyAvailable && (
-              <p className="empty">Nothing left on this day. Try another date.</p>
+              <p className="empty">
+                Every offered hour on this day is either taken or inside the
+                24-hour notice period. Try a later date.
+              </p>
             )}
           </>
         )}

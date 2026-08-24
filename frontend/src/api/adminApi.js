@@ -1,4 +1,4 @@
-import { request } from "./http";
+import { request, requestEnvelope } from "./http";
 
 /**
  * Backend: AdminController + AdminPlanController -> /api/admin
@@ -24,6 +24,15 @@ export const adminApi = {
       body: JSON.stringify({ reason }),
     }),
 
+  // ---- mentor availability (the reference view) ----
+  availability: (from, days = 7) =>
+    request(`/admin/availability?days=${days}` + (from ? `&from=${from}` : "")),
+  /**
+   * Who declared this booking's exact hour, for its exact session type.
+   * The list to assign from - it means the mentor already agreed to the time.
+   */
+  availableMentorsFor: (requestId) => request(`/admin/requests/${requestId}/available-mentors`),
+
   // ---- sessions ----
   allRequests: () => request("/admin/requests"),
   unassignedRequests: () => request("/admin/requests/pending"),
@@ -48,8 +57,12 @@ export const adminApi = {
   updatePlan: (id, payload) =>
     request(`/admin/plans/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
   /** Its own endpoint, so changing a price can never blank out a description. */
+  // requestEnvelope: the server's message spells out the consequence ("students
+  // see it on their next load"), which is the reason an admin came here.
   updatePlanPrice: (id, price) =>
-    request(`/admin/plans/${id}/price`, { method: "PATCH", body: JSON.stringify({ price }) }),
+    requestEnvelope(`/admin/plans/${id}/price`, {
+      method: "PATCH", body: JSON.stringify({ price }),
+    }),
   setPlanActive: (id, active) =>
     request(`/admin/plans/${id}/active?active=${active}`, { method: "PATCH" }),
 

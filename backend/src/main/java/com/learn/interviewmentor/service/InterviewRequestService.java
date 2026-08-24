@@ -58,6 +58,9 @@ public interface InterviewRequestService {
     /** Requests still waiting for a mentor - the admin's assignment queue. */
     List<InterviewRequestVo> findPendingForAdmin();
 
+    /** One booking, whoever is asking. Used to read its slot and session type. */
+    InterviewRequestVo findOne(Long requestId);
+
     List<InterviewRequestVo> findAll();
 
     long countByStatus(RequestStatus status);

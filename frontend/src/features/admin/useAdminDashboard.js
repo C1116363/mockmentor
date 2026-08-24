@@ -107,10 +107,11 @@ export function useAdminDashboard() {
     // Not wrapped in run(): the price form shows its own error inline, next to
     // the input the admin just typed in, so the throw has to reach it.
     savePlanPrice: async (plan, price) => {
-      const updated = await adminApi.updatePlanPrice(plan.id, price);
+      // Envelope, not payload: the message is the point here.
+      const { data, message } = await adminApi.updatePlanPrice(plan.id, price);
       await reload();
-      setMessage({ type: "success", text: updated.message ?? `${plan.name} updated.` });
-      return updated;
+      setMessage({ type: "success", text: message ?? `${plan.name} updated.` });
+      return data;
     },
     savePlan: (planOrNew, payload) => run(
       () => (planOrNew === "new" ? adminApi.createPlan(payload)

@@ -80,6 +80,31 @@ touches. Layer-specific notes are in the
 [backend](backend/README.md#structure) and [frontend](frontend/README.md#structure)
 READMEs.
 
+## How a session gets scheduled
+
+**Slots come from mentors, not from a calendar generator.** A mentor declares the
+hours they're free; students see only those hours; an admin maps a mentor who
+offered that exact hour onto the booking.
+
+```
+mentor declares hours  →  admin sees them  →  students see only those hours
+                                                      ↓
+                                         student books (24h+ ahead)
+                                                      ↓
+                              admin maps a mentor who offered that exact hour
+```
+
+**A day's notice, both ways.** A mentor declares at least 24 hours ahead, a student
+books at least 24 hours ahead — one constant, because an admin needs a day in hand
+to arrange an interviewer.
+
+The mentor also says *what* they'll take in each hour — mock interviews, mentoring
+discussions, or both — so the two grids genuinely differ.
+
+Assigning a mentor who didn't offer that hour is a 409, with an explicit
+`override=true` escape hatch for when somebody agrees over the phone. Detail in the
+[backend README](backend/README.md#mentor-availability--where-slots-come-from).
+
 ## Two kinds of booking
 
 A booked hour is either a **mock interview** or a **mentoring session**, set by

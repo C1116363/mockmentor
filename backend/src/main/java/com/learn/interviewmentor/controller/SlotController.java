@@ -4,6 +4,7 @@ import com.learn.interviewmentor.common.ApiResult;
 
 import com.learn.interviewmentor.vo.SlotVo;
 import com.learn.interviewmentor.facade.SlotFacade;
+import com.learn.interviewmentor.model.SessionType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -35,17 +36,26 @@ public class SlotController {
 
     @GetMapping
     @Operation(
-            summary = "One-hour slots available on a given day",
+            summary = "Hours a mentor has offered on a given day",
             description = """
-                    Returns every slot between 9:00 AM and 9:00 PM for that date, each one
-                    hour long, and marks which are bookable.
+                    **Only hours a verified mentor actually declared** for this kind of
+                    session. Nothing is generated - an empty list means nobody has put their
+                    hand up for that day, which is a truthful answer and more useful than a
+                    row of greyed-out buttons.
 
-                    A slot comes back unavailable when it has already passed, or when it is
-                    fully booked - capacity is the number of mentors in the system, since
-                    that is how many interviews can run at the same time. Cancelled requests
-                    release their slot again.
+                    `mentorsOffering` is how many mentors declared that hour; `remaining` is
+                    how many more students can still book it. Cancelled bookings release
+                    their slot, and the mentor's hour goes back on the market.
 
-                    You can book up to 30 days ahead.""")
+                    A slot comes back unavailable for one of two different reasons, and the
+                    difference matters:
+
+                    - **"Needs 24 hours' notice"** - it has not passed, it is just inside the
+                      notice period. Sessions need a day in hand so an admin can map an
+                      interviewer onto the booking.
+                    - **"Fully booked"** - every mentor who offered that hour is taken.
+
+                    You can book from 24 hours ahead up to 30 days ahead.""")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "The slot grid for that day"),
             @ApiResponse(responseCode = "400", description = "Date is in the past or too far ahead",
@@ -55,7 +65,12 @@ public class SlotController {
     })
     public ApiResult<List<SlotVo>> slots(
             @Parameter(description = "Day to show slots for, yyyy-MM-dd", example = "2026-09-20")
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        return slotFacade.slotsFor(date);
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+
+            @Parameter(description = "Which kind of session. A mentor may offer an hour for "
+                    + "one and not the other. Defaults to MOCK_INTERVIEW.",
+                    example = "MENTORING")
+            @RequestParam(required = false) SessionType sessionType) {
+        return slotFacade.slotsFor(date, sessionType);
     }
 }

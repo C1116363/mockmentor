@@ -3,6 +3,7 @@ package com.learn.interviewmentor.config;
 import com.learn.interviewmentor.model.InterviewRequest;
 import com.learn.interviewmentor.model.MentorProfile;
 import com.learn.interviewmentor.model.LiveProject;
+import com.learn.interviewmentor.model.MentorAvailability;
 import com.learn.interviewmentor.model.Plan;
 import com.learn.interviewmentor.model.ProjectDifficulty;
 import com.learn.interviewmentor.model.Role;
@@ -12,6 +13,7 @@ import com.learn.interviewmentor.model.User;
 import com.learn.interviewmentor.repository.InterviewRequestRepository;
 import com.learn.interviewmentor.repository.MentorProfileRepository;
 import com.learn.interviewmentor.repository.LiveProjectRepository;
+import com.learn.interviewmentor.repository.MentorAvailabilityRepository;
 import com.learn.interviewmentor.repository.PlanRepository;
 import com.learn.interviewmentor.repository.StudyMaterialRepository;
 import com.learn.interviewmentor.repository.UserRepository;
@@ -47,6 +49,7 @@ public class DataSeeder implements CommandLineRunner {
     private final InterviewRequestRepository requestRepository;
     private final PlanRepository planRepository;
     private final LiveProjectRepository projectRepository;
+    private final MentorAvailabilityRepository availabilityRepository;
     private final StudyMaterialRepository materialRepository;
     private final PasswordEncoder passwordEncoder;
 
@@ -55,6 +58,7 @@ public class DataSeeder implements CommandLineRunner {
                       InterviewRequestRepository requestRepository,
                       PlanRepository planRepository,
                       LiveProjectRepository projectRepository,
+                      MentorAvailabilityRepository availabilityRepository,
                       StudyMaterialRepository materialRepository,
                       PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
@@ -62,6 +66,7 @@ public class DataSeeder implements CommandLineRunner {
         this.requestRepository = requestRepository;
         this.planRepository = planRepository;
         this.projectRepository = projectRepository;
+        this.availabilityRepository = availabilityRepository;
         this.materialRepository = materialRepository;
         this.passwordEncoder = passwordEncoder;
     }
@@ -75,6 +80,7 @@ public class DataSeeder implements CommandLineRunner {
         seedAccounts();
         seedPlans();
         seedLiveProjects();
+        seedAvailability();
     }
 
     private void seedAccounts() {
@@ -288,5 +294,57 @@ public class DataSeeder implements CommandLineRunner {
         log.info("Seeded {} live projects. The repo owner/name are placeholders "
                 + "('your-org/...') - point them at real repositories before selling access.",
                 projectRepository.count());
+    }
+
+    /**
+     * A few declared hours, so the slot grid is not empty on a fresh install.
+     *
+     * Without this the booking page would correctly show nothing - which is the
+     * right behaviour and a confusing first impression. Starts from three days out
+     * so everything is comfortably past the 24-hour notice period.
+     */
+    private void seedAvailability() {
+        if (availabilityRepository.count() > 0) {
+            return;
+        }
+
+        var mentors = List.of("ananya@example.com", "vikram@example.com", "neha@example.com")
+                .stream()
+                .map(email -> userRepository.findByEmailIgnoreCase(email).orElse(null))
+                .filter(java.util.Objects::nonNull)
+                .toList();
+
+        if (mentors.isEmpty()) {
+            return;
+        }
+
+        int declared = 0;
+        for (int dayOffset = 3; dayOffset <= 9; dayOffset++) {
+            LocalDate day = LocalDate.now().plusDays(dayOffset);
+            for (User mentor : mentors) {
+                // Staggered rather than everyone offering the same hours, so the
+                // grid looks like real people's calendars and the seat counts on
+                // each slot actually differ.
+                int[] hours = switch (mentors.indexOf(mentor)) {
+                    case 0 -> new int[]{10, 11, 15, 16};
+                    case 1 -> new int[]{14, 15, 18, 19};
+                    default -> new int[]{9, 11, 16, 20};
+                };
+                for (int hour : hours) {
+                    availabilityRepository.save(new MentorAvailability(
+                            mentor,
+                            LocalDateTime.of(day, java.time.LocalTime.of(hour, 0)),
+                            true,
+                            // Neha takes interviews only - so the two grids
+                            // genuinely differ and the flags are visibly doing
+                            // something.
+                            mentors.indexOf(mentor) != 2,
+                            null));
+                    declared++;
+                }
+            }
+        }
+
+        log.info("Seeded {} declared mentor hours over the next 9 days.", declared);
     }
 }

@@ -151,6 +151,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PATCH, "/api/requests/*/accept").hasRole(Role.MENTOR.name())
                         .requestMatchers(HttpMethod.PATCH, "/api/requests/*/complete").hasRole(Role.MENTOR.name())
 
+                        // Declaring availability is what makes a slot exist, so
+                        // only a mentor may do it. The admin reads everyone's
+                        // under /api/admin/availability.
+                        .requestMatchers("/api/mentor/availability/**").hasRole(Role.MENTOR.name())
+                        .requestMatchers("/api/mentor/availability").hasRole(Role.MENTOR.name())
+
                         // Everything else just needs a valid token. Note the
                         // order matters: the FIRST matching rule wins, so this
                         // catch-all has to stay last.

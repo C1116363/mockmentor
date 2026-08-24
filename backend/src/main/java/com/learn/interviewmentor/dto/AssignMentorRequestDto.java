@@ -23,6 +23,16 @@ public record AssignMentorRequestDto(
                 + "automatically** when the mentor is assigned. Only set it if you want to use "
                 + "a link you made yourself.",
                 example = "https://meet.google.com/abc-defg-hij")
-        String meetingLink
+        String meetingLink,
+
+        /*
+         * Defaults to false, which is the safe direction: an assignment that skips
+         * the availability check has to be asked for.
+         */
+        @Schema(description = "Assign a mentor who has **not** declared this hour. Refused "
+                + "without this, because the point of availability is that the person being "
+                + "assigned agreed to the time - check with them before overriding.",
+                example = "false")
+        boolean override
 ) {
 }

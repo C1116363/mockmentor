@@ -2,8 +2,8 @@
 
 A map of the codebase. If you are looking for where something is, start here.
 
-- 143 Java files across 5 layers · 78 endpoints
-- 68 JS/JSX files across the same 5 layers
+- 152 Java files across 5 layers · 83 endpoints
+- 73 JS/JSX files across the same 5 layers
 - Both halves use the **same layering**, so what you learn on one side transfers
 
 **Just want to run it?** → [SETUP.md](SETUP.md)
@@ -43,13 +43,13 @@ See [rules you can grep](#rules-you-can-grep) — every one of them returns empt
 
 | Package | Files | What is in it |
 | --- | --- | --- |
-| `controller/` | 13 | HTTP only. Every method returns `ApiResult<T>`. |
+| `controller/` | 14 | HTTP only. Every method returns `ApiResult<T>`. |
 | `facade/` + `impl/` | 10 + 10 | Use cases. Interface + implementation. |
-| `service/` + `impl/` | 13 + 13 | Business rules. Interface + implementation. |
-| `repository/` | 9 | Spring Data interfaces. One per table. |
-| `model/` | 20 | JPA entities + their enums. |
-| `dto/` | 14 | Requests coming **in**. Every class ends in `Dto`. |
-| `vo/` | 14 | Responses going **out**. Every class ends in `Vo`. |
+| `service/` + `impl/` | 15 + 15 | Business rules. Interface + implementation. |
+| `repository/` | 10 | Spring Data interfaces. One per table. |
+| `model/` | 23 | JPA entities + their enums. |
+| `dto/` | 15 | Requests coming **in**. Every class ends in `Dto`. |
+| `vo/` | 15 | Responses going **out**. Every class ends in `Vo`. |
 | `common/` | 2 | `ApiResult` (the response envelope) + the advice that syncs its status. |
 | `exception/` | 7 | Custom exceptions + the `@RestControllerAdvice` that maps them. |
 | `security/` | 8 | JWT filter, role rules, the 401/403 writers. |
@@ -66,6 +66,7 @@ See [rules you can grep](#rules-you-can-grep) — every one of them returns empt
 | Login / signup | `AuthController` | `AuthFacade` | `AuthService` |
 | Booking a session | `InterviewRequestController` | `SessionFacade` | `InterviewRequestService` |
 | The hours grid | `SlotController` | `SlotFacade` | `SlotService` |
+| Mentor availability | `MentorAvailabilityController` | `MentorFacade` | `AvailabilityService` |
 | Paying for a session | `PaymentController` | `PaymentFacade` | `PaymentService` |
 | Mentor directory | `MentorController` | `MentorFacade` | `MentorService` |
 | Mentor onboarding | `MentorProfileController` | `MentorFacade` | `MentorProfileService` |
@@ -90,10 +91,11 @@ See [rules you can grep](#rules-you-can-grep) — every one of them returns empt
 | `StudyMaterial` | `study_materials` | A file or link, with one of three audiences. |
 | `LiveProject` | `live_projects` | A private repo sold as contributor access. Repo stored as owner + name. |
 | `ProjectAccessRequest` | `project_access_requests` | One student's paid access to one repo. |
+| `MentorAvailability` | `mentor_availability` | One hour a mentor declared. **This is where slots come from.** |
 
 Enums: `Role`, `RequestStatus`, `SessionType`, `PaymentStatus`, `EnrollmentStatus`,
 `VerificationStatus`, `MaterialAudience`, `MaterialKind`, `Recommendation`,
-`ProjectAccessStatus`, `ProjectDifficulty`.
+`ProjectAccessStatus`, `ProjectDifficulty`, `AvailabilityStatus`.
 
 ---
 
@@ -125,6 +127,7 @@ Enums: `Role`, `RequestStatus`, `SessionType`, `PaymentStatus`, `EnrollmentStatu
 | `planApi.js` | `PlanController` |
 | `materialApi.js` | `StudyMaterialController` |
 | `adminApi.js` | `AdminController` + `AdminPlanController` |
+| `availabilityApi.js` | `MentorAvailabilityController` |
 | `projectApi.js` | `ProjectController` |
 | `adminProjectApi.js` | `AdminProjectController` |
 | `http.js` | — (transport: fetch, auth header, envelope, token) |
@@ -138,6 +141,9 @@ Enums: `Role`, `RequestStatus`, `SessionType`, `PaymentStatus`, `EnrollmentStatu
 | `useSessions` | sessions | `StudentDashboard` |
 | `useMentorSessions` | sessions | `MentorDashboard` |
 | `useSlots` | sessions | `SlotPicker` |
+| `useAvailability` | mentors | `MentorDashboard` |
+| `useAllAvailability` | mentors | `AdminDashboard` |
+| `useAvailableMentors` | mentors | `AssignMentorForm` |
 | `useSessionFeedback` | sessions | `FeedbackModal` |
 | `usePlans` | plans | `StudentDashboard` |
 | `usePlanPayment` | plans | `PlanPayModal` |

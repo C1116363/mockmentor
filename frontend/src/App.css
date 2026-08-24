@@ -1743,3 +1743,95 @@
 @media (max-width: 560px) {
   .project-grid { grid-template-columns: 1fr; }
 }
+
+/* ============================================================
+   Availability
+   ============================================================ */
+
+/* The mentor's hour picker. A grid of the twelve bookable hours, so a whole
+   afternoon is three clicks rather than three separate forms. */
+.hours {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));
+  gap: 8px;
+}
+
+.hour {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 11px 8px;
+  font: inherit;
+  font-size: .84rem;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color .13s var(--ease), background .13s var(--ease), color .13s var(--ease);
+}
+
+.hour:not(:disabled):hover { border-color: var(--border-strong); color: var(--text); }
+
+.hour--on {
+  color: #fff;
+  background: var(--mentor);
+  border-color: var(--mentor);
+}
+
+/* Already offered: visible, still clickable, because ticking it again is how a
+   mentor changes what they'll take in that hour. */
+.hour--offered { border-color: var(--mentor); color: var(--mentor); background: var(--mentor-soft); }
+.hour--on.hour--offered { color: #fff; background: var(--mentor); }
+
+.hour--booked {
+  color: var(--faint);
+  background: var(--bg-alt);
+  border-color: var(--border);
+  cursor: not-allowed;
+}
+
+.hour__flag {
+  font-size: .62rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  opacity: .85;
+}
+
+/* ---- the admin's reference grid ---- */
+.avail-day { margin-bottom: 22px; }
+
+.avail-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(178px, 1fr));
+  gap: 9px;
+}
+
+.avail {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 11px 13px;
+  font-size: .8rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--mentor);
+  border-radius: 9px;
+}
+
+.avail strong { font-size: .87rem; }
+.avail__who { color: var(--muted); }
+.avail__kinds { font-size: .7rem; color: var(--faint); }
+.avail__note { font-size: .72rem; color: var(--muted); font-style: italic; }
+
+/* A booked hour is not available - it reads as spent, not as an option. */
+.avail--booked {
+  background: var(--surface-2);
+  border-left-color: var(--student);
+  opacity: .82;
+}
+.avail__booked { font-size: .72rem; font-weight: 700; color: var(--student); }
