@@ -5,8 +5,11 @@ import com.learn.interviewmentor.dto.AcceptRequestDto;
 import com.learn.interviewmentor.dto.CompleteRequestDto;
 import com.learn.interviewmentor.dto.CreateRequestDto;
 import com.learn.interviewmentor.model.User;
+import com.learn.interviewmentor.model.InterviewRequest;
 import com.learn.interviewmentor.vo.InterviewRequestVo;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.nio.file.Path;
 import java.util.List;
 
 /**
@@ -33,4 +36,17 @@ public interface SessionFacade {
     ApiResult<InterviewRequestVo> accept(Long id, AcceptRequestDto request, User mentor);
 
     ApiResult<InterviewRequestVo> complete(Long id, CompleteRequestDto request, User mentor);
+
+    // ---- the candidate's CV ----
+
+    ApiResult<InterviewRequestVo> attachCv(Long id, MultipartFile cv, User student);
+
+    /**
+     * The booking, checked. Returns the entity rather than a VO because the
+     * controller needs the content type and download name to build the headers,
+     * and those are properties of the stored file, not of a response body.
+     */
+    InterviewRequest cvFor(Long id, User caller);
+
+    Path cvPath(InterviewRequest request);
 }

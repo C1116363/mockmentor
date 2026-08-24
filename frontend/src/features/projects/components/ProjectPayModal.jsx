@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useProjectAccessPayment } from "../useProjectAccessPayment";
 import { formatPrice } from "../../../utils/format";
+import GatewayPayPanel from "../../checkout/components/GatewayPayPanel";
 
 /**
  * Pay for contributor access to a project.
@@ -90,6 +91,15 @@ export default function ProjectPayModal({ access, onDone, onClose }) {
               This is the price when you requested access. It stays fixed even if the
               listed price changes.
             </p>
+
+            {/* Nothing renders here unless a gateway is configured on the
+                server, so a manual-UPI deployment sees this screen unchanged. */}
+            <GatewayPayPanel
+              purpose="PROJECT"
+              targetId={access.id}
+              amount={formatPrice(instructions.amount)}
+              onPaid={onDone}
+            />
 
             <ol className="pay-steps">
               <li>

@@ -71,6 +71,19 @@ public record InterviewRequestVo(
 
         @Schema(description = "READY, ALMOST_READY or NEEDS_WORK", example = "ALMOST_READY")
         Recommendation recommendation,
+
+        @Schema(description = "true when the candidate attached a CV. Fetch it from "
+                + "/api/requests/{id}/cv - it is never inlined here, and the stored filename "
+                + "is deliberately not exposed.", example = "true")
+        boolean hasCv,
+
+        @Schema(description = "The download name, when there is a CV", example = "rahul-sharma-cv.pdf")
+        String cvFileName,
+
+        @Schema(description = "Size in bytes, so the UI can show it before downloading",
+                example = "184320")
+        Long cvSizeBytes,
+
         LocalDateTime createdAt
 ) {
     public static InterviewRequestVo from(InterviewRequest request) {
@@ -97,6 +110,9 @@ public record InterviewRequestVo(
                 request.getCommunicationRating(),
                 request.getProblemSolvingRating(),
                 request.getRecommendation(),
+                request.hasCv(),
+                request.getCvOriginalName(),
+                request.getCvSizeBytes(),
                 request.getCreatedAt()
         );
     }

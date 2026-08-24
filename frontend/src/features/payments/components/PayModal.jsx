@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { usePayment } from "../usePayment";
+import GatewayPayPanel from "../../checkout/components/GatewayPayPanel";
 
 /**
  * "Pay and book" - shown right after a slot is reserved.
@@ -78,6 +79,16 @@ export default function PayModal({ request, onDone, onClose }) {
               <span className="pay-amount__label">Amount</span>
               <span className="pay-amount__value">₹{instructions.amount}</span>
             </div>
+
+            {/* Renders nothing unless a gateway is configured and its keys are
+                present, so this screen is unchanged on a manual-UPI server.
+                INTERVIEW is addressed by request id - see PaymentServiceImpl. */}
+            <GatewayPayPanel
+              purpose="INTERVIEW"
+              targetId={request.id}
+              amount={instructions.amount}
+              onPaid={onDone}
+            />
 
             <ol className="pay-steps">
               <li>

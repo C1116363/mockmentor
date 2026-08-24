@@ -14,6 +14,8 @@ import PayModal from "../features/payments/components/PayModal";
 import PlanCard from "../features/plans/components/PlanCard";
 import PlanPayModal from "../features/plans/components/PlanPayModal";
 import MaterialCard from "../features/materials/components/MaterialCard";
+import ConfirmDialog from "../components/ConfirmDialog";
+import Skeleton from "../components/Skeleton";
 import { useSectionNav } from "../layout/SectionNav";
 
 const EXPERIENCE_LEVELS = ["Fresher", "0-1 years", "1-3 years", "3-5 years", "5+ years"];
@@ -69,7 +71,8 @@ export default function StudentDashboard() {
 
   // Three hooks, one per feature - this is the facade layer. Each loads and
   // fails on its own, so a broken plans call cannot blank out the interview list.
-  const { live, done, unpaidCount, upcoming, loading, book, cancel } = useSessions();
+  const { live, done, unpaidCount, upcoming, loading, book, cancel, attachCv } =
+    useSessions();
   const plansFeature = usePlans();
   const { materials } = useMaterials();
   const projectsFeature = useProjects();
@@ -80,12 +83,17 @@ export default function StudentDashboard() {
   const [message, setMessage] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [payingFor, setPayingFor] = useState(null);
+  // Held outside the form object: a File is not JSON, and it goes up in its own
+  // call after the booking exists.
+  const [cv, setCv] = useState(null);
   const [gettingPlan, setGettingPlan] = useState(null);
   const [payingPlan, setPayingPlan] = useState(null);
   // requesting = the project whose request form is open; payingProject = the
   // access row being paid for. Two states because they are two steps.
   const [requesting, setRequesting] = useState(null);
   const [payingProject, setPayingProject] = useState(null);
+  // The booking whose cancel dialog is open.
+  const [cancelling, setCancelling] = useState(null);
 
   async function getPlan(plan) {
     setGettingPlan(plan.id);
@@ -159,8 +167,26 @@ export default function StudentDashboard() {
 
     try {
       const created = await book(form);
+
+      /*
+       * The CV goes up after the booking exists, and a failure here must not
+       * lose the booking - the slot is the scarce thing, the file is not. So it
+       * is caught separately and reported as a note rather than as a failure.
+       */
+      let cvWarning = null;
+      if (cv) {
+        try {
+          await attachCv(created.id, cv);
+        } catch (e) {
+          cvWarning = `Booked, but your CV didn't upload: ${e.message} `
+            + "You can add it from the booking card.";
+        }
+      }
+
       setForm(EMPTY_FORM);
       setDate("");
+      setCv(null);
+      if (cvWarning) setMessage({ type: "error", text: cvWarning });
       setPayingFor(created);
     } catch (error) {
       setFieldErrors(error.fieldErrors);
@@ -170,13 +196,12 @@ export default function StudentDashboard() {
     }
   }
 
-  async function cancelRequest(id) {
-    if (!window.confirm("Cancel this request?")) return;
-    try {
-      await cancel(id);
-    } catch (error) {
-      setMessage({ type: "error", text: error.message });
-    }
+  async function confirmCancel() {
+    // Throwing leaves the dialog open with the reason shown, rather than closing
+    // it and dropping the error into a banner they may not look at.
+    await cancel(cancelling.id);
+    setCancelling(null);
+    setMessage({ type: "success", text: "Booking cancelled. The slot is free again." });
   }
 
   async function afterPayment() {
@@ -216,7 +241,7 @@ export default function StudentDashboard() {
         </button>
       )}
       {LIVE_STATUSES.includes(request.status) && (
-        <button className="btn btn--ghost" onClick={() => cancelRequest(request.id)}>
+        <button className="btn btn--ghost" onClick={() => setCancelling(request)}>
           Cancel request
         </button>
       )}
@@ -253,6 +278,39 @@ export default function StudentDashboard() {
             });
           }}
         />
+      )}
+
+      {cancelling && (
+        <ConfirmDialog
+          title="Cancel this booking?"
+          confirmLabel="Cancel booking"
+          cancelLabel="Keep it"
+          onCancel={() => setCancelling(null)}
+          onConfirm={confirmCancel}
+        >
+          <p>
+            <strong>{cancelling.topic}</strong>
+            <br />
+            {cancelling.preferredSlot
+              && new Date(cancelling.preferredSlot).toLocaleString(undefined,
+                   { dateStyle: "full", timeStyle: "short" })}
+          </p>
+          <p>
+            The hour goes back to whoever offered it, so somebody else can book
+            it. You would need to book again from scratch.
+          </p>
+          {cancelling.status === "AWAITING_PAYMENT" && (
+            <p className="confirm__warn">
+              You have not paid for this one, so there is nothing to refund.
+            </p>
+          )}
+          {cancelling.status !== "AWAITING_PAYMENT" && (
+            <p className="confirm__warn">
+              You have already paid for this. Cancelling does not refund you
+              automatically — contact an admin.
+            </p>
+          )}
+        </ConfirmDialog>
       )}
 
       {requesting && (
@@ -358,6 +416,30 @@ export default function StudentDashboard() {
               />
             </label>
 
+            <label className="field">
+              <span>
+                Your CV <em>(optional)</em>
+              </span>
+              <input
+                type="file"
+                accept=".pdf,.doc,.docx,application/pdf"
+                onChange={(e) => setCv(e.target.files?.[0] ?? null)}
+              />
+              <small className="field__hint">
+                {session.key === "MENTORING"
+                  ? "Helps the mentor give advice that fits where you actually are."
+                  : "Your interviewer reads it beforehand, so the questions are about your "
+                    + "own projects rather than generic ones."}
+                {" "}PDF or Word, up to 5 MB — PDF looks the same on their machine as it
+                does on yours.
+              </small>
+              {cv && (
+                <small className="field__hint cv-picked">
+                  📎 {cv.name} · {(cv.size / 1024).toFixed(0)} KB
+                </small>
+              )}
+            </label>
+
             <button
               className="btn btn--primary"
               type="submit"
@@ -385,7 +467,7 @@ export default function StudentDashboard() {
             <p>Everything booked but not finished yet.</p>
           </header>
 
-          {loading && <p className="empty">Loading...</p>}
+          {loading && <Skeleton rows={2} />}
           {!loading && live.length === 0 && (
             <div className="empty">
               <p>Nothing booked right now.</p>

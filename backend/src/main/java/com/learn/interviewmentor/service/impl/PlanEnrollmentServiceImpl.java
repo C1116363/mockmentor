@@ -1,5 +1,7 @@
 package com.learn.interviewmentor.service.impl;
 
+import com.learn.interviewmentor.model.PaymentPurpose;
+import com.learn.interviewmentor.payment.PurchaseSettlement;
 import com.learn.interviewmentor.service.PaymentService;
 import com.learn.interviewmentor.service.PlanEnrollmentService;
 import com.learn.interviewmentor.service.PlanService;
@@ -48,7 +50,7 @@ import java.util.List;
  */
 @Service
 @Transactional(readOnly = true)
-public class PlanEnrollmentServiceImpl implements PlanEnrollmentService {
+public class PlanEnrollmentServiceImpl implements PlanEnrollmentService, PurchaseSettlement {
 
     private static final Logger log = LoggerFactory.getLogger(PlanEnrollmentServiceImpl.class);
 
@@ -262,6 +264,56 @@ public class PlanEnrollmentServiceImpl implements PlanEnrollmentService {
     @Override
     public List<Long> activePlanIds(User student) {
         return enrollmentRepository.findActivePlanIds(student.getId(), LocalDateTime.now());
+    }
+
+    // ---------- gateway settlement ----------
+
+    @Override
+    public PaymentPurpose purpose() {
+        return PaymentPurpose.PLAN;
+    }
+
+    /**
+     * pricePaid, not plan.getPrice().
+     *
+     * The enrollment froze the price when the student chose the plan. If an
+     * admin raises the price while the student is on the payment screen, the
+     * charge must still be the number they were shown - reading it live off the
+     * plan would quietly move the goalposts mid-purchase.
+     */
+    @Override
+    public PurchaseSettlement.Payable prepare(Long enrollmentId, User caller) {
+        PlanEnrollment enrollment = getOrThrow(enrollmentId);
+
+        if (!enrollment.isOwnedBy(caller)) {
+            throw new ForbiddenException("That isn't your purchase");
+        }
+        if (enrollment.getStatus() == EnrollmentStatus.ACTIVE) {
+            throw new ConflictException("You already have this plan.");
+        }
+        if (enrollment.getStatus() == EnrollmentStatus.SUBMITTED) {
+            throw new ConflictException(
+                    "We're already checking the screenshot you sent. Wait for that to be "
+                            + "reviewed rather than paying twice.");
+        }
+        if (enrollment.getStatus() == EnrollmentStatus.CANCELLED) {
+            throw new ConflictException("You cancelled this purchase. Choose the plan again to restart it.");
+        }
+
+        return new PurchaseSettlement.Payable(
+                enrollment.getPricePaid(),
+                enrollment.getPlan().getName() + " - " + enrollment.getDurationDays() + " days");
+    }
+
+    @Transactional
+    @Override
+    public void settle(Long enrollmentId, String gatewayPaymentId) {
+        PlanEnrollment enrollment = getOrThrow(enrollmentId);
+        enrollment.settleByGateway(gatewayPaymentId);
+
+        log.info("Plan '{}' activated for {} by gateway payment {} - runs until {}",
+                enrollment.getPlan().getName(), enrollment.getStudent().getEmail(),
+                gatewayPaymentId, enrollment.getExpiresAt());
     }
 
     private void assertCanSee(PlanEnrollment enrollment, User caller) {

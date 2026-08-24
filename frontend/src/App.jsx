@@ -1,5 +1,5 @@
 import { AuthProvider, useAuth } from "./features/auth/AuthContext";
-import { SectionNavProvider, SectionMenu } from "./layout/SectionNav";
+import { SectionNavProvider, SectionTabs, useSectionNav } from "./layout/SectionNav";
 import AuthPage from "./pages/AuthPage";
 import StudentDashboard from "./pages/StudentDashboard";
 import MentorGate from "./pages/MentorGate";
@@ -32,8 +32,16 @@ function initials(name) {
 
 function Shell() {
   const { user, loading, logout } = useAuth();
+  const { active } = useSectionNav();
 
-  if (loading) return <div className="booting">Loading...</div>;
+  if (loading) {
+    return (
+      <div className="booting">
+        <span className="booting__mark">🎯</span>
+        <span className="booting__bar"><i /></span>
+      </div>
+    );
+  }
   if (!user) return <AuthPage />;
 
   const Dashboard = DASHBOARDS[user.role];
@@ -44,10 +52,9 @@ function Shell() {
         <div className="topbar__left">
           <div className="brand">
             <span className="brand__mark">🎯</span>
-            <span className="brand__name">PreHire</span>
+            <span className="brand__name">ConfirmPlacement</span>
           </div>
-          {/* menu button - opens the section list */}
-          <SectionMenu />
+          <p className="topbar__subtitle">{SUBTITLES[user.role]}</p>
         </div>
 
         <div className="topbar__user">
@@ -63,13 +70,20 @@ function Shell() {
         </div>
       </header>
 
-      <p className="topbar__subtitle">{SUBTITLES[user.role]}</p>
+      {/* Every section on screen at once - see where you are, what else there
+          is, and what is waiting, without opening anything. */}
+      <SectionTabs />
 
-      <main>
+      {/*
+        `key` is doing real work: changing it makes React remount the subtree, so
+        the enter animation replays on every tab change. Without it the content
+        swaps instantly and the app feels like one static box being rewritten.
+      */}
+      <main key={active} className="view">
         {Dashboard ? <Dashboard /> : <p className="empty">Unknown role: {user.role}</p>}
       </main>
 
-      <footer className="footer">PreHire · practise before it counts</footer>
+      <footer className="footer">ConfirmPlacement · practise before it counts</footer>
     </div>
   );
 }

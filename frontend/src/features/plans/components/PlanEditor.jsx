@@ -136,25 +136,30 @@ export default function PlanEditor({ plan, onSave, onCancel }) {
             <small className="field__hint">Each line becomes a bullet on the card.</small>
           </label>
 
-          <div className="form__row">
-            <label className="field">
-              <span>Display order <em>(lower is first)</em></span>
-              <input name="displayOrder" type="number" value={form.displayOrder} onChange={update} />
-            </label>
+          <label className="field field--narrow">
+            <span>Display order <em>(lower is first)</em></span>
+            <input name="displayOrder" type="number" value={form.displayOrder} onChange={update} />
+          </label>
 
-            <div className="field">
-              <span>Flags</span>
-              <label className="check">
-                <input type="checkbox" name="active" checked={form.active} onChange={update} />
-                On sale
-              </label>
-              <label className="check">
-                <input type="checkbox" name="highlighted" checked={form.highlighted}
-                       onChange={update} />
-                Show “Most popular” ribbon
-              </label>
-            </div>
-          </div>
+          <label className="toggle">
+            <input type="checkbox" name="active" checked={form.active} onChange={update} />
+            <span className="toggle__text">
+              <strong>On sale</strong>
+              <small>
+                Taking it off sale hides it from students. Anyone who already bought
+                it keeps their access.
+              </small>
+            </span>
+          </label>
+
+          <label className="toggle">
+            <input type="checkbox" name="highlighted" checked={form.highlighted}
+                   onChange={update} />
+            <span className="toggle__text">
+              <strong>Show the “Most popular” ribbon</strong>
+              <small>Draws the eye to one plan. Only worth using on one of them.</small>
+            </span>
+          </label>
 
           {error && <p className="notice notice--error">{error}</p>}
 

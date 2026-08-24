@@ -101,6 +101,28 @@ public class SecurityConfig {
                         // must be open. It returns counts only, never people.
                         .requestMatchers("/api/public/**").permitAll()
 
+                        // Gateway webhooks. Razorpay's servers have no account
+                        // here and cannot get a token, so this has to be open -
+                        // what replaces the login is the HMAC signature on the
+                        // body, checked before the request touches anything.
+                        //
+                        // Narrowed to POST deliberately. There is nothing here
+                        // to GET, and leaving other methods open would put an
+                        // unauthenticated surface next to the payment code for
+                        // no benefit at all.
+                        .requestMatchers(HttpMethod.POST, "/api/webhooks/**").permitAll()
+
+                        // Opening a checkout and confirming one. Students only -
+                        // the three things this app sells are all bought by
+                        // students, and a mentor or admin reaching a checkout
+                        // would mean something has gone wrong elsewhere.
+                        .requestMatchers("/api/checkout/confirm").hasRole(Role.STUDENT.name())
+                        .requestMatchers(HttpMethod.POST, "/api/checkout/*/*").hasRole(Role.STUDENT.name())
+
+                        // Which payment methods exist is not sensitive, and the
+                        // payment screen needs it before it can render.
+                        .requestMatchers(HttpMethod.GET, "/api/checkout/options").authenticated()
+
                         // Swagger UI and the OpenAPI spec. Fine to leave open on
                         // a learning project; on a real public API you would
                         // lock these down or disable them outside dev.
@@ -150,6 +172,12 @@ public class SecurityConfig {
                         .requestMatchers("/api/requests/pending").hasRole(Role.MENTOR.name())
                         .requestMatchers(HttpMethod.PATCH, "/api/requests/*/accept").hasRole(Role.MENTOR.name())
                         .requestMatchers(HttpMethod.PATCH, "/api/requests/*/complete").hasRole(Role.MENTOR.name())
+
+                        // Only a student uploads a CV - it is their own. Reading
+                        // one is narrower than any URL rule can express (owner,
+                        // the assigned mentor, admin), so that check lives in
+                        // InterviewRequestService.cvFor.
+                        .requestMatchers(HttpMethod.POST, "/api/requests/*/cv").hasRole(Role.STUDENT.name())
 
                         // Declaring availability is what makes a slot exist, so
                         // only a mentor may do it. The admin reads everyone's

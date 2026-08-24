@@ -12,13 +12,15 @@
  */
 
 export const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8080/api";
-const TOKEN_KEY = "prehire.token";
+const TOKEN_KEY = "confirmplacement.token";
 
 /**
- * The app has been renamed twice (MockMentor -> AbhiMentor -> PreHire), so a
- * token may sit under an older key too.
+ * The app has been renamed a few times (MockMentor -> AbhiMentor -> PreHire ->
+ * ConfirmPlacement), so a token may sit under an older key.
+ *
+ * These are only ever purged, never migrated - see below.
  */
-const LEGACY_TOKEN_KEYS = ["abhimentor.token", "mockmentor.token"];
+const LEGACY_TOKEN_KEYS = ["prehire.token", "abhimentor.token", "mockmentor.token"];
 
 /**
  * Anything still holding a token in localStorage is cleared on load.
@@ -219,6 +221,25 @@ export async function fetchScreenshotUrl(paymentId) {
  */
 export async function fetchMaterialBlobUrl(materialId) {
   const response = await fetch(`${BASE_URL}/materials/${materialId}/file`, {
+    headers: { Authorization: `Bearer ${tokenStore.get()}` },
+  });
+
+  if (!response.ok) {
+    if (response.status === 401) tokenStore.clear();
+    const body = await response.json().catch(() => null);
+    throw new ApiError(body, response.status);
+  }
+  return URL.createObjectURL(await response.blob());
+}
+
+/**
+ * A candidate's CV.
+ *
+ * Only the candidate, the assigned mentor and admins get a 200 - the server
+ * decides, and a 403 here is the access rule working rather than a bug.
+ */
+export async function fetchCvBlobUrl(requestId) {
+  const response = await fetch(`${BASE_URL}/requests/${requestId}/cv`, {
     headers: { Authorization: `Bearer ${tokenStore.get()}` },
   });
 

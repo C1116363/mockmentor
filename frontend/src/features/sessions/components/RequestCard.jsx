@@ -1,5 +1,6 @@
 import StatusBadge from "../../../components/StatusBadge";
 import FeedbackCard from "./FeedbackCard";
+import CvChip from "./CvChip";
 
 function formatDateTime(value) {
   if (!value) return null;
@@ -66,6 +67,11 @@ export default function RequestCard({ request, children }) {
       </dl>
 
       {request.notes && <p className="card__notes">&ldquo;{request.notes}&rdquo;</p>}
+
+      {/* Shown to everyone who can see the card; the download itself is what the
+          server gates. A mentor who is not assigned gets a 403 from the button,
+          not a hidden one - but they only ever see cards they may act on. */}
+      {request.hasCv && <CvChip session={request} />}
 
       {request.meetingLink && (
         <a className="card__link" href={request.meetingLink} target="_blank" rel="noreferrer">

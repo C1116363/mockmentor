@@ -120,19 +120,29 @@ export default function MaterialSendForm({ students, plans, onUpload, onShareLin
         </label>
       )}
 
-      <fieldset className="field audience">
+      {/* Option cards, not radios with a run-on hint. The hint here IS the
+          decision - "nobody else can reach it, even with the link" is the whole
+          reason to pick that one - and a full sentence trailing a label after an
+          em dash wraps onto its own line starting with a dash, which reads as
+          broken text rather than as an explanation. */}
+      <div className="field">
         <span>Who gets it?</span>
-        {AUDIENCES.map((a) => (
-          <label className="check" key={a.key}>
-            <input type="radio" name="audience" value={a.key} checked={audience === a.key}
-                   onChange={() => setAudience(a.key)} />
-            <span>
-              {a.label}
-              <small className="field__hint"> — {a.hint}</small>
-            </span>
-          </label>
-        ))}
-      </fieldset>
+        <div className="pick pick--stack" role="radiogroup" aria-label="Who gets it">
+          {AUDIENCES.map((a) => (
+            <button
+              key={a.key}
+              type="button"
+              role="radio"
+              aria-checked={audience === a.key}
+              className={`pick__opt ${audience === a.key ? "pick__opt--on" : ""}`}
+              onClick={() => setAudience(a.key)}
+            >
+              <strong>{a.label}</strong>
+              <small>{a.hint}</small>
+            </button>
+          ))}
+        </div>
+      </div>
 
       {audience === "STUDENT" && (
         <label className="field">

@@ -25,6 +25,14 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import com.learn.interviewmentor.model.InterviewRequest;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
+import java.nio.file.Path;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -184,5 +192,83 @@ public class InterviewRequestController {
             @Parameter(description = "Id of the interview request", example = "1") @PathVariable Long id,
             @CurrentUser User actor) {
         return sessionFacade.cancel(id, actor);
+    }
+
+    // ---------------- the candidate's CV ----------------
+
+    @PostMapping(value = "/{id}/cv", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(
+            summary = "Attach your CV to a booking",
+            description = """
+                    Optional, and separate from creating the booking on purpose: if the
+                    upload fails you still have a booking rather than losing the slot over
+                    a file.
+
+                    PDF or Word, up to 5 MB. **PDF is best** - it looks the same on the
+                    interviewer's machine as it does on yours.
+
+                    Send it again to replace it; the old one is deleted. Allowed right up
+                    until the session is completed or cancelled, because people find a typo
+                    on their CV the evening before and the interviewer wants the version
+                    that will actually be in front of them.
+
+                    The CV is attached to **this booking**, not to your account - a CV
+                    changes between March and August, and an interviewer needs the one that
+                    was current for the session they are running.""")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Attached"),
+            @ApiResponse(responseCode = "400",
+                    description = "Not a PDF or Word file, over 5 MB, or named .pdf but not a PDF",
+                    content = @Content(schema = @Schema(implementation = ApiResult.class))),
+            @ApiResponse(responseCode = "403", description = "Not your booking",
+                    content = @Content(schema = @Schema(implementation = ApiResult.class))),
+            @ApiResponse(responseCode = "409", description = "The session is already finished",
+                    content = @Content(schema = @Schema(implementation = ApiResult.class)))
+    })
+    public ApiResult<InterviewRequestVo> attachCv(
+            @Parameter(description = "Booking id", example = "1") @PathVariable Long id,
+            @Parameter(description = "Your CV as a PDF or Word document") @RequestParam MultipartFile cv,
+            @CurrentUser User student) {
+        return sessionFacade.attachCv(id, cv, student);
+    }
+
+    @GetMapping("/{id}/cv")
+    @Operation(
+            summary = "Download the candidate's CV",
+            description = """
+                    **Only the candidate, the mentor assigned to this session, and admins.**
+
+                    Note who is deliberately excluded: a mentor browsing the open queue. A CV
+                    carries a phone number and an address, and letting every approved mentor
+                    read every candidate's CV before deciding whether to accept would turn a
+                    booking list into a CV database - which is not what anybody uploaded it
+                    for. Accept the session first.
+
+                    Served as an attachment with `nosniff`, so an uploaded file can never
+                    render as a page in our own origin.""")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "The CV"),
+            @ApiResponse(responseCode = "403",
+                    description = "You are not the candidate or the assigned mentor",
+                    content = @Content(schema = @Schema(implementation = ApiResult.class))),
+            @ApiResponse(responseCode = "404", description = "No CV attached, or the file is gone",
+                    content = @Content(schema = @Schema(implementation = ApiResult.class)))
+    })
+    public ResponseEntity<Resource> downloadCv(@PathVariable Long id, @CurrentUser User caller) {
+        InterviewRequest request = sessionFacade.cvFor(id, caller);
+        Path path = sessionFacade.cvPath(request);
+
+        String type = request.getCvContentType() == null
+                ? "application/octet-stream" : request.getCvContentType();
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(type))
+                // The candidate's own filename comes back as the download name. It
+                // was stripped of quotes, backslashes and newlines on the way in,
+                // so it cannot break out of the header here.
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + request.getCvOriginalName() + "\"")
+                .header("X-Content-Type-Options", "nosniff")
+                .body(new FileSystemResource(path));
     }
 }

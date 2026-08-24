@@ -16,6 +16,9 @@ import com.learn.interviewmentor.model.User;
 import com.learn.interviewmentor.repository.InterviewRequestRepository;
 import com.learn.interviewmentor.repository.UserRepository;
 import java.time.LocalDateTime;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.nio.file.Path;
 import java.util.List;
 
 /**
@@ -66,4 +69,19 @@ public interface InterviewRequestService {
     long countByStatus(RequestStatus status);
 
     long countAll();
+
+    // ---- the candidate's CV ----
+
+    /** Attach or replace it. Allowed until the session is completed or cancelled. */
+    InterviewRequestVo attachCv(Long requestId, MultipartFile cv, User student);
+
+    /**
+     * The booking, if this caller may read its CV.
+     *
+     * Owner, the assigned mentor, and admins only - deliberately not every mentor
+     * in the open queue. A CV is personal data, not a listing.
+     */
+    InterviewRequest cvFor(Long requestId, User caller);
+
+    Path cvPath(InterviewRequest request);
 }

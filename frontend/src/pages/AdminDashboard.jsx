@@ -4,6 +4,8 @@ import { useAdminProjects } from "../features/projects/useAdminProjects";
 import { useAllAvailability } from "../features/mentors/useAllAvailability";
 import ProjectAdminCard from "../features/projects/components/ProjectAdminCard";
 import ProjectEditor from "../features/projects/components/ProjectEditor";
+import ConfirmDialog from "../components/ConfirmDialog";
+import Skeleton from "../components/Skeleton";
 import AccessReviewCard from "../features/projects/components/AccessReviewCard";
 import StatusBadge from "../components/StatusBadge";
 import RequestCard from "../features/sessions/components/RequestCard";
@@ -16,28 +18,6 @@ import EnrollmentReviewCard from "../features/plans/components/EnrollmentReviewC
 import MaterialSendForm from "../features/materials/components/MaterialSendForm";
 import { useSectionNav } from "../layout/SectionNav";
 
-const STAT_LABELS = {
-  awaitingPayment: "Unpaid",
-  paymentsToCheck: "To verify",
-  students: "Candidates",
-  mentors: "Mentors",
-  admins: "Admins",
-  totalRequests: "Requests",
-  pending: "Unassigned",
-  scheduled: "Scheduled",
-  completed: "Completed",
-  cancelled: "Cancelled",
-  activePlans: "Plans",
-  planPaymentsToCheck: "Plan pay",
-  activeEnrollments: "Enrolled",
-  materials: "Material",
-  liveProjects: "Projects",
-  projectAccessToCheck: "Proj pay",
-  contributors: "Contribs",
-  awaitingRepoInvite: "To invite",
-  openSlots: "Open hours",
-};
-
 /** Everything an admin does: verify mentors, and match students to mentors. */
 export default function AdminDashboard() {
   const { active: tab, register } = useSectionNav();
@@ -45,7 +25,7 @@ export default function AdminDashboard() {
   // mentor profiles, sessions, two payment queues, plans and material at once, so
   // something has to compose them; better there, once, than sixteen useState here.
   const {
-    stats, profiles, unassigned, mentors, users, requests,
+    profiles, unassigned, mentors, users, requests,
     payments, plans, planPayments, materials,
     loading, message,
     verifyPayment, rejectPayment: doRejectPayment,
@@ -69,24 +49,114 @@ export default function AdminDashboard() {
   // null = closed, "new" = creating, a plan object = editing that one.
   const [editingPlan, setEditingPlan] = useState(null);
 
-  // The prompts stay in the screen: asking the user a question is a UI concern,
-  // and a hook that popped a window.prompt() could not be used headlessly.
-  async function reject(profile) {
-    const reason = window.prompt(`Why are you rejecting ${profile.fullName}?`);
-    if (reason) await doRejectMentor(profile, reason);
-  }
+  /**
+   * Whichever confirm dialog is open, described as data.
+   *
+   * One piece of state rather than five booleans - two of these can never be open
+   * at once, and modelling it that way makes that impossible rather than merely
+   * unlikely. `onConfirm` throwing keeps the dialog open with the error attached,
+   * so a failed call does not lose the typed reason.
+   */
+  const [confirming, setConfirming] = useState(null);
 
-  async function rejectPayment(payment) {
-    const reason = window.prompt(`Why are you rejecting this payment from ${payment.studentName}?`);
-    if (reason) await doRejectPayment(payment, reason);
-  }
+  const rejectMentorDialog = (profile) => setConfirming({
+    title: `Reject ${profile.fullName}?`,
+    confirmLabel: "Reject profile",
+    body: (
+      <p>
+        Their profile goes back to them and they can fix it and resubmit. They
+        will not appear to students until it is approved.
+      </p>
+    ),
+    reason: {
+      label: "Why are you rejecting it?",
+      hint: `${profile.fullName} reads this — tell them what to fix.`,
+      placeholder: "The Aadhaar number doesn't match the name on the profile.",
+    },
+    onConfirm: (reason) => doRejectMentor(profile, reason),
+  });
 
-  async function rejectEnrollment(enrollment) {
-    const reason = window.prompt(
-      `Why are you rejecting ${enrollment.studentName}'s payment for ${enrollment.planName}?`
-    );
-    if (reason) await doRejectEnrollment(enrollment, reason);
-  }
+  const rejectPaymentDialog = (payment) => setConfirming({
+    title: `Reject ${payment.studentName}'s payment?`,
+    confirmLabel: "Reject payment",
+    body: (
+      <p>
+        Their booking stays unpaid and their slot is still held. They can send new
+        proof straight away.
+      </p>
+    ),
+    reason: {
+      label: "Why couldn't you accept it?",
+      hint: `${payment.studentName} reads this — say what to send instead.`,
+      placeholder: "We couldn't find UTR 412345678901 in our account. Check the number and resend.",
+    },
+    onConfirm: (reason) => doRejectPayment(payment, reason),
+  });
+
+  const rejectEnrollmentDialog = (enrollment) => setConfirming({
+    title: `Reject payment for ${enrollment.planName}?`,
+    confirmLabel: "Reject payment",
+    body: <p>{enrollment.studentName} keeps their place and can send new proof.</p>,
+    reason: {
+      label: "Why couldn't you accept it?",
+      hint: `${enrollment.studentName} reads this.`,
+      placeholder: "The screenshot shows ₹2,999 but the plan is ₹3,499.",
+    },
+    onConfirm: (reason) => doRejectEnrollment(enrollment, reason),
+  });
+
+  const rejectAccessDialog = (access) => setConfirming({
+    title: `Reject payment for ${access.projectName}?`,
+    confirmLabel: "Reject payment",
+    body: (
+      <p>
+        {access.studentName} is <strong>not</strong> added to the repository. They
+        can send new proof.
+      </p>
+    ),
+    reason: {
+      label: "Why couldn't you accept it?",
+      hint: `${access.studentName} reads this.`,
+      placeholder: "We couldn't match this UTR against our account.",
+    },
+    onConfirm: (reason) => projectsAdmin.reject(access, reason),
+  });
+
+  const revokeAccessDialog = (access) => setConfirming({
+    title: `Revoke @${access.githubUsername}'s access?`,
+    confirmLabel: "Revoke access",
+    body: (
+      <>
+        <p>
+          <strong>{access.studentName}</strong> loses access to{" "}
+          <span className="mono">{access.repoFullName ?? access.projectName}</span>.
+        </p>
+        {/* The thing an admin forgets, said before they click rather than after.
+            Our row going REVOKED does not touch GitHub. */}
+        <p className="confirm__warn">
+          This does <strong>not</strong> remove them on GitHub. You still have to
+          take <span className="mono">@{access.githubUsername}</span> off the
+          repository yourself
+          {access.repoFullName && (
+            <>
+              {" — "}
+              <a href={`https://github.com/${access.repoFullName}/settings/access`}
+                 target="_blank" rel="noopener noreferrer">
+                open access settings
+              </a>
+            </>
+          )}
+          .
+        </p>
+      </>
+    ),
+    reason: {
+      label: "Why are you revoking it?",
+      hint: `${access.studentName} reads this.`,
+      placeholder: "The project has wrapped up — thanks for your contributions.",
+    },
+    onConfirm: (reason) => projectsAdmin.revoke(access, reason),
+  });
 
   async function assign(requestId, payload) {
     await assignMentor(requestId, payload);
@@ -98,24 +168,13 @@ export default function AdminDashboard() {
     setEditingProject(null);
   }
 
-  async function rejectAccess(access) {
-    const reason = window.prompt(
-      `Why are you rejecting ${access.studentName}'s payment for ${access.projectName}?`);
-    if (reason) await projectsAdmin.reject(access, reason);
-  }
-
-  async function revokeAccess(access) {
-    const reason = window.prompt(
-      `Why are you revoking @${access.githubUsername}'s access to ${access.projectName}? `
-      + "They see this reason.");
-    if (reason) await projectsAdmin.revoke(access, reason);
-  }
-
   async function showContributors(project) {
     try {
       setContributorsOf({ project, rows: await projectsAdmin.contributors(project.id) });
     } catch (e) {
-      setMessage({ type: "error", text: e.message });
+      // Reported through the project hook, since that is whose banner is
+      // rendered next to this section.
+      projectsAdmin.setMessage({ type: "error", text: e.message });
     }
   }
 
@@ -153,7 +212,13 @@ export default function AdminDashboard() {
       projectsAdmin.awaitingInvite.length, projectsAdmin.pastExpiry.length,
       projectsAdmin.projects.length, availability.openCount]);
 
-  if (loading) return <p className="empty">Loading admin data...</p>;
+  if (loading) {
+    return (
+      <div className="admin">
+        <Skeleton rows={3} />
+      </div>
+    );
+  }
 
   const shown = profiles.filter((p) => p.verificationStatus === mentorFilter);
 
@@ -185,22 +250,29 @@ export default function AdminDashboard() {
         />
       )}
 
+      {confirming && (
+        <ConfirmDialog
+          title={confirming.title}
+          confirmLabel={confirming.confirmLabel}
+          reason={confirming.reason}
+          onCancel={() => setConfirming(null)}
+          onConfirm={async (reason) => {
+            // Throwing keeps the dialog open with the error shown, so the typed
+            // reason survives a failed call.
+            await confirming.onConfirm(reason);
+            setConfirming(null);
+          }}
+        >
+          {confirming.body}
+        </ConfirmDialog>
+      )}
+
       {message && <p className={`notice notice--${message.type}`}>{message.text}</p>}
       {projectsAdmin.message && (
         <p className={`notice notice--${projectsAdmin.message.type}`}>
           {projectsAdmin.message.text}
         </p>
       )}
-
-      <div className="stat-grid">
-        {Object.entries(stats).map(([key, value]) => (
-          <div className="stat" key={key}>
-            <span className="stat__value">{value}</span>
-            <span className="stat__label">{STAT_LABELS[key] ?? key}</span>
-          </div>
-        ))}
-      </div>
-
 
       {tab === "payments" && (
         <section className="panel">
@@ -224,7 +296,7 @@ export default function AdminDashboard() {
                 key={p.id}
                 payment={p}
                 onVerify={verifyPayment}
-                onReject={rejectPayment}
+                onReject={rejectPaymentDialog}
               />
             ))}
           </div>
@@ -311,7 +383,7 @@ export default function AdminDashboard() {
                 {p.verificationStatus === "PENDING" && (
                   <div className="accept-form__actions">
                     <button className="btn btn--primary" onClick={() => approveMentor(p)}>Approve</button>
-                    <button className="btn btn--ghost" onClick={() => reject(p)}>Reject</button>
+                    <button className="btn btn--ghost" onClick={() => rejectMentorDialog(p)}>Reject</button>
                   </div>
                 )}
               </MentorProfileCard>
@@ -344,7 +416,7 @@ export default function AdminDashboard() {
                 key={e.id}
                 enrollment={e}
                 onActivate={activateEnrollment}
-                onReject={rejectEnrollment}
+                onReject={rejectEnrollmentDialog}
               />
             ))}
           </div>
@@ -476,7 +548,7 @@ export default function AdminDashboard() {
               <div className="card-list">
                 {projectsAdmin.awaitingInvite.map((a) => (
                   <AccessReviewCard key={a.id} access={a} mode="invite"
-                    onConfirmInvite={projectsAdmin.confirmInvite} onRevoke={revokeAccess} />
+                    onConfirmInvite={projectsAdmin.confirmInvite} onRevoke={revokeAccessDialog} />
                 ))}
               </div>
             </>
@@ -491,7 +563,7 @@ export default function AdminDashboard() {
             <div className="card-list">
               {projectsAdmin.pending.map((a) => (
                 <AccessReviewCard key={a.id} access={a} mode="payment"
-                  onApprove={projectsAdmin.approve} onReject={rejectAccess} />
+                  onApprove={projectsAdmin.approve} onReject={rejectAccessDialog} />
               ))}
             </div>
           )}
@@ -511,7 +583,7 @@ export default function AdminDashboard() {
               <div className="card-list">
                 {projectsAdmin.pastExpiry.map((a) => (
                   <AccessReviewCard key={a.id} access={a} mode="expired"
-                    onRevoke={revokeAccess} />
+                    onRevoke={revokeAccessDialog} />
                 ))}
               </div>
             </>
@@ -594,7 +666,7 @@ export default function AdminDashboard() {
                           </td>
                           <td>
                             <button className="btn btn--ghost btn--sm"
-                                    onClick={() => revokeAccess(r)}>
+                                    onClick={() => revokeAccessDialog(r)}>
                               Revoke
                             </button>
                           </td>

@@ -17,6 +17,18 @@ export const sessionApi = {
 
   cancel: (id) => request(`/requests/${id}/cancel`, { method: "PATCH" }),
 
+  /**
+   * Attach or replace the CV on one booking.
+   *
+   * Separate from create() on purpose: if the upload fails you still have a
+   * booking, rather than losing the slot over a file.
+   */
+  attachCv: (id, file) => {
+    const body = new FormData();
+    body.append("cv", file);
+    return request(`/requests/${id}/cv`, { method: "POST", body });
+  },
+
   // ---- mentor side ----
   openQueue: () => request("/requests/pending"),
   assignedToMe: () => request("/requests/assigned"),

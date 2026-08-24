@@ -5,6 +5,7 @@ import com.learn.interviewmentor.service.MentorProfileService;
 import com.learn.interviewmentor.service.PaymentService;
 import com.learn.interviewmentor.service.AvailabilityService;
 import com.learn.interviewmentor.service.SlotService;
+import com.learn.interviewmentor.storage.CvStorage;
 
 import com.learn.interviewmentor.dto.AcceptRequestDto;
 import com.learn.interviewmentor.dto.AssignMentorRequestDto;
@@ -25,8 +26,11 @@ import com.learn.interviewmentor.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -49,6 +53,7 @@ public class InterviewRequestServiceImpl implements InterviewRequestService {
     private final InterviewRequestRepository requestRepository;
     private final SlotService slotService;
     private final AvailabilityService availabilityService;
+    private final CvStorage cvStorage;
     private final MentorProfileService mentorProfileService;
     private final UserRepository userRepository;
     private final MeetingLinkGenerator meetingLinkGenerator;
@@ -60,10 +65,12 @@ public class InterviewRequestServiceImpl implements InterviewRequestService {
                                    UserRepository userRepository,
                                    MeetingLinkGenerator meetingLinkGenerator,
                                    PaymentService paymentService,
-                                      AvailabilityService availabilityService) {
+                                      AvailabilityService availabilityService,
+                                      CvStorage cvStorage) {
         this.requestRepository = requestRepository;
         this.slotService = slotService;
         this.availabilityService = availabilityService;
+        this.cvStorage = cvStorage;
         this.mentorProfileService = mentorProfileService;
         this.userRepository = userRepository;
         this.meetingLinkGenerator = meetingLinkGenerator;
@@ -333,5 +340,93 @@ public class InterviewRequestServiceImpl implements InterviewRequestService {
     private InterviewRequest getRequestOrThrow(Long id) {
         return requestRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Interview request not found with id " + id));
+    }
+
+    // ---------- CV ----------
+
+    /**
+     * Attach or replace the candidate's CV.
+     *
+     * Allowed right up until the session is completed or cancelled: people find a
+     * typo on their CV the evening before, and the interviewer wants the version
+     * that will be in front of them, not whichever one was uploaded first.
+     */
+    @Override
+    @Transactional
+    public InterviewRequestVo attachCv(Long requestId, MultipartFile cv, User student) {
+        InterviewRequest request = getRequestOrThrow(requestId);
+
+        if (!request.isOwnedBy(student)) {
+            throw new ForbiddenException("That isn't your booking");
+        }
+        if (request.getStatus() == RequestStatus.COMPLETED
+                || request.getStatus() == RequestStatus.CANCELLED) {
+            throw new ConflictException(
+                    "This session is already " + request.getStatus().name().toLowerCase()
+                            + ", so there is nothing left to prepare for.");
+        }
+
+        String stored = cvStorage.store(cv);
+        String replaced = request.attachCv(
+                stored, cvStorage.safeDisplayName(cv), cvStorage.contentTypeOf(cv), cv.getSize());
+
+        // Delete the old one only once the new one is safely on disk and the row
+        // points at it - the other order loses the CV if the upload fails.
+        if (replaced != null) {
+            cvStorage.delete(replaced);
+        }
+
+        log.info("{} attached a CV to booking {}", student.getEmail(), requestId);
+        return InterviewRequestVo.from(request);
+    }
+
+    /**
+     * The CV, if this caller may read it.
+     *
+     * <b>A CV is personal data</b> - a phone number, an address, sometimes a date
+     * of birth. So the list is short and deliberate:
+     *
+     * <ul>
+     *   <li>the candidate who uploaded it</li>
+     *   <li>the mentor <em>actually assigned</em> to that session - they need it
+     *       to run a realistic interview</li>
+     *   <li>admins</li>
+     * </ul>
+     *
+     * Note who is <b>not</b> on it: a mentor browsing the open queue. Letting any
+     * approved mentor read every candidate's CV before deciding whether to accept
+     * would turn a booking list into a CV database, which is not what anybody
+     * uploaded it for.
+     */
+    @Override
+    public InterviewRequest cvFor(Long requestId, User caller) {
+        InterviewRequest request = getRequestOrThrow(requestId);
+
+        boolean allowed = caller.getRole() == Role.ADMIN
+                || request.isOwnedBy(caller)
+                || request.isMentoredBy(caller);
+
+        if (!allowed) {
+            throw new ForbiddenException(
+                    "Only the candidate and the mentor taking this session can open the CV");
+        }
+        if (!request.hasCv()) {
+            throw new NotFoundException("No CV was attached to this booking");
+        }
+        return request;
+    }
+
+    /** Resolved and checked, so the controller can stream it straight out. */
+    @Override
+    public Path cvPath(InterviewRequest request) {
+        Path path = cvStorage.pathOf(request.getCvFile());
+
+        // Checked before the controller starts streaming: once the headers are
+        // sent the status cannot change, and a missing file would give the client
+        // a truncated body rather than a 404 it can act on.
+        if (!Files.isReadable(path)) {
+            throw new NotFoundException("That CV is no longer available");
+        }
+        return path;
     }
 }

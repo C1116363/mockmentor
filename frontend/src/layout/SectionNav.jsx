@@ -2,28 +2,23 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useRef,
   useState,
 } from "react";
 
 /**
- * Navigation lives behind a menu button in the header.
+ * Which section of a dashboard is showing.
  *
- * Nothing is shown until you click it; then the sections drop down one under
- * the other, and picking one shows that screen and closes the menu.
- *
- * The state lives up here because the button is in the header while the
+ * The state lives up here because the tabs are in the app shell while the
  * sections belong to whichever dashboard is mounted. Each dashboard registers
- * its own sections on mount, so the header knows nothing about roles.
+ * its own sections on mount, so the shell knows nothing about roles.
  */
 const SectionNavContext = createContext(null);
 
 export function SectionNavProvider({ children }) {
   const [items, setItems] = useState([]);
   const [active, setActive] = useState(null);
-  const [open, setOpen] = useState(false);
   // Compared against each incoming registration, so re-registering identical
   // sections (which happens on every parent render) can't loop setState.
   const signature = useRef("");
@@ -38,15 +33,9 @@ export function SectionNavProvider({ children }) {
     );
   }, []);
 
-  const go = useCallback((key) => {
-    setActive(key);
-    setOpen(false);
-  }, []);
+  const go = useCallback((key) => setActive(key), []);
 
-  const value = useMemo(
-    () => ({ items, active, register, go, open, setOpen }),
-    [items, active, register, go, open]
-  );
+  const value = useMemo(() => ({ items, active, register, go }), [items, active, register, go]);
 
   return <SectionNavContext.Provider value={value}>{children}</SectionNavContext.Provider>;
 }
@@ -58,89 +47,54 @@ export function useSectionNav() {
 }
 
 /**
- * The menu button plus the panel it opens.
+ * The section tabs.
  *
- * Both live in one component so the panel can be positioned against the
- * button, and so the outside-click handler has a single element to test.
+ * <h2>Why these are tabs and not a menu</h2>
+ * This was a hamburger button that opened a dropdown. Everything was one click
+ * away and nothing was visible, so at any moment the screen was a single panel
+ * and a button - which is exactly why the app read as "one box". Worse, the
+ * counts that tell an admin there are four payments waiting were inside the
+ * closed menu, so the one thing that should pull you somewhere was the one thing
+ * you could not see.
+ *
+ * Tabs put the whole shape of the dashboard on screen: where you are, what else
+ * exists, and what is waiting. The dot on a tab with outstanding work is the
+ * point - it is a reason to click, visible without clicking anything.
  */
-export function SectionMenu() {
-  const { items, active, go, open, setOpen } = useSectionNav();
-  const wrapRef = useRef(null);
-
-  // Clicking anywhere else, or pressing Escape, closes the menu - a dropdown
-  // you can only close by clicking the button again feels stuck.
-  useEffect(() => {
-    if (!open) return;
-
-    const onPointer = (e) => {
-      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
-    };
-    const onKey = (e) => e.key === "Escape" && setOpen(false);
-
-    document.addEventListener("mousedown", onPointer);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onPointer);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open, setOpen]);
+export function SectionTabs() {
+  const { items, active, go } = useSectionNav();
 
   if (items.length === 0) return null;
 
-  const current = items.find((i) => i.key === active);
-  // Work waiting in sections you are not on, so a closed menu never hides it.
-  const outstanding = items.reduce(
-    (n, i) => n + (i.alert && i.count > 0 && i.key !== active ? i.count : 0),
-    0
-  );
-
   return (
-    <div className="navmenu" ref={wrapRef}>
-      <button
-        className={`navmenu__btn ${open ? "navmenu__btn--open" : ""}`}
-        onClick={() => setOpen(!open)}
-        aria-expanded={open}
-        aria-haspopup="menu"
-        aria-label={open ? "Close menu" : "Open menu"}
-      >
-        <span className="burger" aria-hidden="true">
-          <span />
-          <span />
-          <span />
-        </span>
-        {outstanding > 0 && !open && <span className="navmenu__dot">{outstanding}</span>}
-      </button>
+    <nav className="tabs-bar" aria-label="Sections">
+      <div className="tabs-bar__scroll" role="tablist">
+        {items.map((item) => {
+          const on = active === item.key;
+          // "alert" marks a section as urgent; the dot only shows when there is
+          // actually something in it. An empty urgent section is just a section.
+          const urgent = item.alert && item.count > 0;
 
-      {open && (
-        <div className="navmenu__panel" role="menu">
-          <p className="navmenu__heading">Go to</p>
-
-          {items.map((i) => (
+          return (
             <button
-              key={i.key}
-              role="menuitem"
-              className={`navmenu__item ${active === i.key ? "navmenu__item--on" : ""}`}
-              onClick={() => go(i.key)}
+              key={item.key}
+              role="tab"
+              aria-selected={on}
+              className={`tab-btn ${on ? "tab-btn--on" : ""} ${urgent ? "tab-btn--urgent" : ""}`}
+              onClick={() => go(item.key)}
             >
-              <span className="navmenu__icon">{i.icon}</span>
-              <span className="navmenu__label">{i.label}</span>
-              {i.count > 0 && (
-                <span className={`navmenu__count ${i.alert ? "navmenu__count--alert" : ""}`}>
-                  {i.count}
-                </span>
-              )}
-              {active === i.key && (
-                <span className="navmenu__tick" aria-hidden="true">
-                  ✓
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
-      )}
+              <span className="tab-btn__icon" aria-hidden="true">{item.icon}</span>
+              <span className="tab-btn__label">{item.label}</span>
 
-      {/* what you're currently looking at, next to the button */}
-      <span className="navmenu__current">{current?.label}</span>
-    </div>
+              {item.count > 0 && (
+                <span className="tab-btn__count">{item.count}</span>
+              )}
+
+              {urgent && !on && <span className="tab-btn__dot" aria-label="needs attention" />}
+            </button>
+          );
+        })}
+      </div>
+    </nav>
   );
 }

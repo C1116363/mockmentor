@@ -129,30 +129,33 @@ export default function AvailabilityPlanner({ onDeclare, existing }) {
         </div>
       )}
 
-      <fieldset className="field audience">
+      <div className="field" role="group" aria-label="What you will take">
         <span>What will you take in these hours?</span>
-        <label className="check">
+
+        <label className="toggle">
           <input type="checkbox" checked={forInterviews}
                  onChange={(e) => setForInterviews(e.target.checked)} />
-          <span>
-            Mock interviews
-            <small className="field__hint"> — under real pressure, ending in a scorecard</small>
+          <span className="toggle__text">
+            <strong>Mock interviews</strong>
+            <small>Under real pressure, ending in a written scorecard.</small>
           </span>
         </label>
-        <label className="check">
+
+        <label className="toggle">
           <input type="checkbox" checked={forMentoring}
                  onChange={(e) => setForMentoring(e.target.checked)} />
-          <span>
-            Mentoring sessions
-            <small className="field__hint"> — a discussion, no ratings</small>
+          <span className="toggle__text">
+            <strong>Mentoring sessions</strong>
+            <small>A discussion — advice, a code review, working through a problem. No ratings.</small>
           </span>
         </label>
+
         {noKindPicked && (
           <small className="field__error">
             Pick at least one — an hour you&apos;ll take neither in isn&apos;t availability.
           </small>
         )}
-      </fieldset>
+      </div>
 
       <label className="field">
         <span>Note for the admin <em>(optional)</em></span>

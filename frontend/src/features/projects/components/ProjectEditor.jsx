@@ -188,9 +188,6 @@ export default function ProjectEditor({ project, reviewers, onSave, onCancel }) 
               <span>Max contributors <em>(blank = no limit)</em></span>
               <input name="maxContributors" type="number" min="1" max="500"
                      value={form.maxContributors} onChange={update} placeholder="4" />
-              <small className="field__hint">
-                One reviewer cannot meaningfully review thirty newcomers at once.
-              </small>
             </label>
 
             <label className="field">
@@ -208,6 +205,14 @@ export default function ProjectEditor({ project, reviewers, onSave, onCancel }) 
             </label>
           </div>
 
+          {/* Under the row, not inside half of it - a sentence in a half-width
+              cell wraps into four ragged lines and reads as damage. */}
+          <small className="field__hint">
+            Cap the seats to what you can actually review. One engineer cannot
+            meaningfully review thirty newcomers at once, and selling access past
+            that point sells something you cannot deliver.
+          </small>
+
           <label className="field">
             <span>Onboarding link <em>(optional)</em></span>
             <input name="onboardingUrl" type="url" value={form.onboardingUrl} onChange={update}
@@ -217,37 +222,49 @@ export default function ProjectEditor({ project, reviewers, onSave, onCancel }) 
             )}
           </label>
 
-          <fieldset className="field audience">
+          {/* Cards rather than radios with a run-on hint: three options where the
+              hint IS the decision read far better side by side, and it reuses the
+              picker the booking form already uses. role/aria keep it a real radio
+              group for anyone not using a mouse. */}
+          <div className="field">
             <span>Difficulty</span>
-            {DIFFICULTIES.map((d) => (
-              <label className="check" key={d.key}>
-                <input type="radio" name="difficulty" value={d.key}
-                       checked={form.difficulty === d.key} onChange={update} />
-                <span>
-                  {d.label}
-                  <small className="field__hint"> — {d.hint}</small>
-                </span>
-              </label>
-            ))}
-          </fieldset>
-
-          <div className="form__row">
-            <label className="field">
-              <span>Display order <em>(lower is first)</em></span>
-              <input name="displayOrder" type="number" value={form.displayOrder} onChange={update} />
-            </label>
-
-            <div className="field">
-              <span>Flags</span>
-              <label className="check">
-                <input type="checkbox" name="active" checked={form.active} onChange={update} />
-                Open to new contributors
-              </label>
-              <small className="field__hint">
-                Closing does not revoke anyone — existing access runs to its expiry.
-              </small>
+            <div className="pick pick--3" role="radiogroup" aria-label="Difficulty">
+              {DIFFICULTIES.map((d) => (
+                <button
+                  key={d.key}
+                  type="button"
+                  role="radio"
+                  aria-checked={form.difficulty === d.key}
+                  className={`pick__opt ${form.difficulty === d.key ? "pick__opt--on" : ""}`}
+                  onClick={() => setForm((c) => ({ ...c, difficulty: d.key }))}
+                >
+                  <strong>{d.label}</strong>
+                  <small>{d.hint}</small>
+                </button>
+              ))}
             </div>
           </div>
+
+          <label className="field field--narrow">
+            <span>Display order <em>(lower is first)</em></span>
+            <input name="displayOrder" type="number" value={form.displayOrder} onChange={update} />
+          </label>
+
+          {/* Full width, not squeezed into half a row under a "Flags" heading.
+              The explanation is the important part - it is what stops somebody
+              closing a project thinking it revokes people - and a sentence needs
+              room to be a sentence. */}
+          <label className="toggle">
+            <input type="checkbox" name="active" checked={form.active} onChange={update} />
+            <span className="toggle__text">
+              <strong>Open to new contributors</strong>
+              <small>
+                Closing takes it off the list for new requests. It does{" "}
+                <b>not</b> revoke anyone — people mid-contribution keep their access
+                until it expires.
+              </small>
+            </span>
+          </label>
 
           {error && <p className="notice notice--error">{error}</p>}
 

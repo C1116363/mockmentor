@@ -74,6 +74,29 @@ public class InterviewRequest {
     @Column(length = 1000)
     private String notes;
 
+    // ---------- the candidate's CV (optional) ----------
+
+    /**
+     * Attached per booking, not held once on the account.
+     *
+     * A CV changes - somebody books in March and again in August with a job in
+     * between - and an interviewer needs the version that was current for the
+     * session they are running, not whatever was uploaded last. Storing it on the
+     * booking also means deleting a booking takes its CV with it.
+     */
+    @Column(name = "cv_file")
+    private String cvFile;
+
+    /** What the candidate called it. Used as the download name. */
+    @Column(name = "cv_original_name", length = 200)
+    private String cvOriginalName;
+
+    @Column(name = "cv_content_type", length = 120)
+    private String cvContentType;
+
+    @Column(name = "cv_size_bytes")
+    private Long cvSizeBytes;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private RequestStatus status = RequestStatus.PENDING;
@@ -195,6 +218,26 @@ public class InterviewRequest {
         this.status = RequestStatus.CANCELLED;
     }
 
+    /**
+     * Attach or replace the CV.
+     *
+     * @return the filename this replaced, so the caller can delete it. A booking
+     *         keeps one CV, not a pile of old ones - and returning it rather than
+     *         deleting here keeps the entity free of file-system concerns.
+     */
+    public String attachCv(String file, String originalName, String contentType, long sizeBytes) {
+        String previous = this.cvFile;
+        this.cvFile = file;
+        this.cvOriginalName = originalName;
+        this.cvContentType = contentType;
+        this.cvSizeBytes = sizeBytes;
+        return previous;
+    }
+
+    public boolean hasCv() {
+        return cvFile != null;
+    }
+
     /** Used by the service to check "is this actually your request?". */
     public boolean isOwnedBy(User user) {
         return student != null && student.getId().equals(user.getId());
@@ -291,5 +334,21 @@ public class InterviewRequest {
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
+    }
+
+    public String getCvFile() {
+        return cvFile;
+    }
+
+    public String getCvOriginalName() {
+        return cvOriginalName;
+    }
+
+    public String getCvContentType() {
+        return cvContentType;
+    }
+
+    public Long getCvSizeBytes() {
+        return cvSizeBytes;
     }
 }

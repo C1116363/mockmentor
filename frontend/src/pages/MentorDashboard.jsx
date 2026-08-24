@@ -6,6 +6,7 @@ import { useSectionNav } from "../layout/SectionNav";
 import { useMentorSessions } from "../features/sessions/useMentorSessions";
 import { useAvailability } from "../features/mentors/useAvailability";
 import AvailabilityPlanner from "../features/mentors/components/AvailabilityPlanner";
+import Skeleton from "../components/Skeleton";
 import { selectUpcoming } from "../features/sessions/sessionRules";
 
 function defaultSlotFrom(preferred) {
@@ -104,7 +105,7 @@ export default function MentorDashboard() {
             </p>
           </header>
 
-          {loading && <p className="empty">Loading the queue...</p>}
+          {loading && <Skeleton rows={2} />}
           {!loading && pending.length === 0 && (
             <p className="empty">Nothing in the queue right now. Check back later.</p>
           )}
@@ -226,7 +227,7 @@ export default function MentorDashboard() {
             Offered <span className="count">{availability.hours.length}</span>
           </h3>
 
-          {availability.loading && <p className="empty">Loading your hours...</p>}
+          {availability.loading && <Skeleton rows={2} lines={2} />}
           {availability.error && (
             <p className="notice notice--error">{availability.error}</p>
           )}

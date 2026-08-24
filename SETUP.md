@@ -116,11 +116,11 @@ If root has no password, press Enter at the prompt.
 CREATE DATABASE IF NOT EXISTS interview_mentor
   CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE USER 'prehire'@'localhost' IDENTIFIED BY 'choose-a-password';
+CREATE USER 'confirmplacement'@'localhost' IDENTIFIED BY 'choose-a-password';
 
 -- ALL on that one schema only. Not *.* - a web app has no business being able
 -- to read or drop every other database on the box.
-GRANT ALL PRIVILEGES ON interview_mentor.* TO 'prehire'@'localhost';
+GRANT ALL PRIVILEGES ON interview_mentor.* TO 'confirmplacement'@'localhost';
 FLUSH PRIVILEGES;
 ```
 
@@ -133,13 +133,18 @@ cp backend/.env.example backend/.env
 Then edit `backend/.env`:
 
 ```ini
-DB_USER=root                  # or prehire, if you made a dedicated user
+DB_USER=root                  # or confirmplacement, if you made a dedicated user
 DB_PASSWORD=your-password     # leave blank if root has no password
 
 # Only needed if you want the payment screens to show your own UPI ID.
 UPI_ID=yourname@okhdfcbank
 UPI_PAYEE=Your Name
 ```
+
+**Card payments are off by default**, and the app runs fine without them — the
+manual UPI flow is the default and needs no account, no KYC and no keys. When
+you are ready to take cards, [PAYMENTS.md](PAYMENTS.md) covers the three
+Razorpay keys and where they go.
 
 `.env` is gitignored, so your password never reaches GitHub.
 
@@ -317,3 +322,4 @@ session and closing a tab logs you out. Refreshing keeps you in. See
 | Change API behaviour | [backend/README.md](backend/README.md) |
 | Change a screen | [frontend/README.md](frontend/README.md) |
 | Change the marketing page | [website/README.md](website/README.md) |
+| **Take card / UPI payments (Razorpay)** | [**PAYMENTS.md**](PAYMENTS.md) |

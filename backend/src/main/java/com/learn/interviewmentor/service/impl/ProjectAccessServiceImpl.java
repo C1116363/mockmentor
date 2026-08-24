@@ -7,10 +7,12 @@ import com.learn.interviewmentor.exception.ForbiddenException;
 import com.learn.interviewmentor.exception.NotFoundException;
 import com.learn.interviewmentor.github.CollaboratorGranter;
 import com.learn.interviewmentor.model.LiveProject;
+import com.learn.interviewmentor.model.PaymentPurpose;
 import com.learn.interviewmentor.model.ProjectAccessRequest;
 import com.learn.interviewmentor.model.ProjectAccessStatus;
 import com.learn.interviewmentor.model.Role;
 import com.learn.interviewmentor.model.User;
+import com.learn.interviewmentor.payment.PurchaseSettlement;
 import com.learn.interviewmentor.repository.ProjectAccessRequestRepository;
 import com.learn.interviewmentor.service.LiveProjectService;
 import com.learn.interviewmentor.service.ProjectAccessService;
@@ -54,7 +56,7 @@ import java.util.List;
  */
 @Service
 @Transactional(readOnly = true)
-public class ProjectAccessServiceImpl implements ProjectAccessService {
+public class ProjectAccessServiceImpl implements ProjectAccessService, PurchaseSettlement {
 
     private static final Logger log = LoggerFactory.getLogger(ProjectAccessServiceImpl.class);
 
@@ -401,6 +403,101 @@ public class ProjectAccessServiceImpl implements ProjectAccessService {
     }
 
     // ---------------- helpers ----------------
+
+    // ---------- gateway settlement ----------
+
+    @Override
+    public PaymentPurpose purpose() {
+        return PaymentPurpose.PROJECT;
+    }
+
+    /**
+     * The seat check runs here, before the money.
+     *
+     * A project has a fixed number of contributor seats and days can pass
+     * between requesting one and paying for it. Checking at the checkout means
+     * the student is told "this project filled up" instead of being charged and
+     * refunded - and a refund on a card takes five working days to come back,
+     * which is a genuinely bad experience over a race we can see coming.
+     *
+     * It cannot be the only check. Two students can both pass this and both pay
+     * before either settles, so {@link #settle} looks again. What this buys is
+     * that the overwhelmingly common case fails cheaply and early.
+     */
+    @Override
+    public PurchaseSettlement.Payable prepare(Long accessId, User caller) {
+        ProjectAccessRequest request = getOrThrow(accessId);
+
+        if (!request.isOwnedBy(caller)) {
+            throw new ForbiddenException("That isn't your request");
+        }
+        if (request.getStatus() == ProjectAccessStatus.ACTIVE) {
+            throw new ConflictException("You already have access to this project.");
+        }
+        if (request.getStatus() == ProjectAccessStatus.SUBMITTED) {
+            throw new ConflictException(
+                    "We're already checking the screenshot you sent. Wait for that to be "
+                            + "reviewed rather than paying twice.");
+        }
+        if (request.getStatus() == ProjectAccessStatus.CANCELLED) {
+            throw new ConflictException("You cancelled this request. Apply again to restart it.");
+        }
+
+        projectService.assertSeatAvailable(request.getProject(), request.getId());
+
+        return new PurchaseSettlement.Payable(
+                request.getPricePaid(),
+                "Contributor access - " + request.getProject().getName());
+    }
+
+    /**
+     * Paid. Grant access, and do not throw if GitHub says no.
+     *
+     * <h2>The seat re-check does not roll anything back</h2>
+     * If the last seat went while this student was at the checkout, their money
+     * is already taken - refusing here would leave them charged with nothing to
+     * show for it, and the gateway would redeliver the webhook forever trying to
+     * tell us about a payment we keep rejecting. So the access is granted and
+     * the overfill is logged loudly for an admin to sort out. One seat over is a
+     * conversation; a silent unrefunded charge is not.
+     *
+     * <h2>Why a failed GitHub invite is not a failure here</h2>
+     * Same reason. The student paid, so they get the row, the expiry window and
+     * the entry in the admin's "needs inviting" queue - which is exactly where a
+     * manual approval leaves it too. A throw would undo the settlement and put
+     * the payment back in limbo over something a person fixes in ten seconds.
+     */
+    @Transactional
+    @Override
+    public void settle(Long accessId, String gatewayPaymentId) {
+        ProjectAccessRequest request = getOrThrow(accessId);
+
+        try {
+            projectService.assertSeatAvailable(request.getProject(), request.getId());
+        } catch (RuntimeException e) {
+            log.warn("Project '{}' is over its seat limit: {} paid ({}) for access {} after "
+                            + "the last seat went. Access granted anyway - review this.",
+                    request.getProject().getRepoFullName(), request.getStudent().getEmail(),
+                    gatewayPaymentId, accessId);
+        }
+
+        request.settleByGateway(gatewayPaymentId);
+
+        var result = granter.grant(
+                request.getProject().getRepoFullName(),
+                request.getGithubUsername(),
+                CollaboratorGranter.PUSH);
+
+        if (result.done()) {
+            request.markCollaboratorGranted();
+        } else {
+            request.markGrantFailed(result.message());
+        }
+
+        log.info("Project access {} settled by gateway payment {} for {} on '{}' until {} - GitHub: {}",
+                accessId, gatewayPaymentId, request.getStudent().getEmail(),
+                request.getProject().getRepoFullName(), request.getExpiresAt(), result.message());
+    }
 
     private void assertCanSee(ProjectAccessRequest request, User caller) {
         if (caller.getRole() != Role.ADMIN && !request.isOwnedBy(caller)) {

@@ -7,7 +7,11 @@ import com.learn.interviewmentor.dto.CreateRequestDto;
 import com.learn.interviewmentor.facade.SessionFacade;
 import com.learn.interviewmentor.model.User;
 import com.learn.interviewmentor.service.InterviewRequestService;
+import com.learn.interviewmentor.model.InterviewRequest;
 import com.learn.interviewmentor.vo.InterviewRequestVo;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.nio.file.Path;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -59,5 +63,22 @@ public class SessionFacadeImpl implements SessionFacade {
         return ApiResult.ok(done, done.scored()
                 ? "Scorecard sent."
                 : "Notes sent.");
+    }
+
+    @Override
+    public ApiResult<InterviewRequestVo> attachCv(Long id, MultipartFile cv, User student) {
+        InterviewRequestVo saved = requestService.attachCv(id, cv, student);
+        return ApiResult.ok(saved,
+                "CV attached. Your interviewer will read it before the session.");
+    }
+
+    @Override
+    public InterviewRequest cvFor(Long id, User caller) {
+        return requestService.cvFor(id, caller);
+    }
+
+    @Override
+    public Path cvPath(InterviewRequest request) {
+        return requestService.cvPath(request);
     }
 }

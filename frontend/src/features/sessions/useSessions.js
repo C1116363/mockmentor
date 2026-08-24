@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { sessionApi } from "../../api/sessionApi";
+import { fetchCvBlobUrl } from "../../api/http";
 import { partitionSessions, selectUpcoming } from "./sessionRules";
 
 /**
@@ -39,12 +40,52 @@ export function useSessions() {
     await reload();
   }, [reload]);
 
+  const attachCv = useCallback(async (id, file) => {
+    await sessionApi.attachCv(id, file);
+    await reload();
+  }, [reload]);
+
   const { live, done, unpaidCount } = partitionSessions(sessions);
 
   return {
     sessions, live, done, unpaidCount,
     upcoming: selectUpcoming(sessions),
     loading, error,
-    reload, book, cancel,
+    reload, book, cancel, attachCv,
   };
+}
+
+/**
+ * Downloading a CV.
+ *
+ * The endpoint needs the Authorization header, so the bytes cannot go in a plain
+ * href - they are fetched as a blob and handed to the browser through a
+ * throwaway anchor, which is the only way to give a blob a filename.
+ */
+export function useCvDownload(session) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+
+  const download = useCallback(async () => {
+    setBusy(true);
+    setError(null);
+    let url;
+    try {
+      url = await fetchCvBlobUrl(session.id);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = session.cvFileName ?? "cv.pdf";
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      // Safe immediately: click() has already handed the download off.
+      if (url) URL.revokeObjectURL(url);
+      setBusy(false);
+    }
+  }, [session]);
+
+  return { download, busy, error };
 }

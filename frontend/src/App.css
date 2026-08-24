@@ -842,30 +842,6 @@
 
 .admin { display: flex; flex-direction: column; gap: 20px; }
 
-.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(116px, 1fr)); gap: 11px; }
-
-.stat {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 15px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  transition: all .18s var(--ease);
-}
-
-.stat:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); border-color: var(--border-strong); }
-
-.stat__value { font-size: 1.6rem; font-weight: 800; line-height: 1; }
-
-.stat__label {
-  font-size: .69rem;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: .06em;
-}
-
 .table-wrap { overflow-x: auto; border-radius: var(--radius); }
 
 .table { width: 100%; border-collapse: collapse; font-size: .87rem; }
@@ -1121,7 +1097,6 @@
 /* empty states can now hold an action button */
 .empty { display: flex; flex-direction: column; align-items: center; gap: 12px; }
 
-
 /* ============================================================
    Header menu: button + the drop-down list of sections
    ============================================================ */
@@ -1131,148 +1106,19 @@
 .topbar__subtitle { color: var(--muted); font-size: .86rem; margin: 0 0 20px; }
 
 /* anchor for the panel, which is positioned against the button */
-.navmenu { position: relative; display: flex; align-items: center; gap: 11px; }
-
-.navmenu__btn {
-  position: relative;
-  width: 38px; height: 38px;
-  display: grid; place-items: center;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all .18s var(--ease);
-}
-
-.navmenu__btn:hover { border-color: var(--border-strong); box-shadow: var(--shadow-xs); }
-
-.navmenu__btn--open {
-  border-color: var(--student);
-  background: var(--student-soft);
-}
 
 /* three bars that fold into an X when open */
-.burger { display: grid; gap: 4px; width: 17px; }
-
-.burger span {
-  height: 2px;
-  width: 100%;
-  background: var(--text);
-  border-radius: 2px;
-  transition: transform .22s var(--ease), opacity .16s var(--ease);
-  transform-origin: center;
-}
-
-.navmenu__btn--open .burger span { background: var(--student); }
-.navmenu__btn--open .burger span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
-.navmenu__btn--open .burger span:nth-child(2) { opacity: 0; }
-.navmenu__btn--open .burger span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
 
 /* count of work waiting in sections you're not on */
-.navmenu__dot {
-  position: absolute;
-  top: -5px; right: -5px;
-  min-width: 18px;
-  padding: 0 5px;
-  border-radius: 999px;
-  background: var(--error);
-  color: #fff;
-  font-size: .66rem;
-  font-weight: 800;
-  line-height: 18px;
-  text-align: center;
-  border: 2px solid var(--bg);
-}
-
-.navmenu__current { font-size: .95rem; font-weight: 700; letter-spacing: -.01em; }
 
 /* ---- the drop-down ---- */
-
-.navmenu__panel {
-  position: absolute;
-  top: calc(100% + 9px);
-  left: 0;
-  z-index: 60;
-  min-width: 258px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 7px;
-  box-shadow: var(--shadow-lg);
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  animation: menudrop .18s var(--ease) both;
-  transform-origin: top left;
-}
 
 @keyframes menudrop {
   from { opacity: 0; transform: translateY(-6px) scale(.97); }
   to { opacity: 1; transform: none; }
 }
 
-.navmenu__heading {
-  font-size: .66rem;
-  font-weight: 800;
-  letter-spacing: .1em;
-  text-transform: uppercase;
-  color: var(--faint);
-  padding: 7px 11px 5px;
-}
-
-.navmenu__item {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  width: 100%;
-  border: none;
-  background: none;
-  padding: 10px 11px;
-  border-radius: 9px;
-  font-size: .89rem;
-  font-weight: 600;
-  color: var(--text);
-  cursor: pointer;
-  text-align: left;
-  transition: background .14s var(--ease);
-}
-
-.navmenu__item:hover { background: var(--surface-2); }
-
-.navmenu__item--on { background: var(--student-soft); color: var(--student); }
-
-.navmenu__icon {
-  width: 26px; height: 26px;
-  flex: 0 0 auto;
-  display: grid; place-items: center;
-  border-radius: 7px;
-  background: var(--bg-alt);
-  font-size: .88rem;
-}
-
-.navmenu__item--on .navmenu__icon { background: color-mix(in srgb, var(--student) 18%, transparent); }
-
-.navmenu__label { flex: 1; }
-
-.navmenu__count {
-  min-width: 20px;
-  padding: 0 6px;
-  border-radius: 999px;
-  background: var(--bg-alt);
-  color: var(--muted);
-  font-size: .71rem;
-  font-weight: 800;
-  line-height: 20px;
-  text-align: center;
-}
-
-.navmenu__count--alert { background: var(--error); color: #fff; }
-
-.navmenu__tick { color: var(--student); font-weight: 800; font-size: .8rem; }
-
 @media (max-width: 560px) {
-  .navmenu__current { display: none; }
-  .navmenu__panel { min-width: 234px; }
 }
 
 /* ============================================================
@@ -1461,22 +1307,6 @@
 /* ============================================================
    Shared odds and ends
    ============================================================ */
-.check {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  font-size: .86rem;
-  font-weight: 500;
-  color: var(--text);
-  cursor: pointer;
-}
-
-.check input { margin-top: 3px; flex-shrink: 0; accent-color: var(--student); }
-
-/* A fieldset carries a browser border and padding by default; this is a group
-   of radios, not a boxed section. */
-.audience { border: 0; padding: 0; margin: 0; gap: 9px; }
-.audience > span { margin-bottom: 2px; }
 
 .send-form {
   padding: 18px;
@@ -1835,3 +1665,742 @@
   opacity: .82;
 }
 .avail__booked { font-size: .72rem; font-weight: 700; color: var(--student); }
+
+/* ============================================================
+   Confirm dialog
+   ============================================================
+   Replaces window.prompt/confirm. These are destructive actions - rejecting
+   somebody's payment, taking their repository access away - so they get room to
+   say what will happen, and the button says what it does rather than "OK".
+*/
+.modal--confirm { max-width: 480px; }
+
+/* A coloured top edge rather than a coloured panel: enough to register as
+   serious at a glance, without making the text harder to read. */
+.modal--danger  { border-top: 3px solid var(--error); }
+.modal--warning { border-top: 3px solid var(--warning); }
+
+.confirm__body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 18px;
+  font-size: .88rem;
+  color: var(--muted);
+}
+.confirm__body strong { color: var(--text); }
+.confirm__body a { color: var(--student); }
+
+/* The consequence somebody is about to forget. */
+.confirm__warn {
+  padding: 10px 12px;
+  font-size: .83rem;
+  color: var(--text);
+  background: var(--warning-soft);
+  border-left: 3px solid var(--warning);
+  border-radius: 0 8px 8px 0;
+}
+
+/* "They will read this." The eye is doing real work - it is the one thing a
+   native prompt could never tell anyone. */
+.confirm__seen {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--warning);
+  font-weight: 600;
+}
+
+.btn--danger {
+  color: #fff;
+  background: var(--error);
+  border-color: var(--error);
+}
+.btn--danger:not(:disabled):hover {
+  background: color-mix(in srgb, var(--error) 86%, #000);
+  border-color: color-mix(in srgb, var(--error) 86%, #000);
+  transform: translateY(-1px);
+}
+.btn--danger:not(:disabled):active { transform: translateY(0); }
+
+/* ============================================================
+   Form layout fixes
+   ============================================================ */
+
+/*
+ * The blowout fix.
+ *
+ * Grid and flex children default to `min-width: auto`, which means "never shrink
+ * below your content". Pair that with `width: 100%` on the inputs and a long
+ * placeholder or a wide number spinner pushes its track wider than the modal,
+ * the row overflows, and the whole form looks broken rather than wrapping.
+ *
+ * `min-width: 0` restores the shrinking these layouts assume, and is the single
+ * most common missing line in any CSS grid form.
+ */
+.field,
+.form__row > *,
+.pick__opt {
+  min-width: 0;
+}
+
+.field input,
+.field select,
+.field textarea {
+  min-width: 0;
+  /* Long placeholders and pasted URLs must not widen the field either. */
+  max-width: 100%;
+}
+
+/* A <fieldset> carries a UA `min-inline-size: min-content` that ignores the
+   rules above and fights every flex or grid parent it sits in. Every grouping in
+   this app is a div with role="group" for that reason - this is here so anyone
+   reaching for a fieldset finds out before debugging it. */
+
+/* ---- segmented picker: a few options where the hint IS the decision ---- */
+.pick {
+  display: grid;
+  gap: 8px;
+}
+
+.pick--3 { grid-template-columns: repeat(3, 1fr); }
+
+.pick__opt {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 11px 12px;
+  font: inherit;
+  text-align: left;
+  color: var(--muted);
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: border-color .14s var(--ease), background .14s var(--ease), color .14s var(--ease);
+}
+
+.pick__opt:hover { border-color: var(--border-strong); color: var(--text); }
+
+.pick__opt--on {
+  color: var(--text);
+  background: var(--student-soft);
+  border-color: var(--student);
+}
+
+.pick__opt strong { font-size: .86rem; }
+/* The hint wraps under the label rather than running on after an em dash -
+   three of them side by side are read by comparison, not as sentences. */
+.pick__opt small {
+  font-size: .73rem;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+@media (max-width: 560px) {
+  .pick--3 { grid-template-columns: 1fr; }
+}
+
+/* ============================================================
+   Toggle row
+   ============================================================
+   A checkbox whose explanation matters as much as its label.
+
+   These used to sit two-to-a-column under a "Flags" heading, which gave a full
+   sentence about half the modal's width to wrap in - so it broke across four
+   ragged lines and read as damage. The explanation is often the important part
+   ("closing does not revoke anyone"), so it gets a full-width row and room to be
+   a sentence.
+*/
+.toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 13px 15px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: border-color .14s var(--ease), background .14s var(--ease);
+}
+
+.toggle:hover { border-color: var(--border-strong); }
+
+/* The whole row reads as "on" - a 13px checkbox is not enough signal on its own. */
+.toggle:has(input:checked) {
+  background: var(--student-soft);
+  border-color: color-mix(in srgb, var(--student) 40%, transparent);
+}
+
+.toggle input {
+  margin-top: 2px;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--student);
+  cursor: pointer;
+}
+
+.toggle__text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  /* Without this the text refuses to wrap and pushes the row wider than its
+     container - the same min-width:auto trap as the form rows. */
+  min-width: 0;
+}
+
+.toggle__text strong { font-size: .87rem; color: var(--text); }
+
+.toggle__text small {
+  font-size: .78rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.toggle__text b { color: var(--text); font-weight: 700; }
+
+/*
+ * A lone number input should not span the whole modal.
+ *
+ * "Display order" is two characters. Stretched to 620px it looks like a mistake,
+ * and it is what pushed these toggles into a cramped half-column in the first
+ * place - the row existed to give the number something to sit beside.
+ */
+.field--narrow input,
+.field--narrow select {
+  max-width: 180px;
+}
+
+/* ============================================================
+   Section tabs
+   ============================================================
+   Replaced a hamburger that hid every section behind a click. The counts that
+   say "four payments are waiting" were inside the closed menu, so the one thing
+   that should pull you somewhere was the one thing you could not see.
+*/
+.tabs-bar {
+  position: sticky;
+  /* Sticky so the sections stay reachable down a long page - the old menu
+     button scrolled away and left you with no way across. */
+  top: 0;
+  z-index: 20;
+  margin: 0 -24px 22px;
+  padding: 10px 24px;
+  background: color-mix(in srgb, var(--bg) 86%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+}
+
+.tabs-bar__scroll {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  /* The scrollbar itself is noise on a row of six buttons; the overflow still
+     scrolls by wheel, trackpad and touch. */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.tabs-bar__scroll::-webkit-scrollbar { display: none; }
+
+.tab-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-shrink: 0;
+  padding: 9px 14px;
+  font: inherit;
+  font-size: .85rem;
+  font-weight: 600;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color .14s var(--ease), background .14s var(--ease), border-color .14s var(--ease);
+}
+
+.tab-btn:hover { color: var(--text); background: var(--surface); border-color: var(--border); }
+
+.tab-btn--on {
+  color: #fff;
+  background: var(--accent, var(--student));
+  border-color: var(--accent, var(--student));
+}
+
+.tab-btn__icon { font-size: .95rem; line-height: 1; }
+
+.tab-btn__count {
+  min-width: 19px;
+  padding: 1px 6px;
+  font-size: .7rem;
+  font-weight: 800;
+  text-align: center;
+  border-radius: 999px;
+  background: var(--bg-alt);
+  color: var(--muted);
+}
+.tab-btn--on .tab-btn__count { background: rgba(255, 255, 255, .24); color: #fff; }
+.tab-btn--urgent .tab-btn__count { background: var(--error-soft); color: var(--error); }
+.tab-btn--on.tab-btn--urgent .tab-btn__count { background: rgba(255, 255, 255, .24); color: #fff; }
+
+/* The reason to click, visible without clicking. Hidden on the active tab -
+   you are already looking at it. */
+.tab-btn__dot {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--error);
+  box-shadow: 0 0 0 2px var(--bg);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: .55; transform: scale(.82); }
+}
+
+@media (max-width: 640px) {
+  /* Labels off, icons and counts on - six tabs still fit across a phone. */
+  .tab-btn__label { display: none; }
+  .tab-btn { padding: 9px 12px; }
+  .tab-btn--on .tab-btn__label { display: inline; }
+}
+
+/* ============================================================
+   View transition
+   ============================================================
+   Remounted on every tab change (see the `key` in App.jsx), so this replays.
+   Without it the panel content swaps instantly and the app reads as one static
+   box being rewritten in place.
+*/
+.view { animation: view-in .26s var(--ease) both; }
+
+@keyframes view-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Anyone who has asked the OS for less motion gets none of it. */
+@media (prefers-reduced-motion: reduce) {
+  .view, .tab-btn__dot, .skel { animation: none; }
+}
+
+/* ============================================================
+   Skeletons
+   ============================================================
+   The shape of what is coming, rather than the word "Loading". The layout does
+   not jump when the real thing arrives.
+*/
+.skel-card {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 18px 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.skel {
+  height: 11px;
+  border-radius: 6px;
+  background: linear-gradient(90deg,
+    var(--bg-alt) 25%, var(--surface-2) 37%, var(--bg-alt) 63%);
+  background-size: 400% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+.skel--title { height: 15px; width: 45%; margin-bottom: 3px; }
+
+@keyframes shimmer {
+  from { background-position: 100% 50%; }
+  to { background-position: 0 50%; }
+}
+
+/* A number that needs doing something about. */
+
+/* ============================================================
+   Boot screen
+   ============================================================ */
+.booting { flex-direction: column; gap: 16px; }
+.booting__mark { font-size: 2rem; animation: pulse 1.6s ease-in-out infinite; }
+
+.booting__bar {
+  display: block;
+  width: 140px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--bg-alt);
+  overflow: hidden;
+}
+.booting__bar i {
+  display: block;
+  width: 40%;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--student);
+  animation: slide 1.1s var(--ease) infinite;
+}
+@keyframes slide {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(350%); }
+}
+
+/* ============================================================
+   Sections stop being boxes
+   ============================================================
+   `.panel` was a bordered, shadowed, padded container holding everything, and
+   `.card` inside it was surface-2 - a box inside a box, in two greys a shade
+   apart. Nothing separated, nothing had depth, and every screen read as "one box
+   with the data in it".
+
+   The container goes. The section header sits on the page, and the CARDS become
+   the objects - elevated, on the page background, with real space between them.
+   Same markup, no JSX changes: the panel is now a layout wrapper, not a surface.
+*/
+.panel {
+  background: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  /* was hidden, which clipped the hover lift and shadow off every card */
+  overflow: visible;
+}
+
+.panel::before { display: none; }
+
+/* ---- the section header, given some weight ---- */
+.panel__head {
+  position: relative;
+  margin-bottom: 22px;
+  padding-left: 16px;
+}
+
+/* A gradient rail down the header instead of a hairline across a box top.
+   It marks the section without drawing a container around it. */
+.panel__head::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 4px;
+  width: 4px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--accent, var(--student)),
+              color-mix(in srgb, var(--accent, var(--student)) 15%, transparent));
+}
+
+.panel__head h2 {
+  font-size: 1.55rem;
+  letter-spacing: -.02em;
+}
+
+.panel__head p { max-width: 62ch; font-size: .9rem; line-height: 1.6; }
+
+.panel__tag { font-size: .7rem; margin-bottom: 6px; }
+
+/* ============================================================
+   Cards become the object on the page
+   ============================================================ */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px 22px;
+  box-shadow: var(--shadow-xs);
+  /* The left rail lights up on hover - a colour cue that costs no layout and
+     does not move anything around it. */
+  border-left: 3px solid transparent;
+  transition:
+    transform .2s var(--ease),
+    box-shadow .2s var(--ease),
+    border-color .2s var(--ease);
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--border-strong);
+  border-left-color: var(--accent, var(--student));
+}
+
+.card-list { gap: 14px; }
+
+/*
+ * Lists cascade in rather than appearing all at once.
+ *
+ * Ten rows arriving in the same frame reads as a page being painted; the same
+ * ten arriving 45ms apart reads as a list being dealt. Capped at 10 - past that
+ * the last row would wait half a second for no benefit, so everything after just
+ * uses the final delay.
+ */
+.card-list > *  { animation: rise .4s var(--ease) both; }
+.card-list > *:nth-child(1)  { animation-delay: 0ms; }
+.card-list > *:nth-child(2)  { animation-delay: 45ms; }
+.card-list > *:nth-child(3)  { animation-delay: 90ms; }
+.card-list > *:nth-child(4)  { animation-delay: 135ms; }
+.card-list > *:nth-child(5)  { animation-delay: 180ms; }
+.card-list > *:nth-child(6)  { animation-delay: 225ms; }
+.card-list > *:nth-child(7)  { animation-delay: 270ms; }
+.card-list > *:nth-child(8)  { animation-delay: 315ms; }
+.card-list > *:nth-child(9)  { animation-delay: 360ms; }
+.card-list > *:nth-child(n+10) { animation-delay: 400ms; }
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* The grids get it too. */
+.plan-grid > *, .project-grid > * { animation: rise .4s var(--ease) both; }
+.plan-grid > *:nth-child(2), .project-grid > *:nth-child(2) { animation-delay: 70ms; }
+.plan-grid > *:nth-child(3), .project-grid > *:nth-child(3) { animation-delay: 140ms; }
+.plan-grid > *:nth-child(n+4), .project-grid > *:nth-child(n+4) { animation-delay: 210ms; }
+
+/* ============================================================
+   Forms get a surface, since the section no longer provides one
+   ============================================================ */
+.panel > .form,
+.panel > form.form {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-xs);
+}
+
+.table-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
+  padding: 4px 18px;
+}
+
+/* ============================================================
+   Empty states worth reading
+   ============================================================ */
+.empty {
+  padding: 44px 24px;
+  background: var(--surface);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-lg);
+  font-size: .92rem;
+}
+
+/* Nothing here is not an error, so it should not look like one. */
+.empty::before {
+  content: "◌";
+  display: block;
+  font-size: 1.7rem;
+  color: var(--faint);
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+.subhead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.02rem;
+  margin: 30px 0 14px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-list > *, .plan-grid > *, .project-grid > *, .card { animation: none; }
+  .card:hover { transform: none; }
+}
+
+/* ============================================================
+   Top bar
+   ============================================================ */
+.topbar { padding-bottom: 20px; }
+
+.brand__mark {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  font-size: 1rem;
+  background: linear-gradient(135deg, var(--student), var(--mentor));
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--student) 32%, transparent);
+}
+
+.brand__name {
+  font-size: 1.12rem;
+  font-weight: 800;
+  letter-spacing: -.02em;
+}
+
+.topbar__subtitle {
+  margin: 0;
+  padding-left: 14px;
+  border-left: 1px solid var(--border);
+}
+
+@media (max-width: 700px) {
+  /* The strapline is the first thing worth losing on a phone. */
+  .topbar__subtitle { display: none; }
+}
+
+/* ---- stacked option cards, for options whose hint is a full sentence ---- */
+.pick--stack { grid-template-columns: 1fr; }
+
+/*
+ * Label above, explanation below - never trailing after an em dash.
+ *
+ * "All students — Everyone with a student account sees it." looks fine on one
+ * line and breaks the moment it wraps: the hint drops to its own line still
+ * carrying the dash, so the sentence starts with "—" and reads as damage. Two
+ * elements, each of which can wrap on its own, cannot do that.
+ */
+.pick--stack .pick__opt {
+  padding: 13px 15px;
+  gap: 4px;
+}
+
+.pick--stack .pick__opt small { line-height: 1.5; }
+
+/* The selected card carries a tick, so "which one is on" survives being read in
+   greyscale or by anyone who does not separate the two blues. */
+.pick--stack .pick__opt--on strong::after {
+  content: " ✓";
+  color: var(--student);
+  font-weight: 900;
+}
+
+/* ============================================================
+   CV on a booking card
+   ============================================================ */
+.cv-chip { display: flex; flex-direction: column; gap: 5px; }
+
+.cv-chip__btn {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  padding: 11px 14px;
+  font: inherit;
+  text-align: left;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: border-color .14s var(--ease), background .14s var(--ease);
+}
+
+.cv-chip__btn:hover:not(:disabled) {
+  border-color: var(--student);
+  background: var(--student-soft);
+}
+.cv-chip__btn:disabled { opacity: .6; cursor: wait; }
+
+.cv-chip__icon { font-size: 1.1rem; flex-shrink: 0; }
+
+.cv-chip__text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.cv-chip__text strong { font-size: .84rem; }
+.cv-chip__text small {
+  font-size: .74rem;
+  color: var(--muted);
+  /* A candidate's filename can be long; it truncates rather than wrapping the row. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cv-chip__go { margin-left: auto; color: var(--faint); font-weight: 700; flex-shrink: 0; }
+.cv-chip__btn:hover:not(:disabled) .cv-chip__go { color: var(--student); }
+
+/* The picked-file confirmation under the upload input. */
+.cv-picked { color: var(--student); font-weight: 600; }
+
+/* ---------------------------------------------------------------------------
+   Gateway checkout panel
+   Sits at the top of the three pay modals, above the manual UPI steps.
+   --------------------------------------------------------------------------- */
+
+.gw {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  margin-bottom: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  /* Grid and flex children default to min-width:auto, so a long description
+     inside pushes the modal wider than the viewport instead of wrapping. */
+  min-width: 0;
+}
+
+.gw__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.gw__head strong { display: block; font-size: .95rem; }
+.gw__head small { display: block; margin-top: 3px; font-size: .78rem; color: var(--muted); }
+
+.gw__amount {
+  font-size: 1.25rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.gw__note { margin: 0; font-size: .74rem; color: var(--faint); text-align: center; }
+
+/* A labelled rule. The pseudo-elements are the two halves of the line, so the
+   text sits in a gap rather than on top of a border. */
+.gw__or {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: .76rem;
+}
+
+.gw__or::before,
+.gw__or::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.gw--done {
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  border-color: color-mix(in srgb, var(--success) 35%, var(--border));
+  background: var(--success-soft);
+}
+
+.gw--done strong { display: block; font-size: .95rem; color: var(--success); }
+.gw--done small { display: block; margin-top: 2px; font-size: .8rem; color: var(--muted); }
+
+.gw__tick {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--success);
+  color: #fff;
+  font-weight: 800;
+}

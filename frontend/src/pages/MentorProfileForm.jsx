@@ -103,7 +103,7 @@ export default function MentorProfileForm({ profile, onSubmitted }) {
       )}
 
       <form className="form" onSubmit={submit}>
-        <fieldset className="fs">
+        <div className="fs" role="group">
           <legend>Professional</legend>
           {field("expertise", "Areas you can interview on", {
             placeholder: "Java, Spring Boot, System Design",
@@ -131,9 +131,9 @@ export default function MentorProfileForm({ profile, onSubmitted }) {
             <span>Short bio shown to candidates (optional)</span>
             <textarea name="bio" rows={2} value={form.bio} onChange={update} />
           </label>
-        </fieldset>
+        </div>
 
-        <fieldset className="fs">
+        <div className="fs" role="group">
           <legend>Education</legend>
           {field("highestQualification", "Highest qualification", {
             placeholder: "B.Tech Computer Science",
@@ -149,9 +149,9 @@ export default function MentorProfileForm({ profile, onSubmitted }) {
               required: true,
             })}
           </div>
-        </fieldset>
+        </div>
 
-        <fieldset className="fs">
+        <div className="fs" role="group">
           <legend>Identity &amp; contact</legend>
           <p className="fs__note">
             Used only to verify you are who you say you are. Stored securely and
@@ -177,9 +177,9 @@ export default function MentorProfileForm({ profile, onSubmitted }) {
             style: { textTransform: "uppercase" },
             required: true,
           })}
-        </fieldset>
+        </div>
 
-        <fieldset className="fs">
+        <div className="fs" role="group">
           <legend>Bank details</legend>
           <p className="fs__note">Where we send your payout after each interview.</p>
           {field("bankAccountHolder", "Account holder name", {
@@ -201,7 +201,7 @@ export default function MentorProfileForm({ profile, onSubmitted }) {
             })}
           </div>
           {field("bankName", "Bank name", { placeholder: "HDFC Bank", required: true })}
-        </fieldset>
+        </div>
 
         <button className="btn btn--primary" type="submit" disabled={busy}>
           {busy ? "Submitting..." : rejected ? "Resubmit for verification" : "Submit for verification"}

@@ -1,5 +1,7 @@
 package com.learn.interviewmentor.service.impl;
 
+import com.learn.interviewmentor.model.PaymentPurpose;
+import com.learn.interviewmentor.payment.PurchaseSettlement;
 import com.learn.interviewmentor.service.PaymentService;
 
 import com.learn.interviewmentor.vo.payment.PaymentVo;
@@ -16,6 +18,8 @@ import com.learn.interviewmentor.model.Role;
 import com.learn.interviewmentor.model.User;
 import com.learn.interviewmentor.repository.PaymentRepository;
 import com.learn.interviewmentor.storage.ScreenshotStorage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,7 +45,9 @@ import java.util.List;
  */
 @Service
 @Transactional(readOnly = true)
-public class PaymentServiceImpl implements PaymentService {
+public class PaymentServiceImpl implements PaymentService, PurchaseSettlement {
+
+    private static final Logger log = LoggerFactory.getLogger(PaymentServiceImpl.class);
 
     private final PaymentRepository paymentRepository;
     private final ScreenshotStorage storage;
@@ -207,6 +213,75 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     public long countAwaitingReview() {
         return paymentRepository.countByStatus(PaymentStatus.SUBMITTED);
+    }
+
+    // ---------- gateway settlement ----------
+
+    @Override
+    public PaymentPurpose purpose() {
+        return PaymentPurpose.INTERVIEW;
+    }
+
+    /**
+     * The amount comes off the row, not out of config.
+     *
+     * Payment.amount was frozen when the booking was made. Reading
+     * currentAmount() here instead would charge today's price for a slot booked
+     * last week at last week's price - a difference the student would only
+     * discover on their bank statement.
+     */
+    @Override
+    public PurchaseSettlement.Payable prepare(Long requestId, User caller) {
+        Payment payment = byRequest(requestId);
+
+        if (!payment.getRequest().isOwnedBy(caller)) {
+            throw new ForbiddenException("That isn't your booking");
+        }
+        if (payment.getStatus() == PaymentStatus.VERIFIED) {
+            throw new ConflictException("This booking is already paid for.");
+        }
+        if (payment.getStatus() == PaymentStatus.SUBMITTED) {
+            throw new ConflictException(
+                    "We're already checking the screenshot you sent. Wait for that to be "
+                            + "reviewed rather than paying twice.");
+        }
+
+        return new PurchaseSettlement.Payable(
+                payment.getAmount(),
+                payment.getRequest().getSessionType().getLabel()
+                        + " with a ConfirmPlacement mentor");
+    }
+
+    @Transactional
+    @Override
+    public void settle(Long requestId, String gatewayPaymentId) {
+        Payment payment = byRequest(requestId);
+        payment.settleByGateway(gatewayPaymentId);
+
+        // The same call the admin path makes. This is what takes the booking out
+        // of AWAITING_PAYMENT and puts it in front of mentors - without it the
+        // student has paid and nothing visible has happened.
+        payment.getRequest().markPaid();
+
+        log.info("Payment {} settled by gateway ({}) - request {} is now in the queue",
+                payment.getId(), gatewayPaymentId, requestId);
+    }
+
+    /**
+     * INTERVIEW is addressed by request id, not payment id.
+     *
+     * The odd one out: PLAN and PROJECT are addressed by the id of the row that
+     * holds the money, and here that row is the Payment. But a Payment is
+     * one-to-one with its InterviewRequest and never exists without one, so
+     * nothing is ambiguous - and the request id is what every other interview
+     * endpoint takes, what the booking screen already has in hand, and what a
+     * person reading a webhook receipt would recognise. Making the frontend
+     * fetch a second id purely so this purpose matches the shape of the other
+     * two would be consistency for its own sake.
+     */
+    private Payment byRequest(Long requestId) {
+        return paymentRepository.findByRequestId(requestId)
+                .orElseThrow(() -> new NotFoundException("No payment for request " + requestId));
     }
 
     private static String enc(String value) {

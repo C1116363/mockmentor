@@ -41,7 +41,7 @@ public class JitsiMeetingLinkGenerator implements MeetingLinkGenerator {
 
     @Override
     public String generateFor(InterviewRequest request) {
-        StringBuilder room = new StringBuilder("prehire");
+        StringBuilder room = new StringBuilder("confirmplacement");
         for (int s = 0; s < SEGMENTS; s++) {
             room.append('-');
             for (int i = 0; i < SEGMENT; i++) {

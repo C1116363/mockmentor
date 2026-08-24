@@ -1,4 +1,4 @@
-# PreHire
+# ConfirmPlacement
 
 A learning project: **students and working professionals request mock interviews, senior mentors pick them up and take the call.**
 
@@ -20,6 +20,9 @@ Start at <http://localhost:3000> and click the corner button.
 > `./start.sh` to bring up all three servers.
 >
 > **Looking for where something is in the code?**
+> **Turning on card payments?** → [**PAYMENTS.md**](PAYMENTS.md) — the three
+> Razorpay keys, exactly where they go, and how to test without real money.
+>
 > [**ARCHITECTURE.md**](ARCHITECTURE.md) is the map — every folder, which file
 > handles which feature, one request traced end to end, and a recipe for adding a
 > feature.
@@ -262,7 +265,7 @@ To use real Google Meet, set `app.meeting.provider=google` and implement
 (Calendar API, OAuth or a service account, and a `conferenceData` insert). Until
 then it throws loudly rather than handing anyone a dead link.
 
-Room names are long and random (`prehire-h5rye2-rzcuqq-ummniz`) because a
+Room names are long and random (`confirmplacement-h5rye2-rzcuqq-ummniz`) because a
 Jitsi room is reachable by anyone who knows its name — a guessable one like
 `interview-7` would let strangers walk into somebody's interview.
 

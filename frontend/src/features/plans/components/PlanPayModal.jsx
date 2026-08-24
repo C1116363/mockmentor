@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { usePlanPayment } from "../usePlanPayment";
+import GatewayPayPanel from "../../checkout/components/GatewayPayPanel";
 import { formatPrice } from "../../../utils/format";
 
 /**
@@ -89,6 +90,15 @@ export default function PlanPayModal({ enrollment, onDone, onClose }) {
               This is the price when you chose the plan. It stays fixed even if the
               listed price changes.
             </p>
+
+            {/* Nothing renders here unless a gateway is configured on the
+                server, so a manual-UPI deployment sees this screen unchanged. */}
+            <GatewayPayPanel
+              purpose="PLAN"
+              targetId={enrollment.id}
+              amount={formatPrice(instructions.amount)}
+              onPaid={onDone}
+            />
 
             <ol className="pay-steps">
               <li>

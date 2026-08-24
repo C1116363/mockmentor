@@ -16,7 +16,6 @@ import { mentorApi } from "../../api/mentorApi";
  */
 export function useAdminDashboard() {
   const [data, setData] = useState({
-    stats: {},
     users: [],
     profiles: [],
     unassigned: [],
@@ -31,9 +30,10 @@ export function useAdminDashboard() {
   const [message, setMessage] = useState(null);
 
   const reload = useCallback(async () => {
-    const [stats, profiles, unassigned, mentors, users, requests,
+    // No stats call: the tiles it fed are gone, and the tabs already carry every
+    // queue count. One fewer request on every load and every action's reload.
+    const [profiles, unassigned, mentors, users, requests,
            payments, plans, planPayments, materials] = await Promise.all([
-      adminApi.stats(),
       adminApi.allMentorProfiles(),
       adminApi.unassignedRequests(),
       mentorApi.all(),
@@ -44,7 +44,7 @@ export function useAdminDashboard() {
       adminApi.pendingEnrollments(),
       adminApi.materials(),
     ]);
-    setData({ stats, profiles, unassigned, mentors, users, requests,
+    setData({ profiles, unassigned, mentors, users, requests,
               payments, plans, planPayments, materials });
   }, []);
 

@@ -115,6 +115,29 @@ public class GlobalExceptionHandler {
         return serverError("Could not store the file. Please try again.", request, ex);
     }
 
+    /**
+     * The payment gateway is unreachable or misconfigured -> 502 Bad Gateway.
+     *
+     * The message the student sees is fixed, and says the one thing they
+     * actually need to know: their money has not been taken. A payment error
+     * with a vague message is the kind that makes somebody pay again to be
+     * safe - which is the outcome worth designing against. The detail goes to
+     * the log with a reference code, as it does for any 5xx.
+     */
+    @ExceptionHandler(PaymentGatewayException.class)
+    public ResponseEntity<ApiResult<Void>> handlePaymentGateway(PaymentGatewayException ex,
+                                                                HttpServletRequest request) {
+        String reference = reference();
+        log.error("Payment gateway failure [{}] on {} {}",
+                reference, request.getMethod(), request.getRequestURI(), ex);
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                .body(ApiResult.failure(HttpStatus.BAD_GATEWAY.value(),
+                        "We couldn't reach the payment gateway, so nothing has been charged. "
+                                + "Try again in a moment, or pay by UPI instead. "
+                                + "(reference " + reference + ")",
+                        request.getRequestURI()));
+    }
+
     // ------------------------------------------------------------------
     // Authentication and authorisation (the MVC-level half)
     // ------------------------------------------------------------------

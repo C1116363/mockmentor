@@ -117,6 +117,35 @@ public class PlanEnrollment {
         this.reviewedBy = null;
     }
 
+    /**
+     * The gateway confirmed the money. Nobody reviews it.
+     *
+     * A gateway payment skips SUBMITTED, because that state means "a human still has
+     * to check this". Here the bank has already checked it - re-queueing it for
+     * an admin would ask somebody to re-verify a cryptographically signed
+     * confirmation, which is both busywork and a delay a paying student can see.
+     *
+     * upiReference holds the gateway's payment id ("pay_QK3n..."). Reusing the column is
+     * deliberate rather than lazy: it means "the reference that proves this was
+     * paid", the two id formats cannot be confused for each other, and every
+     * screen that already shows it keeps working. Which gateway, which order,
+     * and whether it settled by webhook or callback all live on the matching
+     * PaymentIntent row.
+     *
+     * reviewedBy stays null. Nobody reviewed it, and writing in an admin who did not
+     * look at it would put a name against a decision they never made.
+     */
+    public void settleByGateway(String gatewayPaymentId) {
+        this.upiReference = gatewayPaymentId;
+        this.status = EnrollmentStatus.ACTIVE;
+        this.rejectionReason = null;
+        this.submittedAt = LocalDateTime.now();
+        this.reviewedAt = this.submittedAt;
+        this.reviewedBy = null;
+        this.activatedAt = this.submittedAt;
+        this.expiresAt = this.activatedAt.plusDays(durationDays);
+    }
+
     /** Admin confirmed the money arrived. This is what starts the clock. */
     public void activate(User admin) {
         this.status = EnrollmentStatus.ACTIVE;

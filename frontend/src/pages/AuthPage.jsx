@@ -106,7 +106,7 @@ export default function AuthPage() {
       <section className="auth__intro">
         <div className="brand">
           <span className="brand__mark">🎯</span>
-          <span className="brand__name">PreHire</span>
+          <span className="brand__name">ConfirmPlacement</span>
         </div>
 
         <h1>
