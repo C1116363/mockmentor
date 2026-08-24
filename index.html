@@ -389,9 +389,11 @@
     <div class="wrap">
       <span class="pill">
         <span class="avatars">
+          <!-- The real interviewers' initials. These read A / V / N, which
+               matched none of the three people listed further down the page. -->
           <span style="background:#2f5fe0">A</span>
-          <span style="background:#7b3ff2">V</span>
-          <span style="background:#12a150">N</span>
+          <span style="background:#7b3ff2">R</span>
+          <span style="background:#12a150">A</span>
         </span>
         <strong>Engineers and educators</strong> who have been through it recently
       </span>
@@ -448,6 +450,11 @@
       <div class="chips" id="chips">
         <button class="chip" aria-pressed="true" data-topic="all">All</button>
         <button class="chip" aria-pressed="false" data-topic="data">Python &amp; SQL</button>
+        <!-- Added with Akash. Java, Spring Boot and React had no chip, so
+             filtering by anything at all made him vanish - a filter that can
+             hide a mentor with no way to get back to him is worse than no
+             filter. -->
+        <button class="chip" aria-pressed="false" data-topic="web">Java &amp; Full-stack</button>
         <button class="chip" aria-pressed="false" data-topic="aiml">AI &amp; ML</button>
         <button class="chip" aria-pressed="false" data-topic="embedded">Embedded &amp; IoT</button>
       </div>
@@ -581,7 +588,7 @@
         </div>
         <div class="qa">
           <button class="qa__q">What can I be interviewed on? <span class="qa__sign">+</span></button>
-          <div class="qa__a"><p>Python, SQL, AI and ML, and embedded systems are what this team covers. When you book you describe the round you're preparing for, and an interviewer who works in that area picks it up.</p></div>
+          <div class="qa__a"><p>Java and Spring Boot, React, SQL, Python, AI and ML, and embedded systems are what this team covers. When you book you describe the round you're preparing for, and an interviewer who works in that area picks it up.</p></div>
         </div>
         <!--
           Added because every other question here assumes an interview. Somebody
@@ -722,7 +729,10 @@
   onScroll();
 
   /* ---------------- headline rotator ---------------- */
-  const WORDS = ["Python", "SQL", "AI / ML", "embedded", "SDE-1"];
+  // Kept in step with who is actually on the team. Java and Spring Boot went in
+  // with Akash - the headline is the first thing anybody reads, and it should
+  // not advertise every area the team covers except the newest one.
+  const WORDS = ["Java", "Spring Boot", "React", "Python", "SQL", "AI / ML", "embedded", "SDE-1"];
   const rotator = document.getElementById("rotator");
   let w = 0, c = 0, del = false;
   (function type() {
@@ -747,11 +757,15 @@
    */
   const MENTORS = [
     {
-      name: "Chetan Raut",
-      role: "Software Developer at Cognizant",
-      expertise: "SQL, Python",
-      topics: ["data"],
-      bio: "Software developer. Ask me about SQL and Python — the questions that come up in almost every round.",
+      name: "Akash K",
+      role: "SDE at Virtusa",
+      expertise: "Java, Spring Boot, React, MySQL",
+      // Both, and honestly so: the stack is full-stack web, and MySQL is SQL -
+      // somebody filtering for SQL has a real reason to want him. Only the
+      // first three expertise entries become tags, so MySQL shows in the bio
+      // rather than being silently dropped.
+      topics: ["web", "data"],
+      bio: "Builds and ships full-stack products. Java and Spring Boot on the server, React on the front, MySQL underneath — and the design questions that come with all three.",
     },
     {
       name: "Rutuja Khose",
