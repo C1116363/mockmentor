@@ -67,6 +67,13 @@ if command -v java >/dev/null 2>&1; then
 fi
 command -v node >/dev/null 2>&1 && ok "Node $(node --version)"
 
+# Maven and Python are checked above and would have stopped the run if missing,
+# but only Java and Node reported a version - so a first run listed two of the
+# four things it had actually verified and looked like it had skipped the rest.
+# `mvn -v` is slow enough to notice (it boots a JVM), hence the trimmed one-liner.
+command -v mvn >/dev/null 2>&1 && ok "Maven $(mvn -v 2>/dev/null | head -1 | awk '{print $3}')"
+command -v python3 >/dev/null 2>&1 && ok "Python $(python3 --version 2>&1 | awk '{print $2}')"
+
 # ---------------------------------------------------------------------- database
 if [ "$WHICH" = "all" ] || [ "$WHICH" = "backend" ]; then
   printf "\n${BOLD}Checking the database${OFF}\n"
