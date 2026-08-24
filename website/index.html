@@ -92,11 +92,6 @@
   }
   .theme-toggle:hover { color: var(--text); }
 
-  .nav__signin {
-    font-size: .93rem; font-weight: 600; color: var(--muted);
-    text-decoration: none; padding: 9px 6px;
-  }
-  .nav__signin:hover { color: var(--text); }
 
   /* the corner button that opens the app */
   .cta {
@@ -115,7 +110,7 @@
 
   .cta--lg { padding: 14px 28px; font-size: 1rem; border-radius: 13px; }
 
-  @media (max-width: 820px) { .nav__links, .nav__signin { display: none; } }
+  @media (max-width: 820px) { .nav__links { display: none; } }
 
   /* ---------------- hero ---------------- */
 
@@ -377,7 +372,12 @@
 
     <div class="nav__right">
       <button class="theme-toggle" id="themeBtn" aria-label="Toggle dark mode">🌙</button>
-      <a class="nav__signin app-link" href="#">Log in</a>
+      <!-- There was a "Log in" link here beside this button. Both carried the
+           class app-link, and wireAppLinks() gives every app-link the same
+           href - so they were two differently worded links to one destination,
+           which is the app's own screen with Log in and Sign up on it. Two
+           buttons that do the same thing make a visitor stop and pick; one
+           does not. -->
       <a class="cta app-link" href="#">Book a mock interview <span class="cta__arrow">→</span></a>
     </div>
   </div>
@@ -620,7 +620,6 @@
         <div class="foot__col">
           <h5>Get started</h5>
           <a class="app-link" href="#">Book an interview</a>
-          <a class="app-link" href="#">Log in</a>
         </div>
       </div>
     </div>
