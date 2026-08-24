@@ -43,21 +43,40 @@ See [rules you can grep](#rules-you-can-grep) — every one of them returns empt
 
 | Package | Files | What is in it |
 | --- | --- | --- |
-| `controller/` | 14 | HTTP only. Every method returns `ApiResult<T>`. |
-| `facade/` + `impl/` | 10 + 10 | Use cases. Interface + implementation. |
-| `service/` + `impl/` | 15 + 15 | Business rules. Interface + implementation. |
-| `repository/` | 10 | Spring Data interfaces. One per table. |
-| `model/` | 23 | JPA entities + their enums. |
-| `dto/` | 15 | Requests coming **in**. Every class ends in `Dto`. |
-| `vo/` | 15 | Responses going **out**. Every class ends in `Vo`. |
+| `controller/` | 17 | HTTP only. Every method returns `ApiResult<T>`. |
+| `facade/` + `impl/` | 12 + 12 | Use cases. Interface + implementation. |
+| `service/` + `impl/` | 17 + 17 | Business rules. Interface + implementation. |
+| `repository/` | 14 | Spring Data interfaces. One per table. |
+| `model/` | 29 | JPA entities + their enums. |
+| `dto/` | 20 | Requests coming **in**. Every class ends in `Dto`. |
+| `vo/` | 21 | Responses going **out**. Every class ends in `Vo`. |
 | `common/` | 2 | `ApiResult` (the response envelope) + the advice that syncs its status. |
-| `exception/` | 7 | Custom exceptions + the `@RestControllerAdvice` that maps them. |
+| `exception/` | 8 | Custom exceptions + the `@RestControllerAdvice` that maps them. |
 | `security/` | 8 | JWT filter, role rules, the 401/403 writers. |
-| `storage/` | 2 | File uploads — screenshots and study material. |
+| `storage/` | 3 | File uploads — screenshots, study material, CVs. |
 | `meeting/` | 3 | Meeting-link generators (Jitsi, Google). |
 | `config/` | 2 | Swagger metadata, demo-data seeder. |
 | `util/` | 1 | `Masking` — last-4-digits for sensitive numbers. |
-| `github/` | 3 | Granting collaborator access on a private repo. Interface + manual impl + API stub. |
+| `github/` | 3 | Granting collaborator access on a private repo. |
+| `payment/` | 4 | Payment gateways, and how each purchase is priced and switched on. |
+| `mail/` | 3 | Sending email. Console by default, SMTP when configured. |
+
+### The provider pattern, four times
+
+`meeting/`, `github/`, `payment/` and `mail/` are all the same shape, and it is
+worth recognising once rather than four times:
+
+```
+XxxInterface          what the business rules depend on
+├── RealXxx           the working implementation, @ConditionalOnProperty
+└── SimpleXxx         the no-configuration default
+```
+
+Which one is wired in is a **property**, not a code change, and nothing in the
+service layer can tell the difference. The default in every case works with no
+keys, no account and no external setup — a Jitsi room, a logged instruction, a
+UPI ID, an email printed to the console — because a feature that cannot run
+until somebody finishes a third-party signup does not get tested.
 
 ### Which file for which feature
 
@@ -77,6 +96,10 @@ See [rules you can grep](#rules-you-can-grep) — every one of them returns empt
 | Admin — plans & material | `AdminPlanController` | `PlanFacade`, `StudyMaterialFacade` | Plan, PlanEnrollment, StudyMaterial |
 | Live projects (student) | `ProjectController` | `ProjectFacade` | `LiveProjectService`, `ProjectAccessService` |
 | Admin — live projects | `AdminProjectController` | `ProjectFacade` | same two |
+| Gateway checkout | `CheckoutController` | `CheckoutFacade` | `CheckoutService` |
+| Gateway webhook | `PaymentWebhookController` | `CheckoutFacade` | `CheckoutService` |
+| Forgotten passwords | `AuthController` | `AuthFacade` | `PasswordResetService` |
+| Mentor payroll | `AdminPayrollController` | `PayrollFacade` | `PayrollService` |
 
 ### The data model
 
@@ -92,10 +115,27 @@ See [rules you can grep](#rules-you-can-grep) — every one of them returns empt
 | `LiveProject` | `live_projects` | A private repo sold as contributor access. Repo stored as owner + name. |
 | `ProjectAccessRequest` | `project_access_requests` | One student's paid access to one repo. |
 | `MentorAvailability` | `mentor_availability` | One hour a mentor declared. **This is where slots come from.** |
+| `PaymentIntent` | `payment_intents` | One attempt to pay for one thing through a gateway. Locked on settlement. |
+| `WebhookEvent` | `webhook_events` | Every webhook received. The idempotency key **and** the audit log. |
+| `PasswordResetToken` | `password_reset_tokens` | Stores a **SHA-256 hash**, never the token. |
+| `MentorPayout` | `mentor_payouts` | One payment to one mentor, covering a fixed set of sessions. |
 
 Enums: `Role`, `RequestStatus`, `SessionType`, `PaymentStatus`, `EnrollmentStatus`,
 `VerificationStatus`, `MaterialAudience`, `MaterialKind`, `Recommendation`,
-`ProjectAccessStatus`, `ProjectDifficulty`, `AvailabilityStatus`.
+`ProjectAccessStatus`, `ProjectDifficulty`, `AvailabilityStatus`,
+`PaymentPurpose`, `PaymentIntentStatus`, `MentorPayoutStatus`.
+
+### Three columns that carry the money guarantees
+
+Worth knowing before touching anything financial. None of these are enforced by
+application logic — each is a database guarantee, because the failures they
+prevent are races that read-then-write in Java loses.
+
+| Column | Guarantees |
+| --- | --- |
+| `payment_intents.gateway_order_id` (unique, `SELECT … FOR UPDATE`) | a gateway payment activates a purchase **once**, however the browser callback and webhook race |
+| `webhook_events.event_id` (unique) | a retried webhook cannot re-run a settlement |
+| `interview_requests.payout_id` (`UPDATE … WHERE payout_id IS NULL`) | a completed session is paid **exactly once**, however many admins click at once |
 
 ---
 
@@ -105,15 +145,29 @@ Enums: `Role`, `RequestStatus`, `SessionType`, `PaymentStatus`, `EnrollmentStatu
 
 | Folder | Files | What is in it |
 | --- | --- | --- |
-| `pages/` | 7 | The screens. Render and delegate — no fetch calls. |
-| `features/x/useX.js` | 10 | Hooks: state + orchestration. **The only place that calls `api/`.** |
-| `features/x/xRules.js` | 2 | Pure functions. No React, no fetch. |
-| `features/x/components/` | 16 | UI that one feature owns. |
-| `api/` | 9 | One module per backend controller, plus `http.js`. |
-| `components/` | 3 | Shared UI only — `StatusBadge`, `StarRating`, `ThemeToggle`. |
+| `pages/` | 8 | The screens. Render and delegate — no fetch calls. |
+| `features/x/useX.js` | 21 | Hooks: state + orchestration. **The only place that calls `api/`.** |
+| `features/x/xRules.js` | 4 | Pure functions. No React, no fetch. |
+| `features/x/components/` | 30 | UI that one feature owns. |
+| `api/` | 14 | One module per backend controller, plus `http.js`. |
+| `components/` | 6 | Shared UI only — `StatusBadge`, `StarRating`, `ThemeToggle`, `ConfirmDialog`, `Notice`, `Skeleton`. |
 | `hooks/` | 1 | `useBlobUrl` — shared, feature-agnostic. |
 | `utils/` | 1 | `format.js` — `formatPrice`. No feature knowledge. |
-| `layout/` | 1 | `SectionNav` — the header's section menu. |
+| `layout/` | 1 | `SectionNav` — the dashboard section tabs. |
+
+Ten features: `admin`, `auth`, `checkout`, `materials`, `mentors`, `payments`,
+`payroll`, `plans`, `projects`, `sessions`.
+
+### Two shared components worth knowing about
+
+- **`ConfirmDialog`** — replaced six `window.prompt`/`confirm` calls. Throwing
+  from `onConfirm` keeps it open with the error and preserves what was typed, so
+  a rejected reason is not retyped from scratch.
+- **`Notice`** — decides for itself whether a message should fade. Plain
+  confirmations go after four seconds; **errors and anything containing a link
+  stay**, because a link is something the reader is meant to act on. Approving
+  project access returns "add this person on GitHub: `<url>`", and hiding that
+  would leave a paying student without repo access.
 
 ### `api/` lines up 1:1 with the backend
 
@@ -130,6 +184,8 @@ Enums: `Role`, `RequestStatus`, `SessionType`, `PaymentStatus`, `EnrollmentStatu
 | `availabilityApi.js` | `MentorAvailabilityController` |
 | `projectApi.js` | `ProjectController` |
 | `adminProjectApi.js` | `AdminProjectController` |
+| `checkoutApi.js` | `CheckoutController` |
+| `payrollApi.js` | `AdminPayrollController` |
 | `http.js` | — (transport: fetch, auth header, envelope, token) |
 
 **If you know the endpoint, you know the file.**
@@ -358,3 +414,14 @@ knowing about:
 | Why HTML and SVG uploads are refused | `storage/MaterialStorage.java` |
 | Session ends when the tab closes | [`frontend/README.md`](frontend/README.md#session-lifetime) |
 | 401 vs 403, and why the filter chain writes its own JSON | `security/RestAuthenticationEntryPoint.java` |
+| Why a payment settles exactly once, and how the callback/webhook race is decided | `service/impl/CheckoutServiceImpl.java` |
+| Why the webhook binds `byte[]` and not a DTO | `controller/PaymentWebhookController.java` |
+| The three Razorpay secrets and which one signs what | `payment/RazorpayGateway.java` |
+| Why manual UPI is kept rather than replaced | `payment/ManualUpiGateway.java` |
+| Why a completed session is stamped, not selected by date range | `model/InterviewRequest.java` (`payout`) |
+| Why a paid payout cannot be cancelled | `service/impl/PayrollServiceImpl.java` |
+| Why a bulk `@Modifying` update detaches the entity you just saved | `service/impl/PayrollServiceImpl.java` (`createPayout`) |
+| Why forgot-password answers identically for unknown addresses | `service/PasswordResetService.java` |
+| Why reset tokens are stored hashed, and why not bcrypt | `model/PasswordResetToken.java` |
+| Why a password reset invalidates existing JWTs, and why ties are refused | `security/JwtAuthenticationFilter.java` |
+| Why some status messages fade and others must not | `components/Notice.jsx` |

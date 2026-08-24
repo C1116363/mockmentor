@@ -16,16 +16,12 @@ Start at <http://localhost:3000> and click the corner button.
 
 ---
 
-> **Just cloned this?** → [**SETUP.md**](SETUP.md) — installs, database, and
-> `./start.sh` to bring up all three servers.
->
-> **Looking for where something is in the code?**
-> **Turning on card payments?** → [**PAYMENTS.md**](PAYMENTS.md) — the three
-> Razorpay keys, exactly where they go, and how to test without real money.
->
-> [**ARCHITECTURE.md**](ARCHITECTURE.md) is the map — every folder, which file
-> handles which feature, one request traced end to end, and a recipe for adding a
-> feature.
+| I want to… | Read |
+| --- | --- |
+| **Get it running on a clean machine** | [**SETUP.md**](SETUP.md) — installs, database, `./start.sh` |
+| **Find where something is in the code** | [**ARCHITECTURE.md**](ARCHITECTURE.md) — every folder, which file handles which feature, one request traced end to end |
+| **Take card / UPI payments** | [**PAYMENTS.md**](PAYMENTS.md) — the three Razorpay keys and exactly where they go |
+| **Send real password-reset emails** | [SETUP.md → Sending real emails](SETUP.md#sending-real-emails-gmail) |
 
 ## Three roles, three screens
 
@@ -74,7 +70,7 @@ file. Details in the [frontend README](frontend/README.md#structure).
 ```
 
 So a client checks one boolean for every call it ever makes. On the frontend the
-unwrapping is a single function in `api/client.js` — nothing above that line knows
+unwrapping is a single function in `api/http.js` — nothing above that line knows
 the envelope exists, and `api.plans()` still resolves to an array of plans.
 
 Full details are in [**ARCHITECTURE.md**](ARCHITECTURE.md) — the folder-by-folder
@@ -170,9 +166,12 @@ the moment an admin confirms the payment.
 
 Both are documented in detail in the [backend README](backend/README.md#plans-and-study-material).
 
-## Payment (v1: manual UPI)
+## Paying for things
 
-There is **no payment gateway**. A booking is confirmed by a human:
+Three things cost money — a session, a plan, and contributor access to a private
+repo — and all three can be paid **two ways at once**.
+
+### Manual UPI (the default, and always available)
 
 ```
 student picks a slot  →  AWAITING_PAYMENT   (slot is held, mentors can't see it)
@@ -188,19 +187,59 @@ student picks a slot  →  AWAITING_PAYMENT   (slot is held, mentors can't see i
 
 Set your UPI ID in `backend/.env`:
 
-```
+```ini
 UPI_ID=yourname@okhdfcbank
 UPI_PAYEE=Your Name
 ```
 
-The fee is `app.payment.amount` in `application.properties` (₹499 by default).
+This costs **0%**, the money arrives instantly rather than on T+2, and it needs
+no account, no KYC and no approval wait. It is kept working alongside the
+gateway rather than replaced by it — partly for the fees, partly because it is
+how you take money on a day the gateway is down.
 
-**The amount is always read from server config, never from the request body.**
-A client that could name its own price is the most obvious hole in any payment
-flow, so the API simply doesn't accept one.
+### Razorpay (optional, off until you add keys)
 
-An unpaid booking still **holds its slot** — otherwise a student could pay and
-find the time gone.
+Card, netbanking, UPI and wallets, confirmed automatically with no admin step.
+Switched on by three keys in `backend/.env` and nothing else:
+
+```ini
+PAYMENT_PROVIDER=razorpay
+RAZORPAY_KEY_ID=rzp_test_…
+RAZORPAY_KEY_SECRET=…
+RAZORPAY_WEBHOOK_SECRET=…
+```
+
+With any key missing the app **doesn't break** — it notices, keeps offering
+manual UPI, and says so at startup. Full setup, including the Gmail-style
+gotchas, is in [PAYMENTS.md](PAYMENTS.md).
+
+Both options appear on the same screen: a "Pay now" button on top, an
+`or pay by UPI yourself` divider, then the existing UTR + screenshot steps.
+
+### The rules that keep the money honest
+
+**The amount is never sent by the client.** It is read from the row being paid
+for. There is no amount field on any request DTO and there must never be one — a
+checkout that accepts a price from the browser is a shop where the customer
+writes their own price tag.
+
+**A payment settles exactly once.** The browser callback and Razorpay's webhook
+race each other by design, and Razorpay retries a webhook until it gets a 2xx.
+Two database guarantees, not application logic:
+
+- `SELECT … FOR UPDATE` on the payment intent, so only one route wins
+- a unique constraint on the webhook event id, so a retry cannot re-run one
+
+**The webhook is the authority, not the browser.** A browser callback only
+arrives if the tab survives the round trip; closed tabs and dead phones are
+ordinary, and those students have paid.
+
+**Signatures are checked against the raw bytes.** Binding the body to an object
+and re-serialising changes whitespace and key order, and the HMAC stops
+matching.
+
+**A captured amount that disagrees with what we asked for is refused**, not
+activated, and left for a person.
 
 ### Screenshot uploads
 
@@ -218,11 +257,83 @@ Uploads are the easiest place to open a hole, so `ScreenshotStorage` is strict:
 
 Files land in `backend/uploads/` which is gitignored.
 
-### What v1 does not do
+### What is deliberately not built
 
-No refunds, no automatic reconciliation, and **no payouts to mentors** — you'd
-pay them manually. Real payouts mean Razorpay Route or Stripe Connect plus
-mentor KYC, which is a much bigger job.
+No refunds (Razorpay's dashboard does them in two clicks) and no automatic
+reconciliation against bank settlements. Neither earns its complexity at this
+size.
+
+## Paying mentors — payroll
+
+**Admin → 💰 Payroll.** Set a per-session rate for each mentor, see what they are
+owed from sessions they have actually completed, raise a payout, and record the
+bank reference once the money has gone.
+
+```
+Ananya Rao                                    [On payroll]
+
+   2         +       2                Owed now
+ interviews      mentoring             ₹2,600
+
+₹800 / interview · ₹500 / mentoring          [Edit rates]
+
+Paid to date: ₹0 · Bank details       [Raise payout ₹2,600]
+```
+
+Two rates, because a mock interview ends in a written scorecard and a mentoring
+session does not — different work, usually different money. Bank details and PAN
+come from the mentor's existing profile, behind a click so account numbers are
+not sitting on screen.
+
+### The one rule
+
+**A completed session is paid exactly once.** Both failures are somebody's
+wages: paid twice is awkward to claw back, paid never means a mentor worked for
+free and had to notice before anyone else did.
+
+What guarantees it is a column — `interview_requests.payout_id` — not a date
+range and not a careful process. Raising a payout stamps every unpaid session in
+a single `UPDATE … WHERE payout_id IS NULL`, so two admins pressing the button at
+the same moment cannot both claim the same work; the database picks the winner.
+
+Paying "everything completed in August" sounds equivalent and is not: a session
+finishing while the run is in progress lands on one side or the other depending
+on how somebody rounds, and nobody notices until the money is wrong.
+
+Rates are copied onto the payout, so a raise never rewrites what was already
+paid. **A paid payout cannot be cancelled** — that would release its sessions
+back into the queue and set up the exact double payment the rest of this
+prevents. A payment sent in error needs a correcting entry, which is what every
+ledger does.
+
+## Forgotten passwords
+
+A **Forgot your password?** link under the login button, an emailed one-time
+link, and a page to choose a new one.
+
+**It works with no email setup.** The default writes the message to the backend
+console and you copy the link out of the terminal — so the feature is testable
+on a fresh clone without finishing a Google security setup first. Real Gmail is
+four lines in `.env`; see
+[SETUP.md](SETUP.md#sending-real-emails-gmail).
+
+These are got wrong in four specific places, so each is handled deliberately:
+
+- **Asking for a link answers identically** whether the address has an account or
+  not. Otherwise the endpoint is a free membership checker — and here it would
+  reveal which of somebody's staff are practising for interviews.
+- **The table stores a SHA-256 hash of the token**, never the token. A backup or
+  a dump would otherwise hand over a working reset for every open request.
+- **256-bit tokens from `SecureRandom`**, single use, 30 minutes, and a new
+  request kills the old ones. Unknown, expired, spent and superseded all return
+  one identical message.
+- **Five requests per account per hour**, refused silently — otherwise this is an
+  email flooder aimed at anyone.
+
+**Resetting signs other sessions out.** The JWT is stateless and lives 24 hours,
+so without extra work an attacker's token keeps working for a day after the
+victim resets. Users carry `passwordChangedAt` and the auth filter refuses any
+token issued before it.
 
 ## Interview feedback
 
@@ -619,6 +730,34 @@ readable by the whole internet.
 | `POST` | `/api/admin/materials/link` | ADMIN — `{ title, description, linkUrl }` + the same optional audience params |
 | `PATCH` | `/api/admin/materials/{id}/active?active=` | ADMIN — publish or hide |
 
+### Checkout (gateway) — `/api/checkout`
+
+| Method | Path | Who |
+| --- | --- | --- |
+| `GET` | `/api/checkout/options` | any logged-in user — which payment methods this server can offer |
+| `POST` | `/api/checkout/{purpose}/{targetId}` | STUDENT — open an order. `purpose` is `INTERVIEW` \| `PLAN` \| `PROJECT`. **No amount in the body.** |
+| `POST` | `/api/checkout/confirm` | STUDENT — the signed result from the checkout window |
+| `POST` | `/api/webhooks/razorpay` | **no token** — Razorpay's servers. Signature-verified against the raw bytes. |
+
+### Forgotten passwords — `/api/auth`
+
+| Method | Path | Who |
+| --- | --- | --- |
+| `POST` | `/api/auth/forgot-password` | **no token** — always 200, identical message either way |
+| `POST` | `/api/auth/reset-password` | **no token** — `{ token, newPassword }`; signs other sessions out |
+
+### Payroll — `/api/admin/payroll`
+
+| Method | Path | Who |
+| --- | --- | --- |
+| `GET` | `/api/admin/payroll/mentors` | ADMIN — every mentor, rates, what they are owed, bank details |
+| `GET` | `/api/admin/payroll/summary` | ADMIN — totals across everyone |
+| `PATCH` | `/api/admin/payroll/mentors/{id}/settings` | ADMIN — `{ enabled, interviewRate, mentoringRate }` |
+| `POST` | `/api/admin/payroll/mentors/{id}/payouts` | ADMIN — raise a payout. **No amount in the body.** |
+| `PATCH` | `/api/admin/payroll/payouts/{id}/mark-paid` | ADMIN — `{ paymentReference, notes? }`; reference required |
+| `PATCH` | `/api/admin/payroll/payouts/{id}/cancel?reason=` | ADMIN — releases its sessions; refused once paid |
+| `GET` | `/api/admin/payroll/payouts` | ADMIN — every payout, newest first |
+
 ### Try it from the terminal
 
 ```bash
@@ -721,8 +860,10 @@ accepted while `PENDING`, only a `SCHEDULED` one can be completed, and a
 - **`AuthContext`** — the `loading` flag matters. On refresh you have a token but
   don't yet know if it's valid; without that flag the app flashes the login
   screen every time.
-- **`api/client.js`** — one `request()` wrapper attaches the `Bearer` header and
-  clears the token on 401.
+- **`api/http.js`** — one `request()` wrapper attaches the `Bearer` header and
+  clears the token on 401. `requestEnvelope()` is its sibling for the calls
+  whose *message* is the answer — a payout total, or "add this person on
+  GitHub" with the link.
 - **`App.jsx`** — role-based routing with a plain object lookup. Swap for
   react-router once you add more pages.
 
@@ -736,8 +877,10 @@ accepted while `PENDING`, only a `SCHEDULED` one can be completed, and a
 2. **No refresh token.** After 24h you just log in again.
 3. **No logout on the server.** With JWTs the server keeps no session, so "logout"
    only deletes the client's copy. **Closing the tab is the same act** — the token
-   is discarded locally but stays valid server-side until it expires. If that
-   matters, shorten `app.jwt.expiration-ms` and add a denylist.
+   is discarded locally but stays valid server-side until it expires.
+   The one exception is a **password reset**, which stamps `passwordChangedAt` and
+   makes the auth filter refuse every token issued before it. If you want the same
+   for ordinary logout, that column is the hook to build on.
 4. **`ddl-auto=update`** instead of Flyway migrations.
 5. A harmless startup **warning** about `AuthenticationManager` / `UserDetailsService`
    — it's Spring telling you the explicit `DaoAuthenticationProvider` bean takes
@@ -750,8 +893,14 @@ accepted while `PENDING`, only a `SCHEDULED` one can be completed, and a
 1. **Refresh tokens** — short-lived access token + long-lived refresh token.
 2. **Stop double-booking** — reject a slot a mentor already has an interview in.
 3. **Ratings** — the student rates the mentor after `COMPLETED` (a `@OneToOne` to practise).
-4. **Email notifications** — `spring-boot-starter-mail` when a request is accepted.
+4. **Email notifications** — the `Mailer` interface is already there and already
+   sends password resets; wiring it to "your interview was accepted" is a method
+   call, not a project.
 5. **Flyway migrations** — versioned SQL instead of `ddl-auto`.
-6. **Tests** — `@WebMvcTest` with `spring-security-test`'s `@WithMockUser`,
-   `@DataJpaTest` for repositories. Both dependencies are already in the pom.
-7. **Password reset** — token by email, expiry, single use.
+6. **More tests** — `@WebMvcTest` with `spring-security-test`'s `@WithMockUser`,
+   `@DataJpaTest` for repositories. Both dependencies are already in the pom, and
+   `RazorpayGatewayTest` is a worked example of the style.
+7. **Refunds** — Razorpay's dashboard does them today; in-app would need a
+   correcting entry against the original payment, never an edit to it.
+8. **A mentor-facing earnings screen** — the payroll data is all there; today
+   only admins can see it.
