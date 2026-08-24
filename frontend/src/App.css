@@ -60,7 +60,14 @@
   min-height: 100vh;
   display: grid;
   grid-template-columns: 1fr 460px;
-  gap: 60px;
+  /* Two rows: the brand bar, then the content. auto/1fr means the bar takes
+     exactly its own height and the pitch and card share what is left - so the
+     content stays vertically centred the way it was before the bar existed. */
+  grid-template-rows: auto 1fr;
+  /* Row gap and column gap differ. 60px between the two columns is the
+     breathing room the layout was designed around; 60px under the brand bar
+     would push the content down for no reason. */
+  gap: 30px 60px;
   align-items: center;
   max-width: 1120px;
   margin: 0 auto;
@@ -78,17 +85,44 @@
   z-index: -1;
 }
 
-.auth__theme { position: absolute; top: 22px; right: 24px; }
+/**
+ * The brand and the theme toggle, on one line across the top.
+ *
+ * grid-column: 1 / -1 spans every column, so it sits above both the pitch and
+ * the card rather than inside the left one. align-self: start keeps it pinned
+ * to the top of its row while the row below stays centred.
+ *
+ * It replaced an absolutely positioned toggle. Absolute worked while there was
+ * one small control in the corner, but a bar with content in it needs to take
+ * up space - out of flow it would have sat on top of the heading on a short
+ * window, and there is no padding value that fixes that for every height.
+ */
+.auth__top {
+  grid-column: 1 / -1;
+  align-self: start;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-width: 0;
+}
 
 @media (max-width: 940px) {
-  .auth { grid-template-columns: 1fr; gap: 32px; padding-top: 72px; }
+  /* padding-top drops back to the normal 40px: the extra 72px existed only to
+     clear the toggle when it was out of flow, and the bar now reserves its own
+     space. */
+  .auth { grid-template-columns: 1fr; gap: 30px; padding-top: 40px; }
+  /* The bar stays left/right even when the pitch below it centres - a logo
+     centred over centred text reads as a third heading. */
   .auth__intro { text-align: center; }
   .auth__points { max-width: 420px; margin-inline: auto; }
 }
 
 .auth__intro h1 {
   font-size: clamp(2rem, 4.6vw, 3rem);
-  margin-top: 26px;
+  /* Was 26px to clear the brand that used to sit directly above it. The brand
+     is in the top bar now, so this would be a gap above nothing. */
+  margin-top: 0;
 }
 
 .grad {
@@ -2463,7 +2497,6 @@
   justify-content: center;
 }
 
-.brand--center { justify-content: center; margin-bottom: 18px; }
 
 .auth__title {
   margin: 0 0 4px;

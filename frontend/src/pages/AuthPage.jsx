@@ -135,17 +135,20 @@ export default function AuthPage() {
 
   return (
     <div className="auth">
-      <div className="auth__theme">
-        <ThemeToggle />
-      </div>
-
-      {/* left: the pitch */}
-      <section className="auth__intro">
+      {/* The brand sits on the page, not in the left column - it names the whole
+          site rather than the pitch beside it, and on a narrow screen the old
+          placement pushed it into the middle of the page above a centred
+          heading, reading like a third heading rather than a logo. */}
+      <header className="auth__top">
         <div className="brand">
           <span className="brand__mark">🎯</span>
           <span className="brand__name">ConfirmPlacement</span>
         </div>
+        <ThemeToggle />
+      </header>
 
+      {/* left: the pitch */}
+      <section className="auth__intro">
         <h1>
           Walk in <span className="grad">already prepared</span>
         </h1>

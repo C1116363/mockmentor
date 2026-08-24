@@ -49,16 +49,17 @@ export default function ResetPasswordPage({ token, onDone }) {
 
   return (
     <div className="auth auth--single">
-      <div className="auth__theme">
-        <ThemeToggle />
-      </div>
-
-      <section className="auth__card">
-        <div className="brand brand--center">
+      {/* Same top bar as the login screen, so arriving from a reset link does
+          not look like a different site. */}
+      <header className="auth__top">
+        <div className="brand">
           <span className="brand__mark">🎯</span>
           <span className="brand__name">ConfirmPlacement</span>
         </div>
+        <ThemeToggle />
+      </header>
 
+      <section className="auth__card">
         {done ? (
           <div className="reset-done">
             <span className="reset-done__icon" aria-hidden="true">✓</span>
