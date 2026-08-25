@@ -5,6 +5,8 @@ import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -26,8 +28,21 @@ import java.util.Map;
 @Service
 public class JwtService {
 
+    private static final Logger log = LoggerFactory.getLogger(JwtService.class);
+
     private final SecretKey signingKey;
     private final long expirationMillis;
+
+    /**
+     * The development default, spelled out so it can be recognised.
+     *
+     * It is committed to a public repository, which means anyone who can read
+     * the repo can sign a token for any account on any server still using it -
+     * including an admin one. That is a total authentication bypass, and it
+     * looks like nothing is wrong: the app works perfectly.
+     */
+    private static final String DEV_SECRET =
+            "c3ByaW5nLWJvb3QtbGVhcm5pbmctcHJvamVjdC1qd3Qtc2lnbmluZy1rZXktMzJiKw==";
 
     public JwtService(
             @Value("${app.jwt.secret}") String base64Secret,
@@ -35,6 +50,26 @@ public class JwtService {
         // HMAC-SHA256 needs at least a 256-bit (32 byte) key.
         this.signingKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(base64Secret));
         this.expirationMillis = expirationMillis;
+
+        if (DEV_SECRET.equals(base64Secret.trim())) {
+            // Warn rather than refuse. Refusing would stop a fresh clone from
+            // starting at all, and the whole point of the default is that the
+            // project runs with no configuration. The banner is deliberately
+            // impossible to scroll past.
+            log.warn("""
+
+                    ================================================================
+                     JWT_SECRET IS THE PUBLIC DEVELOPMENT DEFAULT
+                    ================================================================
+                     This value is committed to the repository. Anyone who can
+                     read it can forge a token for ANY account, including admin.
+                     Nothing will look broken - that is what makes it dangerous.
+
+                     Before this is reachable from the internet, set your own:
+                       openssl rand -base64 32
+                     then put it in the environment as JWT_SECRET.
+                    ================================================================""");
+        }
     }
 
     /**

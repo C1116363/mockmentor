@@ -427,3 +427,4 @@ session and closing a tab logs you out. Refreshing keeps you in. See
 | Change the marketing page | [website/README.md](website/README.md) |
 | **Take card / UPI payments (Razorpay)** | [**PAYMENTS.md**](PAYMENTS.md) |
 | **Send real password-reset emails** | [Sending real emails](#sending-real-emails-gmail) |
+| **Host it on a real server** | [DEPLOY.md](DEPLOY.md) |

@@ -22,6 +22,7 @@ Start at <http://localhost:3000> and click the corner button.
 | **Find where something is in the code** | [**ARCHITECTURE.md**](ARCHITECTURE.md) — every folder, which file handles which feature, one request traced end to end |
 | **Take card / UPI payments** | [**PAYMENTS.md**](PAYMENTS.md) — the three Razorpay keys and exactly where they go |
 | **Send real password-reset emails** | [SETUP.md → Sending real emails](SETUP.md#sending-real-emails-gmail) |
+| **Host it on the internet** | [**DEPLOY.md**](DEPLOY.md) — the five things that break, and where to put the backend |
 
 ## Three roles, three screens
 
