@@ -195,6 +195,217 @@ Events: `order.paid`, `payment.captured`, `payment.failed`. Full detail in
 
 ---
 
+## The actual walkthrough (Railway + Vercel)
+
+The fastest path from this repo to a working public URL. Budget 40 minutes,
+about $5/month. Everything the repo can prepare is already committed —
+`backend/Dockerfile`, `frontend/vercel.json`, and every hardcoded localhost
+turned into an environment variable.
+
+You need three accounts: **Railway**, **Vercel**, and GitHub (you have that).
+
+### A. Database — Railway, 5 minutes
+
+1. <https://railway.app> → sign in with GitHub
+2. **New Project** → **Provision MySQL**
+3. Click the MySQL service → **Variables** tab. Keep these three:
+   `MYSQLHOST`, `MYSQLUSER`, `MYSQLPASSWORD`
+4. **Data** tab → run once:
+
+   ```sql
+   CREATE DATABASE IF NOT EXISTS interview_mentor
+     CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+   ```
+
+### B. Backend — Railway, 15 minutes
+
+1. Same project → **New** → **GitHub Repo** → pick `mockmentor`
+2. Settings → **Root Directory**: `backend`
+   Railway finds the `Dockerfile` and uses it. Leave the build command empty.
+3. Settings → **Networking** → **Generate Domain**. Copy it — that is your API
+   host.
+4. Settings → **Volumes** → **New Volume**, mount path `/data`
+
+   > Skip this and every uploaded CV and payment screenshot disappears on your
+   > next deploy. The database rows survive and point at nothing.
+
+5. **Variables** → paste, substituting the MySQL values from step A:
+
+   ```ini
+   DATABASE_URL=jdbc:mysql://MYSQLHOST:3306/interview_mentor?serverTimezone=UTC
+   DB_USER=root
+   DB_PASSWORD=<MYSQLPASSWORD>
+
+   JWT_SECRET=<run: openssl rand -base64 32>
+
+   UPLOAD_ROOT=/data/uploads
+   SHOW_SQL=false
+   DDL_AUTO=update
+
+   UPI_ID=yourname@okhdfcbank
+   UPI_PAYEE=Your Name
+   ```
+
+   Leave `CORS_ORIGINS` out for now — you do not have the frontend URL yet.
+
+6. Wait for the deploy, then check it really is alive:
+
+   ```bash
+   curl https://your-api.up.railway.app/api/public/plans
+   ```
+
+   Four seeded plans means the schema was created and the seeder ran.
+
+7. **Now set `DDL_AUTO=validate`** and redeploy. The schema exists; from here
+   you want it to refuse to start on a mismatch rather than quietly alter a
+   live database.
+
+### C. Frontend — Vercel, 10 minutes
+
+1. <https://vercel.com> → **Add New** → **Project** → import `mockmentor`
+2. **Root Directory**: `frontend`
+   Framework preset: Vite (auto-detected). `vercel.json` handles the rest.
+3. **Environment Variables**:
+
+   ```ini
+   VITE_API_URL=https://your-api.up.railway.app/api
+   ```
+
+   > Vite substitutes this **at build time**. Changing it later needs a
+   > redeploy — there is nothing in `dist/` to edit.
+
+4. **Deploy**, then copy the URL it gives you.
+
+### D. Join them up — 5 minutes, and this is the step everyone gets wrong
+
+Back in Railway → Variables:
+
+```ini
+CORS_ORIGINS=https://your-app.vercel.app,https://c1116363.github.io
+FRONTEND_URL=https://your-app.vercel.app
+```
+
+No trailing slashes. Redeploy.
+
+**Until you do this, the frontend loads and every single request fails**, while
+`curl` against the same API works perfectly. It looks like the frontend is
+broken. It is not — the browser is refusing the response because the API never
+said your domain was allowed.
+
+`FRONTEND_URL` is separate: it is where password-reset links point. Miss it and
+the emails send fine and every link goes to localhost.
+
+### E. Website — 2 minutes
+
+Two constants at the top of the `<script>` in `website/index.html`:
+
+```js
+const DEPLOYED_APP_URL = "https://your-app.vercel.app";
+const DEPLOYED_API_URL = "https://your-api.up.railway.app/api";
+```
+
+Publish it (see step 4 of the section above). Every "Book a mock interview"
+button on the live site is inert until this is set.
+
+### F. Check it end to end
+
+```bash
+API=https://your-api.up.railway.app/api
+
+curl -s $API/public/plans | head -c 100          # seeded data
+
+curl -s -X POST $API/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"admin@example.com","password":"password123"}'
+```
+
+Then in a browser: open the Vercel URL, log in as admin, and check the Payments
+and Payroll tabs load.
+
+> **Change the demo passwords.** The seeder creates seven accounts on
+> `password123`, including an admin. On a public URL that is an open door.
+> Log in as each one and use the password-reset flow, or delete the ones you do
+> not need.
+
+### G. Payments
+
+**You already take money without any of this.** Manual UPI works the moment the
+app is hosted: the student pays your UPI ID, uploads the UTR and a screenshot,
+an admin confirms it. 0% fees, instant settlement, nothing to apply for. Ship
+that first.
+
+Card and netbanking need Razorpay, and that has a paperwork path and a code
+path. The code path is done. The paperwork is where the weeks go.
+
+#### What Razorpay wants before it will activate you
+
+- Business PAN (your personal PAN is fine for a sole proprietorship)
+- Bank account in that name, plus a cancelled cheque
+- Address proof
+- **Four pages on your public website**
+
+That last one stalls more applications than anything else, and **you do not
+have them.** The footer currently says `Privacy · Terms` as plain text, and
+there is no refund policy at all:
+
+| Page | Status |
+| --- | --- |
+| Terms & Conditions | ✗ text only, not a page |
+| Privacy Policy | ✗ text only, not a page |
+| **Refund / Cancellation Policy** | ✗ **missing entirely** — the one they check hardest |
+| Contact Us (real address + phone) | ~ a `mailto:` link, no address or phone |
+
+These have to say what *your* business actually does — how long a refund takes,
+what happens to an unused session, who to contact. That is your policy to
+write, not something to generate. Once you have the wording, they are four
+static pages next to `index.html`.
+
+Approval is usually 2–5 working days once the documents are in.
+
+#### Then the code side — 10 minutes
+
+1. Dashboard → **Account & Settings → API Keys → Generate Key**.
+   The secret shows **once**. Copy it immediately.
+2. Dashboard → **Settings → Webhooks → Add New Webhook**:
+
+   ```
+   URL:    https://your-api.up.railway.app/api/webhooks/razorpay
+   Events: order.paid, payment.captured, payment.failed
+   Secret: any long random string — you type this one in
+   ```
+
+   > **The webhook secret is not the API key secret.** Using the key secret
+   > here makes every webhook fail its signature check, and the symptom — a
+   > stream of 403s — looks like somebody attacking you.
+   >
+   > Being hosted is what makes this work at all. Razorpay cannot reach
+   > `localhost`, which is why local testing needs a `cloudflared` tunnel.
+
+3. Railway → **Variables**:
+
+   ```ini
+   PAYMENT_PROVIDER=razorpay
+   RAZORPAY_KEY_ID=rzp_test_...
+   RAZORPAY_KEY_SECRET=...
+   RAZORPAY_WEBHOOK_SECRET=...
+   ```
+
+4. Redeploy. Both options now appear on every payment screen: **Pay now** on
+   top, then `or pay by UPI yourself` with the existing steps below.
+
+**Start with test keys.** They start `rzp_test_`, move no real money, and run
+the identical flow. Test card `4111 1111 1111 1111`, any future expiry, any
+CVV, OTP `1234`. Switch to live keys only once you have watched a test payment
+appear as ACTIVE in the admin screen.
+
+Fees when you go live: about **2% + 18% GST** on the fee, settling **T+2**.
+Manual UPI stays at 0% and instant, which is why the app keeps both.
+
+Everything else — the signature rules, the idempotency guarantees, and a
+troubleshooting table — is in [PAYMENTS.md](PAYMENTS.md).
+
+---
+
 ## Where to host the backend
 
 This is the only piece that needs a real server: it is a long-running JVM with
