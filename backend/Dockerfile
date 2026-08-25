@@ -23,24 +23,30 @@ RUN mvn -B clean package -DskipTests
 FROM eclipse-temurin:21-jre AS runtime
 WORKDIR /app
 
-# Not root. If anything in the app is ever exploited, this is the difference
-# between reaching the app's own files and owning the container.
+# The account the JVM actually runs as. If anything in the app is ever
+# exploited, this is the difference between reaching the app's own files and
+# owning the container.
 RUN useradd --create-home --shell /bin/false app
 
-# Uploads live here. Mount a PERSISTENT VOLUME at this path or every CV,
+# Uploads live here. Mount a PERSISTENT VOLUME at this path, or every CV,
 # screenshot and study-material file disappears on the next deploy - the
 # database rows survive and point at nothing.
+#
+# Created here for the no-volume case; when a volume IS mounted it replaces
+# this directory entirely and arrives owned by root, which is what the
+# entrypoint exists to fix.
 RUN mkdir -p /data/uploads && chown -R app:app /data
 ENV UPLOAD_ROOT=/data/uploads
 
-COPY --from=build /build/target/*.jar app.jar
-RUN chown app:app app.jar
-USER app
+COPY --from=build /build/target/*.jar /app/app.jar
+COPY docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN chown app:app /app/app.jar && chmod +x /app/docker-entrypoint.sh
+
+# Deliberately still root at this point. The entrypoint has to chown the
+# mounted volume before anything can write to it, then drops to `app` itself.
+# USER app here would move that failure earlier, not remove it.
 
 # The platform overrides this; 8080 is only the local default.
 EXPOSE 8080
 
-# MaxRAMPercentage rather than a fixed -Xmx: containers get a memory limit
-# rather than a machine, and a JVM that ignores it gets OOM-killed by the
-# platform with no Java error to explain why.
-ENTRYPOINT ["sh", "-c", "java -XX:MaxRAMPercentage=75 -jar app.jar"]
+ENTRYPOINT ["/app/docker-entrypoint.sh"]

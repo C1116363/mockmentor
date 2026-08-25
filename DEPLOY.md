@@ -195,214 +195,112 @@ Events: `order.paid`, `payment.captured`, `payment.failed`. Full detail in
 
 ---
 
-## The actual walkthrough (Railway + Vercel)
+## What "deploy ready" means here
 
-The fastest path from this repo to a working public URL. Budget 40 minutes,
-about $5/month. Everything the repo can prepare is already committed —
-`backend/Dockerfile`, `frontend/vercel.json`, and every hardcoded localhost
-turned into an environment variable.
+The repo is now platform-neutral: nothing in it names a host. Three pieces,
+each in the form its kind of host expects.
 
-You need three accounts: **Railway**, **Vercel**, and GitHub (you have that).
+### Backend — a container
 
-### A. Database — Railway, 5 minutes
+`backend/Dockerfile` builds a self-contained image. Any host that runs
+containers will take it: Railway, Fly, Render, Koyeb, Google Cloud Run, AWS
+ECS, a plain VPS, Kubernetes.
 
-1. <https://railway.app> → sign in with GitHub
-2. **New Project** → **Provision MySQL**
-3. Click the MySQL service → **Variables** tab. Keep these three:
-   `MYSQLHOST`, `MYSQLUSER`, `MYSQLPASSWORD`
-4. **Data** tab → run once:
+It follows the conventions every platform expects, so there is nothing to
+adapt:
 
-   ```sql
-   CREATE DATABASE IF NOT EXISTS interview_mentor
-     CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-   ```
+| Convention | Why it matters |
+| --- | --- |
+| Binds `$PORT` | platforms assign a port and health-check *that* port. Hardcode 8080 and the container starts, binds the wrong port, fails every check, and is killed — with a log that reads perfectly healthy. |
+| `GET /api/public/health` | returns `200 {"status":"ok"}`, or `503` if the database is unreachable. Point the platform's health check here. Pointing it at `/` gets a **401**, which every platform reads as dead. |
+| All config from the environment | the same image runs anywhere; moving host is new variables, not a rebuild. |
+| Non-root JVM | the entrypoint fixes the mounted volume's ownership as root, then drops to an unprivileged user before `exec`ing Java. |
+| `exec` as PID 1 | the JVM receives `SIGTERM` directly, so Spring's shutdown hooks actually run instead of the process being killed mid-request. |
+| `MaxRAMPercentage=75` | a container gets a memory *limit*, not a machine. A JVM that ignores it is OOM-killed by the platform with no Java error to explain why. |
 
-### B. Backend — Railway, 15 minutes
-
-1. Same project → **New** → **GitHub Repo** → pick `mockmentor`
-2. Settings → **Root Directory**: `backend`
-   Railway finds the `Dockerfile` and uses it. Leave the build command empty.
-3. Settings → **Networking** → **Generate Domain**. Copy it — that is your API
-   host.
-4. Settings → **Volumes** → **New Volume**, mount path `/data`
-
-   > Skip this and every uploaded CV and payment screenshot disappears on your
-   > next deploy. The database rows survive and point at nothing.
-
-5. **Variables** → paste, substituting the MySQL values from step A:
-
-   ```ini
-   DATABASE_URL=jdbc:mysql://MYSQLHOST:3306/interview_mentor?serverTimezone=UTC
-   DB_USER=root
-   DB_PASSWORD=<MYSQLPASSWORD>
-
-   JWT_SECRET=<run: openssl rand -base64 32>
-
-   UPLOAD_ROOT=/data/uploads
-   SHOW_SQL=false
-   DDL_AUTO=update
-
-   UPI_ID=yourname@okhdfcbank
-   UPI_PAYEE=Your Name
-   ```
-
-   Leave `CORS_ORIGINS` out for now — you do not have the frontend URL yet.
-
-6. Wait for the deploy, then check it really is alive:
-
-   ```bash
-   curl https://your-api.up.railway.app/api/public/plans
-   ```
-
-   Four seeded plans means the schema was created and the seeder ran.
-
-7. **Now set `DDL_AUTO=validate`** and redeploy. The schema exists; from here
-   you want it to refuse to start on a mismatch rather than quietly alter a
-   live database.
-
-### C. Frontend — Vercel, 10 minutes
-
-1. <https://vercel.com> → **Add New** → **Project** → import `mockmentor`
-2. **Root Directory**: `frontend`
-   Framework preset: Vite (auto-detected). `vercel.json` handles the rest.
-3. **Environment Variables**:
-
-   ```ini
-   VITE_API_URL=https://your-api.up.railway.app/api
-   ```
-
-   > Vite substitutes this **at build time**. Changing it later needs a
-   > redeploy — there is nothing in `dist/` to edit.
-
-4. **Deploy**, then copy the URL it gives you.
-
-### D. Join them up — 5 minutes, and this is the step everyone gets wrong
-
-Back in Railway → Variables:
-
-```ini
-CORS_ORIGINS=https://your-app.vercel.app,https://c1116363.github.io
-FRONTEND_URL=https://your-app.vercel.app
-```
-
-No trailing slashes. Redeploy.
-
-**Until you do this, the frontend loads and every single request fails**, while
-`curl` against the same API works perfectly. It looks like the frontend is
-broken. It is not — the browser is refusing the response because the API never
-said your domain was allowed.
-
-`FRONTEND_URL` is separate: it is where password-reset links point. Miss it and
-the emails send fine and every link goes to localhost.
-
-### E. Website — 2 minutes
-
-Two constants at the top of the `<script>` in `website/index.html`:
-
-```js
-const DEPLOYED_APP_URL = "https://your-app.vercel.app";
-const DEPLOYED_API_URL = "https://your-api.up.railway.app/api";
-```
-
-Publish it (see step 4 of the section above). Every "Book a mock interview"
-button on the live site is inert until this is set.
-
-### F. Check it end to end
+### Frontend — static files, or a container
 
 ```bash
-API=https://your-api.up.railway.app/api
-
-curl -s $API/public/plans | head -c 100          # seeded data
-
-curl -s -X POST $API/auth/login \
-  -H 'Content-Type: application/json' \
-  -d '{"email":"admin@example.com","password":"password123"}'
+cd frontend
+VITE_API_URL=https://your-api-url/api npm run build   # -> dist/
 ```
 
-Then in a browser: open the Vercel URL, log in as admin, and check the Payments
-and Payroll tabs load.
+`dist/` is 444 KB of plain static files. Upload it anywhere.
 
-> **Change the demo passwords.** The seeder creates seven accounts on
-> `password123`, including an admin. On a public URL that is an open door.
-> Log in as each one and use the password-reset flow, or delete the ones you do
-> not need.
+> **`VITE_API_URL` is baked in at build time.** It is not read when the app
+> starts, so changing it means rebuilding — there is nothing in `dist/` to edit.
+> This is the most surprising thing about deploying a Vite app.
 
-### G. Payments
+Single-page fallback is covered for every common host, so an unknown path
+reaches the app instead of 404ing:
 
-**You already take money without any of this.** Manual UPI works the moment the
-app is hosted: the student pays your UPI ID, uploads the UTR and a screenshot,
-an admin confirms it. 0% fees, instant settlement, nothing to apply for. Ship
-that first.
+| Host | File | Status |
+| --- | --- | --- |
+| Netlify, Cloudflare Pages | `public/_redirects` | ✓ committed |
+| Vercel | `frontend/vercel.json` | ✓ committed |
+| nginx | `frontend/nginx.conf` | ✓ committed |
+| GitHub Pages | — | no rewrites available; fine, since `/` is the only real path |
 
-Card and netbanking need Razorpay, and that has a paperwork path and a code
-path. The code path is done. The paperwork is where the weeks go.
+`frontend/Dockerfile` also exists if your host only takes containers — it
+builds the bundle and serves it with nginx on port 8080.
 
-#### What Razorpay wants before it will activate you
+### Website — static, already live
 
-- Business PAN (your personal PAN is fine for a sole proprietorship)
-- Bank account in that name, plus a cancelled cheque
-- Address proof
-- **Four pages on your public website**
+`website/` is one HTML file with no build step. Currently published to GitHub
+Pages from the `gh-pages` branch.
 
-That last one stalls more applications than anything else, and **you do not
-have them.** The footer currently says `Privacy · Terms` as plain text, and
-there is no refund policy at all:
+**One edit needed before its buttons work.** At the top of the `<script>`:
 
-| Page | Status |
-| --- | --- |
-| Terms & Conditions | ✗ text only, not a page |
-| Privacy Policy | ✗ text only, not a page |
-| **Refund / Cancellation Policy** | ✗ **missing entirely** — the one they check hardest |
-| Contact Us (real address + phone) | ~ a `mailto:` link, no address or phone |
+```js
+const DEPLOYED_APP_URL = "https://your-frontend-url";
+const DEPLOYED_API_URL = "https://your-api-url/api";
+```
 
-These have to say what *your* business actually does — how long a refund takes,
-what happens to an unused session, who to contact. That is your policy to
-write, not something to generate. Once you have the wording, they are four
-static pages next to `index.html`.
+Until those are set, every "Book a mock interview" on the live site answers
+"not live yet".
 
-Approval is usually 2–5 working days once the documents are in.
+---
 
-#### Then the code side — 10 minutes
+## Everything at once, on one machine
 
-1. Dashboard → **Account & Settings → API Keys → Generate Key**.
-   The secret shows **once**. Copy it immediately.
-2. Dashboard → **Settings → Webhooks → Add New Webhook**:
+For a VPS, or to test the real production build before pushing it to a
+platform:
 
-   ```
-   URL:    https://your-api.up.railway.app/api/webhooks/razorpay
-   Events: order.paid, payment.captured, payment.failed
-   Secret: any long random string — you type this one in
-   ```
+```bash
+cp .env.deploy.example .env     # fill in DB_PASSWORD and JWT_SECRET
+docker compose up -d --build
+```
 
-   > **The webhook secret is not the API key secret.** Using the key secret
-   > here makes every webhook fail its signature check, and the symptom — a
-   > stream of 403s — looks like somebody attacking you.
-   >
-   > Being hosted is what makes this work at all. Razorpay cannot reach
-   > `localhost`, which is why local testing needs a `cloudflared` tunnel.
+That brings up MySQL, the backend and the frontend, with named volumes so the
+database and the uploads survive a restart. Frontend on `:8081`, API on
+`:8080`, and the database deliberately **not** published — nothing outside the
+compose network needs it, and publishing 3306 is how a database ends up exposed
+by accident.
 
-3. Railway → **Variables**:
+The backend waits on a MySQL *health check*, not just the port: MySQL accepts
+TCP connections several seconds before it will answer a query, so waiting on
+the port alone hands the backend a connection that immediately fails.
 
-   ```ini
-   PAYMENT_PROVIDER=razorpay
-   RAZORPAY_KEY_ID=rzp_test_...
-   RAZORPAY_KEY_SECRET=...
-   RAZORPAY_WEBHOOK_SECRET=...
-   ```
+> Not tested end to end — Docker was not available on the machine this was
+> written on. The jar itself was verified running with env vars only and a
+> platform-style `PORT`, which is the part most likely to break.
 
-4. Redeploy. Both options now appear on every payment screen: **Pay now** on
-   top, then `or pay by UPI yourself` with the existing steps below.
+---
 
-**Start with test keys.** They start `rzp_test_`, move no real money, and run
-the identical flow. Test card `4111 1111 1111 1111`, any future expiry, any
-CVV, OTP `1234`. Switch to live keys only once you have watched a test payment
-appear as ACTIVE in the admin screen.
+## The five-minute version
 
-Fees when you go live: about **2% + 18% GST** on the fee, settling **T+2**.
-Manual UPI stays at 0% and instant, which is why the app keeps both.
+1. Build and push the backend image, or point your host at `backend/Dockerfile`
+2. Set the [environment](#the-full-environment) — `DATABASE_URL`, `JWT_SECRET`,
+   `UPLOAD_ROOT` at a **persistent volume**
+3. Health check path: `/api/public/health`
+4. Build the frontend with `VITE_API_URL` set to the backend's public URL, and
+   upload `dist/`
+5. Set `CORS_ORIGINS` and `FRONTEND_URL` on the backend to the frontend's URL
+6. Set the two constants in `website/index.html`
+7. `DDL_AUTO=validate`, and **change the demo passwords**
 
-Everything else — the signature rules, the idempotency guarantees, and a
-troubleshooting table — is in [PAYMENTS.md](PAYMENTS.md).
+Step 5 is the one people miss: without it the frontend loads and every request
+fails, while `curl` against the same API works perfectly.
 
 ---
 

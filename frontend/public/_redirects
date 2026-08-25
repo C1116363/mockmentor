@@ -1,0 +1,11 @@
+# Send every path to index.html so the app handles it.
+#
+# Read by Netlify AND Cloudflare Pages; ignored elsewhere, so it costs nothing
+# to ship. Vercel uses vercel.json for the same thing, and a plain web server
+# wants try_files (nginx) or FallbackResource (Apache) - see DEPLOY.md.
+#
+# Nothing in this app depends on it today: there is no router, so the only real
+# path is /. But the password-reset link arrives as /?reset=<token>, and a host
+# that tried to resolve an unknown path as a file would 404 before the app ever
+# ran - which is a bad way to find out.
+/*  /index.html  200

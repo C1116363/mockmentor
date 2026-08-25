@@ -6,6 +6,14 @@ backend/.env
 backend/.env.*
 !backend/.env.example
 
+# docker-compose reads a .env from the REPO ROOT, and that one holds
+# JWT_SECRET and DB_PASSWORD. It is a different file from backend/.env and the
+# rule above does not cover it - which is exactly the kind of near-miss that
+# ends up in a public repo.
+/.env
+/.env.*
+!/.env.deploy.example
+
 # uploaded payment screenshots and study material (user data)
 backend/uploads/
 
