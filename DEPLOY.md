@@ -267,15 +267,23 @@ For a VPS, or to test the real production build before pushing it to a
 platform:
 
 ```bash
-cp .env.deploy.example .env     # fill in DB_PASSWORD and JWT_SECRET
-docker compose up -d --build
+cp .env.deploy.example .env.deploy
+# fill it in - DB_PASSWORD, JWT_SECRET, VITE_API_URL, CORS_ORIGINS, FRONTEND_URL
+
+docker compose --env-file .env.deploy up -d --build
 ```
 
-That brings up MySQL, the backend and the frontend, with named volumes so the
-database and the uploads survive a restart. Frontend on `:8081`, API on
-`:8080`, and the database deliberately **not** published — nothing outside the
-compose network needs it, and publishing 3306 is how a database ends up exposed
-by accident.
+That brings up **all four** pieces — MySQL, the API, the frontend and the
+marketing site — with named volumes so the database and the uploads survive a
+restart. Ports default to `:8080`, `:5173` and `:3000` and are overridable in
+the env file; the database is deliberately **not** published, because nothing
+outside the compose network needs it and publishing 3306 is how a database ends
+up exposed by accident.
+
+Five variables are marked required, so compose refuses to start rather than
+bringing up a half-configured stack. `CORS_ORIGINS` and `FRONTEND_URL` are in
+that list on purpose: forgetting them produces an app that loads and fails
+every request, which is far harder to diagnose than a refusal to start.
 
 The backend waits on a MySQL *health check*, not just the port: MySQL accepts
 TCP connections several seconds before it will answer a query, so waiting on

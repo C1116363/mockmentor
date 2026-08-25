@@ -1,59 +1,63 @@
-# The whole application on one machine.
+# The whole stack, on any machine that runs Docker.
 #
-#   cp .env.deploy.example .env      # fill in the three secrets
-#   docker compose up -d --build
+# Two jobs. It deploys the app to a plain VPS with one command, and it lets you
+# reproduce a production setup locally - real MySQL, the real jar, nginx in
+# front - which is where the difference between "works on my laptop" and "works
+# deployed" actually shows up.
 #
-# For a VPS, or for testing the real production build before you push it to a
-# platform. Not needed for a managed host - there you point the platform at
-# backend/Dockerfile and let it run the container.
+#   cp .env.deploy.example .env.deploy
+#   # fill it in, then:
+#   docker compose --env-file .env.deploy up -d --build
+#
+# Managed platforms (Railway, Render, Fly, Cloud Run) do not use this file -
+# they build the Dockerfiles directly and you set the same variables in their
+# dashboard.
 
 services:
-  db:
+  mysql:
     image: mysql:8
     restart: unless-stopped
     environment:
       MYSQL_DATABASE: interview_mentor
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
+      MYSQL_ROOT_PASSWORD: "${DB_PASSWORD:?set DB_PASSWORD in your env file}"
     volumes:
-      # Named volume, so the database survives `docker compose down`.
-      # Without this, every restart is a fresh empty database.
-      - db-data:/var/lib/mysql
+      # Named volume, so the database survives `docker compose down`. A bind
+      # mount here would also work; what matters is that it is not anonymous,
+      # because an anonymous volume is orphaned on every recreate.
+      - mysql-data:/var/lib/mysql
     healthcheck:
-      # The backend depends on this passing. MySQL accepts TCP connections
-      # several seconds before it will answer a query, so waiting on the port
-      # alone gives the backend a connection that immediately fails.
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-p$$MYSQL_ROOT_PASSWORD"]
+      # The backend opens its connection pool during startup and fails fast if
+      # MySQL is not listening. depends_on alone only waits for the container to
+      # exist, which it does long before MySQL accepts connections - so without
+      # this the first `up` reliably fails and the second one works.
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-p${DB_PASSWORD}"]
       interval: 5s
       timeout: 5s
       retries: 20
       start_period: 30s
-    # Not published. Nothing outside this compose network has any business
-    # reaching the database, and publishing 3306 is how a database ends up
-    # exposed to the internet by accident.
 
   backend:
     build:
       context: ./backend
     restart: unless-stopped
     depends_on:
-      db:
+      mysql:
         condition: service_healthy
     environment:
-      # `db` is the service name above - compose resolves it on its own network.
-      DATABASE_URL: jdbc:mysql://db:3306/interview_mentor?serverTimezone=UTC
+      DATABASE_URL: jdbc:mysql://mysql:3306/interview_mentor?serverTimezone=UTC
       DB_USER: root
-      DB_PASSWORD: ${DB_PASSWORD:?}
-      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env - openssl rand -base64 32}
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8081}
-      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:8081}
+      DB_PASSWORD: "${DB_PASSWORD:?}"
+      JWT_SECRET: "${JWT_SECRET:?generate one - openssl rand -base64 32}"
+      CORS_ORIGINS: "${CORS_ORIGINS:?}"
+      FRONTEND_URL: "${FRONTEND_URL:?}"
       UPLOAD_ROOT: /data/uploads
-      SHOW_SQL: "false"
-      # update on the first run creates the schema. Switch to validate once it
-      # exists, so a mismatch stops the container instead of altering a live
-      # database.
+      # update on the very first run so the schema is created, then switch to
+      # validate so it refuses to start on a mismatch instead of altering a
+      # live database.
       DDL_AUTO: ${DDL_AUTO:-update}
-      UPI_ID: ${UPI_ID:-yourname@okhdfcbank}
-      UPI_PAYEE: ${UPI_PAYEE:-ConfirmPlacement}
+      SHOW_SQL: "false"
+      UPI_ID: ${UPI_ID:-}
+      UPI_PAYEE: ${UPI_PAYEE:-}
       PAYMENT_PROVIDER: ${PAYMENT_PROVIDER:-manual}
       RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-}
       RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-}
@@ -62,13 +66,14 @@ services:
       MAIL_USERNAME: ${MAIL_USERNAME:-}
       MAIL_PASSWORD: ${MAIL_PASSWORD:-}
       MAIL_FROM: ${MAIL_FROM:-}
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
     volumes:
-      # CVs, payment screenshots and study material. A named volume, because on
-      # an ephemeral filesystem every uploaded file disappears on redeploy while
-      # the database rows survive and point at nothing.
+      # CVs, payment screenshots and study material. Without this they are
+      # inside the container and vanish on every rebuild, while the database
+      # rows survive and point at nothing.
       - uploads:/data/uploads
     ports:
-      - "8080:8080"
+      - "${BACKEND_PORT:-8080}:8080"
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:8080/api/public/health || exit 1"]
       interval: 15s
@@ -80,15 +85,25 @@ services:
     build:
       context: ./frontend
       args:
-        # Baked into the bundle at build time, so this is a build arg rather
-        # than an environment variable. Change it and you must rebuild.
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:8080/api}
+        # Baked into the bundle at build time, so changing it needs a rebuild -
+        # there is nothing in the served files to edit.
+        VITE_API_URL: "${VITE_API_URL:?required - e.g. https://api.example.com/api}"
     restart: unless-stopped
     depends_on:
       - backend
     ports:
-      - "8081:8080"
+      - "${FRONTEND_PORT:-5173}:80"
+
+  website:
+    # The marketing page is one static file with no build step, so nginx serves
+    # the directory as-is. No image to build.
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    volumes:
+      - ./website:/usr/share/nginx/html:ro
+    ports:
+      - "${WEBSITE_PORT:-3000}:80"
 
 volumes:
-  db-data:
+  mysql-data:
   uploads:
