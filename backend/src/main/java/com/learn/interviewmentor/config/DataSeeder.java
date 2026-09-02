@@ -88,7 +88,7 @@ public class DataSeeder implements CommandLineRunner {
             return;
         }
 
-        userRepository.save(user("Admin", "admin@example.com", Role.ADMIN));
+        userRepository.save(user("Admin", "Chetan8552@example.com", Role.ADMIN));
 
         User ananya = userRepository.save(user("Ananya Rao", "ananya@example.com", Role.MENTOR));
         User vikram = userRepository.save(user("Vikram Shetty", "vikram@example.com", Role.MENTOR));
