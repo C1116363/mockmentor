@@ -668,12 +668,25 @@
 </footer>
 
 <script>
-  // The app and API only exist on a developer machine. When this page is served
-  // from anywhere else - GitHub Pages, say - there is nothing behind those URLs,
-  // so the buttons say so instead of dumping people on a dead link.
+  /*
+   * Where the app lives once it is hosted.
+   *
+   * >>> SET THESE TWO WHEN YOU DEPLOY. <<<
+   *
+   * Until they are set, every "Book a mock interview" button on the live site
+   * is inert and answers "not live yet" - which is honest, and also means the
+   * published page currently has no working call to action at all. This is the
+   * one edit that turns the marketing site into a funnel.
+   *
+   * Plain constants rather than environment variables because this page has no
+   * build step: it is one static file, served as-is.
+   */
+  const DEPLOYED_APP_URL = "https://mockmentor-frontend-kappa.vercel.app";              // e.g. "https://app.confirmplacement.com"
+  const DEPLOYED_API_URL = "";              // e.g. "https://api.confirmplacement.com/api"
+
   const IS_LOCAL = ["localhost", "127.0.0.1", ""].includes(location.hostname);
-  const APP_URL = IS_LOCAL ? "http://localhost:5173" : null;
-  const API_URL = IS_LOCAL ? "http://localhost:8080/api" : null;
+  const APP_URL = IS_LOCAL ? "http://localhost:5173"     : (DEPLOYED_APP_URL || null);
+  const API_URL = IS_LOCAL ? "http://localhost:8080/api" : (DEPLOYED_API_URL || null);
 
   /**
    * Point a set of links at the app, or mark them "not live yet".
