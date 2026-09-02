@@ -1,10 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
     <meta charset="UTF-8">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <meta
@@ -47,6 +44,7 @@
                 BlinkMacSystemFont,
                 "Segoe UI",
                 sans-serif;
+
             color: var(--text);
             background: var(--background);
             line-height: 1.5;
@@ -66,6 +64,7 @@
             margin: 0 auto;
         }
 
+
         /* =========================
            NAVBAR
         ========================= */
@@ -74,13 +73,17 @@
             position: sticky;
             top: 0;
             z-index: 1000;
-            background: rgba(255,255,255,.96);
+
+            background: rgba(255, 255, 255, 0.96);
+
             border-bottom: 1px solid var(--border);
+
             backdrop-filter: blur(10px);
         }
 
         .nav-inner {
             height: 72px;
+
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -89,22 +92,30 @@
         .logo {
             display: flex;
             align-items: center;
+
             gap: 10px;
+
             font-size: 18px;
             font-weight: 800;
-            letter-spacing: -.4px;
+
+            letter-spacing: -0.4px;
         }
 
         .logo-mark {
             width: 38px;
             height: 38px;
+
             display: flex;
             align-items: center;
             justify-content: center;
+
             border-radius: 10px;
+
             background: var(--primary);
+
             color: white;
-            transition: .25s ease;
+
+            transition: 0.25s ease;
         }
 
         .logo-svg {
@@ -121,13 +132,17 @@
 
         .check {
             fill: none;
+
             stroke: white;
             stroke-width: 3;
+
             stroke-linecap: round;
             stroke-linejoin: round;
+
             stroke-dasharray: 30;
             stroke-dashoffset: 30;
-            transition: stroke-dashoffset .35s ease;
+
+            transition: stroke-dashoffset 0.35s ease;
         }
 
         .logo:hover .logo-mark {
@@ -141,13 +156,16 @@
         .nav-links {
             display: flex;
             align-items: center;
+
             gap: 28px;
+
             font-size: 14px;
+
             color: #4b5563;
         }
 
         .nav-links a {
-            transition: .2s;
+            transition: 0.2s;
         }
 
         .nav-links a:hover {
@@ -156,9 +174,13 @@
 
         .nav-button {
             padding: 10px 17px;
+
             border-radius: 9px;
+
             background: var(--primary);
+
             color: white !important;
+
             font-weight: 600;
         }
 
@@ -168,11 +190,16 @@
 
         .menu-button {
             display: none;
+
             border: none;
+
             background: transparent;
-            font-size: 25px;
+
+            font-size: 24px;
+
             cursor: pointer;
         }
+
 
         /* =========================
            HERO
@@ -180,41 +207,66 @@
 
         .hero {
             padding: 95px 0 90px;
-            background: linear-gradient(to bottom, #ffffff, #f8f9fd);
+
+            background:
+                linear-gradient(
+                    to bottom,
+                    #ffffff,
+                    #f8f9fd
+                );
         }
 
         .hero-grid {
             display: grid;
-            grid-template-columns: 1.05fr .95fr;
+
+            grid-template-columns:
+                1.05fr
+                0.95fr;
+
             gap: 70px;
+
             align-items: center;
         }
 
         .hero-label {
             display: inline-flex;
             align-items: center;
+
             gap: 8px;
+
             padding: 6px 11px;
+
             border: 1px solid #dfe5ff;
+
             background: #f4f6ff;
+
             color: var(--primary);
+
             border-radius: 20px;
+
             font-size: 12px;
+
             font-weight: 700;
+
             margin-bottom: 20px;
         }
 
         .hero-label span {
             width: 7px;
             height: 7px;
+
             background: var(--success);
+
             border-radius: 50%;
         }
 
         .hero h1 {
             font-size: clamp(42px, 6vw, 68px);
+
             line-height: 1.03;
+
             letter-spacing: -3px;
+
             max-width: 700px;
         }
 
@@ -224,57 +276,83 @@
 
         .hero-text {
             margin-top: 22px;
+
             max-width: 610px;
+
             color: var(--muted);
+
             font-size: 17px;
+
             line-height: 1.7;
         }
 
         .hero-actions {
             display: flex;
+
             gap: 12px;
+
             margin-top: 30px;
+
             flex-wrap: wrap;
         }
 
         .primary-button {
             display: inline-flex;
+
             align-items: center;
             justify-content: center;
+
             padding: 13px 20px;
+
             background: var(--primary);
+
             color: white;
+
             border-radius: 9px;
+
             font-size: 14px;
+
             font-weight: 700;
-            transition: .2s;
+
+            transition: 0.2s;
         }
 
         .primary-button:hover {
             background: var(--primary-dark);
+
             transform: translateY(-2px);
         }
 
         .secondary-button {
             display: inline-flex;
+
             align-items: center;
             justify-content: center;
+
             padding: 13px 20px;
+
             border: 1px solid var(--border);
+
             background: white;
+
             border-radius: 9px;
+
             font-size: 14px;
+
             font-weight: 600;
-            transition: .2s;
+
+            transition: 0.2s;
         }
 
         .secondary-button:hover {
             border-color: #cbd2e8;
+
             transform: translateY(-2px);
         }
 
+
         /* =========================
-           PRODUCT PREVIEW
+           DASHBOARD PREVIEW
         ========================= */
 
         .preview {
@@ -283,36 +361,56 @@
 
         .dashboard-card {
             background: white;
+
             border: 1px solid var(--border);
+
             border-radius: 20px;
+
             padding: 20px;
-            box-shadow: 0 25px 70px rgba(30,40,80,.10);
+
+            box-shadow:
+                0 25px 70px
+                rgba(30, 40, 80, 0.10);
+
             transform: rotate(1deg);
-            transition: .35s;
+
+            transition: 0.35s;
         }
 
         .dashboard-card:hover {
-            transform: rotate(0deg) translateY(-6px);
+            transform:
+                rotate(0deg)
+                translateY(-6px);
         }
 
         .dashboard-top {
             display: flex;
+
             justify-content: space-between;
+
             align-items: center;
+
             padding-bottom: 16px;
-            border-bottom: 1px solid var(--border);
+
+            border-bottom:
+                1px solid var(--border);
         }
 
         .dashboard-title {
             font-size: 15px;
+
             font-weight: 750;
         }
 
         .dashboard-status {
             font-size: 11px;
+
             padding: 5px 9px;
+
             background: #ecfdf3;
+
             color: #15803d;
+
             border-radius: 20px;
         }
 
@@ -322,58 +420,80 @@
 
         .progress-title {
             display: flex;
+
             justify-content: space-between;
+
             font-size: 12px;
+
             color: var(--muted);
         }
 
         .progress {
             height: 8px;
+
             background: #edf0f5;
+
             border-radius: 10px;
+
             margin-top: 9px;
+
             overflow: hidden;
         }
 
         .progress-bar {
             width: 74%;
+
             height: 100%;
+
             background: var(--primary);
+
             border-radius: inherit;
         }
 
         .preview-grid {
             display: grid;
-            grid-template-columns: repeat(2,1fr);
+
+            grid-template-columns:
+                repeat(2, 1fr);
+
             gap: 12px;
+
             margin-top: 18px;
         }
 
         .preview-item {
             border: 1px solid var(--border);
+
             padding: 15px;
+
             border-radius: 12px;
-            transition: .2s;
+
+            transition: 0.2s;
         }
 
         .preview-item:hover {
             transform: translateY(-3px);
+
             border-color: #cbd2e8;
         }
 
         .preview-number {
             font-size: 23px;
+
             font-weight: 800;
         }
 
         .preview-label {
             color: var(--muted);
+
             font-size: 11px;
+
             margin-top: 2px;
         }
 
+
         /* =========================
-           COMMON SECTION
+           SECTIONS
         ========================= */
 
         .section {
@@ -386,29 +506,41 @@
 
         .section-heading {
             max-width: 680px;
+
             margin-bottom: 42px;
         }
 
         .label {
             color: var(--primary);
+
             font-size: 12px;
+
             font-weight: 800;
+
             text-transform: uppercase;
+
             letter-spacing: 1px;
+
             margin-bottom: 10px;
         }
 
         .section-heading h2 {
-            font-size: clamp(30px,4vw,44px);
+            font-size:
+                clamp(30px, 4vw, 44px);
+
             letter-spacing: -1.5px;
+
             line-height: 1.1;
         }
 
         .section-heading p {
             color: var(--muted);
+
             margin-top: 12px;
+
             line-height: 1.7;
         }
+
 
         /* =========================
            FEATURES
@@ -416,34 +548,54 @@
 
         .feature-grid {
             display: grid;
-            grid-template-columns: repeat(4,1fr);
+
+            grid-template-columns:
+                repeat(4, 1fr);
+
             gap: 16px;
         }
 
         .feature-card {
             padding: 24px;
+
             border: 1px solid var(--border);
+
             border-radius: 16px;
+
             background: white;
-            transition: .25s;
+
+            transition: 0.25s;
         }
 
         .feature-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 12px 30px rgba(20,30,60,.06);
+
+            box-shadow:
+                0 12px 30px
+                rgba(20, 30, 60, 0.06);
+
             border-color: #cbd2e8;
         }
 
         .feature-icon {
             width: 42px;
             height: 42px;
+
             display: flex;
+
             align-items: center;
             justify-content: center;
+
             border-radius: 10px;
+
             background: #edf1ff;
+
             color: var(--primary);
-            font-size: 19px;
+
+            font-size: 18px;
+
+            font-weight: 800;
+
             margin-bottom: 18px;
         }
 
@@ -453,10 +605,14 @@
 
         .feature-card p {
             margin-top: 8px;
+
             color: var(--muted);
+
             font-size: 13px;
+
             line-height: 1.65;
         }
+
 
         /* =========================
            MENTORS
@@ -464,20 +620,30 @@
 
         .mentor-filters {
             display: flex;
+
             gap: 8px;
+
             flex-wrap: wrap;
+
             margin-bottom: 25px;
         }
 
         .filter-button {
             padding: 8px 13px;
+
             border: 1px solid var(--border);
+
             background: white;
+
             border-radius: 20px;
+
             color: #667085;
+
             font-size: 12px;
+
             cursor: pointer;
-            transition: .2s;
+
+            transition: 0.2s;
         }
 
         .filter-button:hover {
@@ -486,47 +652,70 @@
 
         .filter-button.active {
             background: var(--primary);
+
             color: white;
+
             border-color: var(--primary);
         }
 
         .mentor-grid {
             display: grid;
-            grid-template-columns: repeat(3,1fr);
+
+            grid-template-columns:
+                repeat(3, 1fr);
+
             gap: 18px;
         }
 
         .mentor-card {
             background: white;
+
             border: 1px solid var(--border);
+
             border-radius: 18px;
+
             padding: 24px;
-            transition: .25s;
+
+            transition: 0.25s;
         }
 
         .mentor-card:hover {
             transform: translateY(-5px);
+
             border-color: #cbd2e8;
-            box-shadow: 0 12px 30px rgba(20,30,60,.07);
+
+            box-shadow:
+                0 12px 30px
+                rgba(20, 30, 60, 0.07);
         }
 
         .mentor-top {
             display: flex;
+
             align-items: center;
+
             gap: 14px;
         }
 
         .mentor-avatar {
             width: 52px;
             height: 52px;
+
             flex-shrink: 0;
+
             display: flex;
+
             align-items: center;
             justify-content: center;
+
             border-radius: 50%;
+
             background: #edf1ff;
+
             color: var(--primary);
+
             font-size: 15px;
+
             font-weight: 800;
         }
 
@@ -536,39 +725,56 @@
 
         .mentor-role {
             color: var(--muted);
+
             font-size: 11px;
+
             line-height: 1.45;
+
             margin-top: 3px;
         }
 
         .mentor-expertise {
             margin-top: 18px;
+
             font-size: 13px;
+
             font-weight: 650;
         }
 
         .mentor-tags {
             display: flex;
+
             flex-wrap: wrap;
+
             gap: 6px;
+
             margin-top: 11px;
         }
 
         .mentor-tag {
             padding: 5px 8px;
+
             background: #f5f6fa;
+
             border-radius: 6px;
+
             color: #596174;
+
             font-size: 10px;
+
             font-weight: 600;
         }
 
         .mentor-bio {
             margin-top: 15px;
+
             color: var(--muted);
+
             font-size: 12px;
+
             line-height: 1.65;
         }
+
 
         /* =========================
            REVIEWS
@@ -576,40 +782,60 @@
 
         .review-grid {
             display: grid;
-            grid-template-columns: repeat(3,1fr);
+
+            grid-template-columns:
+                repeat(3, 1fr);
+
             gap: 18px;
         }
 
         .review-card {
             background: white;
+
             border: 1px solid var(--border);
+
             border-radius: 18px;
+
             padding: 24px;
-            transition: .25s;
+
+            transition: 0.25s;
         }
 
         .review-card:hover {
             transform: translateY(-5px);
+
             border-color: #cbd2e8;
-            box-shadow: 0 12px 30px rgba(20,30,60,.07);
+
+            box-shadow:
+                0 12px 30px
+                rgba(20, 30, 60, 0.07);
         }
 
         .review-top {
             display: flex;
+
             align-items: center;
+
             gap: 13px;
         }
 
         .review-avatar {
             width: 48px;
             height: 48px;
+
             display: flex;
+
             align-items: center;
             justify-content: center;
+
             border-radius: 50%;
+
             background: #edf1ff;
+
             color: var(--primary);
+
             font-size: 14px;
+
             font-weight: 700;
         }
 
@@ -619,23 +845,64 @@
 
         .review-role {
             color: var(--muted);
+
             font-size: 11px;
+
             margin-top: 2px;
         }
 
         .review-stars {
             margin-top: 18px;
-            color: #f5a623;
-            font-size: 14px;
-            letter-spacing: 2px;
+
+            display: flex;
+
+            gap: 4px;
+        }
+
+        .star {
+            width: 14px;
+            height: 14px;
+
+            position: relative;
+
+            display: inline-block;
+        }
+
+        .star::before {
+            content: "";
+
+            position: absolute;
+
+            width: 12px;
+            height: 12px;
+
+            background: #f5a623;
+
+            clip-path:
+                polygon(
+                    50% 0%,
+                    61% 35%,
+                    98% 35%,
+                    68% 57%,
+                    79% 92%,
+                    50% 70%,
+                    21% 92%,
+                    32% 57%,
+                    2% 35%,
+                    39% 35%
+                );
         }
 
         .review-text {
             margin-top: 12px;
+
             color: var(--muted);
+
             font-size: 13px;
+
             line-height: 1.7;
         }
+
 
         /* =========================
            HOW IT WORKS
@@ -643,18 +910,27 @@
 
         .steps {
             display: grid;
-            grid-template-columns: repeat(4,1fr);
+
+            grid-template-columns:
+                repeat(4, 1fr);
+
             gap: 14px;
         }
 
         .step {
             position: relative;
+
             padding: 24px;
+
             border: 1px solid var(--border);
+
             border-radius: 16px;
+
             background: white;
+
             cursor: pointer;
-            transition: .25s;
+
+            transition: 0.25s;
         }
 
         .step:hover {
@@ -663,20 +939,31 @@
 
         .step.active {
             border-color: var(--primary);
-            box-shadow: 0 10px 25px rgba(49,94,251,.10);
+
+            box-shadow:
+                0 10px 25px
+                rgba(49, 94, 251, 0.10);
         }
 
         .step-number {
             width: 32px;
             height: 32px;
+
             display: flex;
+
             align-items: center;
             justify-content: center;
+
             border-radius: 50%;
+
             background: #edf1ff;
+
             color: var(--primary);
+
             font-size: 12px;
+
             font-weight: 800;
+
             margin-bottom: 18px;
         }
 
@@ -686,21 +973,32 @@
 
         .step p {
             margin-top: 8px;
+
             color: var(--muted);
+
             font-size: 13px;
+
             line-height: 1.6;
         }
 
         .step-detail {
             margin-top: 25px;
+
             padding: 20px 22px;
+
             background: white;
+
             border: 1px solid var(--border);
+
             border-radius: 13px;
+
             color: var(--muted);
+
             font-size: 14px;
+
             line-height: 1.7;
         }
+
 
         /* =========================
            CTA
@@ -712,23 +1010,33 @@
 
         .cta-box {
             padding: 55px;
+
             border: 1px solid var(--border);
+
             border-radius: 22px;
+
             background: #f7f8fc;
+
             text-align: center;
         }
 
         .cta-box h2 {
-            font-size: clamp(30px,4vw,44px);
+            font-size:
+                clamp(30px, 4vw, 44px);
+
             letter-spacing: -1.5px;
         }
 
         .cta-box p {
             max-width: 570px;
+
             margin: 13px auto 25px;
+
             color: var(--muted);
+
             line-height: 1.7;
         }
+
 
         /* =========================
            FOOTER
@@ -736,32 +1044,43 @@
 
         footer {
             border-top: 1px solid var(--border);
+
             padding: 35px 0;
+
             background: white;
         }
 
         .footer-inner {
             display: flex;
+
             justify-content: space-between;
+
             align-items: center;
+
             gap: 20px;
         }
 
         .footer-brand {
             font-size: 15px;
+
             font-weight: 800;
         }
 
         .footer-copy {
             color: var(--muted);
+
             font-size: 11px;
+
             margin-top: 5px;
         }
 
         .footer-links {
             display: flex;
+
             gap: 20px;
+
             color: var(--muted);
+
             font-size: 12px;
         }
 
@@ -769,46 +1088,64 @@
             color: var(--primary);
         }
 
+
         /* =========================
            RESPONSIVE
         ========================= */
 
-        @media(max-width: 900px) {
+        @media (max-width: 900px) {
 
             .hero-grid {
                 grid-template-columns: 1fr;
+
                 gap: 45px;
             }
 
             .feature-grid {
-                grid-template-columns: repeat(2,1fr);
+                grid-template-columns:
+                    repeat(2, 1fr);
             }
 
             .mentor-grid {
-                grid-template-columns: repeat(2,1fr);
+                grid-template-columns:
+                    repeat(2, 1fr);
             }
 
             .review-grid {
-                grid-template-columns: repeat(2,1fr);
+                grid-template-columns:
+                    repeat(2, 1fr);
             }
 
             .steps {
-                grid-template-columns: repeat(2,1fr);
+                grid-template-columns:
+                    repeat(2, 1fr);
             }
 
             .nav-links {
                 position: absolute;
+
                 top: 72px;
+
                 left: 20px;
                 right: 20px;
+
                 display: none;
+
                 flex-direction: column;
+
                 align-items: stretch;
+
                 padding: 18px;
+
                 background: white;
+
                 border: 1px solid var(--border);
+
                 border-radius: 12px;
-                box-shadow: 0 15px 35px rgba(20,30,60,.08);
+
+                box-shadow:
+                    0 15px 35px
+                    rgba(20, 30, 60, 0.08);
             }
 
             .nav-links.show {
@@ -824,10 +1161,15 @@
             }
         }
 
-        @media(max-width: 600px) {
+
+        @media (max-width: 600px) {
 
             .container {
-                width: min(calc(100% - 28px), var(--max-width));
+                width:
+                    min(
+                        calc(100% - 28px),
+                        var(--max-width)
+                    );
             }
 
             .hero {
@@ -859,6 +1201,7 @@
 
             .footer-inner {
                 flex-direction: column;
+
                 align-items: flex-start;
             }
 
@@ -867,21 +1210,22 @@
             }
         }
 
-        /* =========================
-           ACCESSIBILITY
-        ========================= */
 
         a:focus-visible,
         button:focus-visible {
-            outline: 3px solid rgba(49,94,251,.25);
+            outline:
+                3px solid
+                rgba(49, 94, 251, 0.25);
+
             outline-offset: 3px;
         }
 
     </style>
-
 </head>
 
+
 <body>
+
 
 <!-- =========================
      NAVBAR
@@ -934,14 +1278,16 @@
 
         </a>
 
+
         <button
             class="menu-button"
             id="menuButton"
             aria-label="Open menu"
             aria-expanded="false"
         >
-            &#9776;
+            MENU
         </button>
+
 
         <nav
             class="nav-links"
@@ -977,7 +1323,9 @@
 
 </header>
 
+
 <main>
+
 
 <!-- =========================
      HERO
@@ -986,6 +1334,7 @@
 <section class="hero">
 
     <div class="container hero-grid">
+
 
         <div>
 
@@ -997,14 +1346,17 @@
 
             </div>
 
+
             <h1>
 
                 Prepare better.
+
                 <span>
                     Get placed.
                 </span>
 
             </h1>
+
 
             <p class="hero-text">
 
@@ -1015,14 +1367,16 @@
 
             </p>
 
+
             <div class="hero-actions">
 
                 <a
                     href="https://app.confirmplacement.com"
                     class="primary-button"
                 >
-                    Start Preparing &rarr;
+                    Start Preparing ->
                 </a>
+
 
                 <a
                     href="#mentors"
@@ -1035,11 +1389,13 @@
 
         </div>
 
-        <!-- PRODUCT PREVIEW -->
+
+        <!-- DASHBOARD -->
 
         <div class="preview">
 
             <div class="dashboard-card">
+
 
                 <div class="dashboard-top">
 
@@ -1053,7 +1409,9 @@
 
                 </div>
 
+
                 <div class="dashboard-body">
+
 
                     <div class="progress-title">
 
@@ -1067,13 +1425,16 @@
 
                     </div>
 
+
                     <div class="progress">
 
                         <div class="progress-bar"></div>
 
                     </div>
 
+
                     <div class="preview-grid">
+
 
                         <div class="preview-item">
 
@@ -1087,6 +1448,7 @@
 
                         </div>
 
+
                         <div class="preview-item">
 
                             <div class="preview-number">
@@ -1098,6 +1460,7 @@
                             </div>
 
                         </div>
+
 
                         <div class="preview-item">
 
@@ -1111,6 +1474,7 @@
 
                         </div>
 
+
                         <div class="preview-item">
 
                             <div class="preview-number">
@@ -1122,6 +1486,7 @@
                             </div>
 
                         </div>
+
 
                     </div>
 
@@ -1135,6 +1500,7 @@
 
 </section>
 
+
 <!-- =========================
      FEATURES
 ========================= -->
@@ -1146,15 +1512,18 @@
 
     <div class="container">
 
+
         <div class="section-heading">
 
             <div class="label">
                 Platform
             </div>
 
+
             <h2>
                 Everything you need to prepare with confidence.
             </h2>
+
 
             <p>
                 Focus on the right skills, practice consistently
@@ -1164,12 +1533,14 @@
 
         </div>
 
+
         <div class="feature-grid">
+
 
             <div class="feature-card">
 
                 <div class="feature-icon">
-                    &#9678;
+                    MI
                 </div>
 
                 <h3>
@@ -1184,10 +1555,11 @@
 
             </div>
 
+
             <div class="feature-card">
 
                 <div class="feature-icon">
-                    &#10003;
+                    OK
                 </div>
 
                 <h3>
@@ -1202,10 +1574,11 @@
 
             </div>
 
+
             <div class="feature-card">
 
                 <div class="feature-icon">
-                    &#9671;
+                    RP
                 </div>
 
                 <h3>
@@ -1219,10 +1592,11 @@
 
             </div>
 
+
             <div class="feature-card">
 
                 <div class="feature-icon">
-                    &rarr;
+                    GO
                 </div>
 
                 <h3>
@@ -1236,11 +1610,13 @@
 
             </div>
 
+
         </div>
 
     </div>
 
 </section>
+
 
 <!-- =========================
      MENTORS
@@ -1253,15 +1629,18 @@
 
     <div class="container">
 
+
         <div class="section-heading">
 
             <div class="label">
                 Mentors
             </div>
 
+
             <h2>
                 Learn from people with real experience.
             </h2>
+
 
             <p>
                 Explore mentors based on their technology,
@@ -1269,6 +1648,7 @@
             </p>
 
         </div>
+
 
         <div
             class="mentor-filters"
@@ -1282,12 +1662,14 @@
                 All
             </button>
 
+
             <button
                 class="filter-button"
                 data-filter="Java"
             >
                 Java
             </button>
+
 
             <button
                 class="filter-button"
@@ -1296,12 +1678,14 @@
                 Frontend
             </button>
 
+
             <button
                 class="filter-button"
                 data-filter="Backend"
             >
                 Backend
             </button>
+
 
             <button
                 class="filter-button"
@@ -1310,12 +1694,14 @@
                 Career
             </button>
 
+
             <button
                 class="filter-button"
                 data-filter="AI / ML"
             >
                 AI / ML
             </button>
+
 
             <button
                 class="filter-button"
@@ -1326,17 +1712,20 @@
 
         </div>
 
+
         <div
             class="mentor-grid"
             id="mentorGrid"
         ></div>
 
+
     </div>
 
 </section>
 
+
 <!-- =========================
-     STUDENT REVIEWS
+     REVIEWS
 ========================= -->
 
 <section
@@ -1346,26 +1735,32 @@
 
     <div class="container">
 
+
         <div class="section-heading">
 
             <div class="label">
                 Student Reviews
             </div>
 
+
             <h2>
                 What students say about ConfirmPlacement.
             </h2>
 
+
             <p>
-                Real experiences from students preparing
+                Experiences from students preparing
                 for their next opportunity.
             </p>
 
         </div>
 
+
         <div class="review-grid">
 
+
             <div class="review-card">
+
 
                 <div class="review-top">
 
@@ -1373,6 +1768,7 @@
                         S1
                     </div>
 
+
                     <div>
 
                         <h3>
@@ -1387,22 +1783,31 @@
 
                 </div>
 
+
                 <div class="review-stars">
-                    &#9733;&#9733;&#9733;&#9733;&#9733;
+
+                    <span class="star"></span>
+                    <span class="star"></span>
+                    <span class="star"></span>
+                    <span class="star"></span>
+                    <span class="star"></span>
+
                 </div>
+
 
                 <p class="review-text">
 
                     "ConfirmPlacement helped me structure
                     my preparation and understand what I
-                    actually needed to improve before
-                    interviews."
+                    needed to improve before interviews."
 
                 </p>
 
             </div>
 
+
             <div class="review-card">
+
 
                 <div class="review-top">
 
@@ -1410,6 +1815,7 @@
                         S2
                     </div>
 
+
                     <div>
 
                         <h3>
@@ -1424,22 +1830,30 @@
 
                 </div>
 
+
                 <div class="review-stars">
-                    &#9733;&#9733;&#9733;&#9733;&#9733;
+
+                    <span class="star"></span>
+                    <span class="star"></span>
+                    <span class="star"></span>
+                    <span class="star"></span>
+                    <span class="star"></span>
+
                 </div>
+
 
                 <p class="review-text">
 
-                    "The mentor guidance made a big
-                    difference in my preparation. I was
-                    able to identify my weak areas and
-                    work on them properly."
+                    "The mentor guidance helped me identify
+                    my weak areas and work on them properly."
 
                 </p>
 
             </div>
 
+
             <div class="review-card">
+
 
                 <div class="review-top">
 
@@ -1447,6 +1861,7 @@
                         S3
                     </div>
 
+
                     <div>
 
                         <h3>
@@ -1461,26 +1876,35 @@
 
                 </div>
 
+
                 <div class="review-stars">
-                    &#9733;&#9733;&#9733;&#9733;&#9733;
+
+                    <span class="star"></span>
+                    <span class="star"></span>
+                    <span class="star"></span>
+                    <span class="star"></span>
+                    <span class="star"></span>
+
                 </div>
+
 
                 <p class="review-text">
 
                     "I liked having interviews, mentors
-                    and preparation resources in one
-                    platform. It made my preparation
-                    much more organised."
+                    and preparation resources in one platform.
+                    It made my preparation more organised."
 
                 </p>
 
             </div>
+
 
         </div>
 
     </div>
 
 </section>
+
 
 <!-- =========================
      HOW IT WORKS
@@ -1493,15 +1917,18 @@
 
     <div class="container">
 
+
         <div class="section-heading">
 
             <div class="label">
                 How it works
             </div>
 
+
             <h2>
                 A simple path from preparation to placement.
             </h2>
+
 
             <p>
                 Follow a structured approach instead of
@@ -1510,7 +1937,9 @@
 
         </div>
 
+
         <div class="steps">
+
 
             <div
                 class="step active"
@@ -1532,6 +1961,7 @@
 
             </div>
 
+
             <div
                 class="step"
                 data-step="1"
@@ -1551,6 +1981,7 @@
                 </p>
 
             </div>
+
 
             <div
                 class="step"
@@ -1572,6 +2003,7 @@
 
             </div>
 
+
             <div
                 class="step"
                 data-step="3"
@@ -1592,7 +2024,9 @@
 
             </div>
 
+
         </div>
+
 
         <div
             class="step-detail"
@@ -1602,9 +2036,11 @@
             areas that matter for your target role.
         </div>
 
+
     </div>
 
 </section>
+
 
 <!-- =========================
      CTA
@@ -1614,11 +2050,13 @@
 
     <div class="container">
 
+
         <div class="cta-box">
 
             <h2>
                 Ready to prepare better?
             </h2>
+
 
             <p>
                 Start your placement preparation with
@@ -1626,20 +2064,24 @@
                 with confidence.
             </p>
 
+
             <a
                 href="https://app.confirmplacement.com"
                 class="primary-button"
             >
-                Open ConfirmPlacement &rarr;
+                Open ConfirmPlacement ->
             </a>
 
         </div>
+
 
     </div>
 
 </section>
 
+
 </main>
+
 
 <!-- =========================
      FOOTER
@@ -1649,17 +2091,21 @@
 
     <div class="container footer-inner">
 
+
         <div>
 
             <div class="footer-brand">
                 ConfirmPlacement
             </div>
 
+
             <div class="footer-copy">
-                &copy; 2026 ConfirmPlacement. All rights reserved.
+                Copyright 2026 ConfirmPlacement.
+                All rights reserved.
             </div>
 
         </div>
+
 
         <div class="footer-links">
 
@@ -1679,6 +2125,7 @@
                 How it works
             </a>
 
+
             <a
                 href="https://www.linkedin.com/"
                 target="_blank"
@@ -1687,17 +2134,21 @@
                 LinkedIn
             </a>
 
+
             <a href="https://app.confirmplacement.com">
                 Open App
             </a>
 
         </div>
 
+
     </div>
 
 </footer>
 
+
 <script>
+
 
 /* =========================
    MENTORS DATA
@@ -1707,48 +2158,71 @@ const MENTORS = [
 
     {
         name: "Akash K",
+
         role: "SDE at Virtusa",
-        expertise: "Java, Spring Boot, React, MySQL",
+
+        expertise:
+            "Java, Spring Boot, React, MySQL",
+
         topics: [
             "Java",
             "Full Stack"
         ],
-        bio: "Builds and ships full-stack products using Java, Spring Boot, React and MySQL."
+
+        bio:
+            "Builds and ships full-stack products using Java, Spring Boot, React and MySQL."
     },
+
 
     {
         name: "Rutuja Khose",
-        role: "Co-founder at ConfirmPlacement · Assistant Professor at Deogiri College",
-        expertise: "AI, ML, Python, SQL",
+
+        role:
+            "Co-founder at ConfirmPlacement - Assistant Professor at Deogiri College",
+
+        expertise:
+            "AI, ML, Python, SQL",
+
         topics: [
             "AI / ML",
             "Python",
             "SQL"
         ],
-        bio: "Teaches AI and machine learning with a strong focus on fundamentals and practical interview preparation."
+
+        bio:
+            "Teaches AI and machine learning with a strong focus on fundamentals and practical interview preparation."
     },
+
 
     {
         name: "Abhijeet Dhumal",
-        role: "Software Engineer at Electropneumatics",
-        expertise: "C, C++, Embedded C, IoT",
+
+        role:
+            "Software Engineer at Electropneumatics",
+
+        expertise:
+            "C, C++, Embedded C, IoT",
+
         topics: [
             "Embedded",
             "IoT"
         ],
-        bio: "Works with embedded systems and IoT, helping candidates understand low-level programming and system fundamentals."
+
+        bio:
+            "Works with embedded systems and IoT, helping candidates understand low-level programming and system fundamentals."
     }
 
 ];
 
 
 /* =========================
-   MENTOR CATEGORIES
+   GET MENTOR CATEGORIES
 ========================= */
 
 function getMentorCategories(mentor) {
 
     const text = (
+
         mentor.name +
         " " +
         mentor.role +
@@ -1756,24 +2230,33 @@ function getMentorCategories(mentor) {
         mentor.expertise +
         " " +
         mentor.topics.join(" ")
+
     ).toLowerCase();
 
+
     const categories = [];
+
 
     if (
         text.includes("java") ||
         text.includes("spring")
     ) {
+
         categories.push("Java");
+
     }
+
 
     if (
         text.includes("react") ||
         text.includes("frontend") ||
         text.includes("full stack")
     ) {
+
         categories.push("Frontend");
+
     }
+
 
     if (
         text.includes("spring") ||
@@ -1781,24 +2264,33 @@ function getMentorCategories(mentor) {
         text.includes("mysql") ||
         text.includes("sql")
     ) {
+
         categories.push("Backend");
+
     }
+
 
     if (
         text.includes("career") ||
         text.includes("interview") ||
         text.includes("placement")
     ) {
+
         categories.push("Career");
+
     }
+
 
     if (
         text.includes("ai") ||
         text.includes("ml") ||
         text.includes("machine learning")
     ) {
+
         categories.push("AI / ML");
+
     }
+
 
     if (
         text.includes("embedded") ||
@@ -1806,10 +2298,14 @@ function getMentorCategories(mentor) {
         text.includes("c++") ||
         text.includes("embedded c")
     ) {
+
         categories.push("Embedded");
+
     }
 
+
     return categories;
+
 }
 
 
@@ -1819,12 +2315,14 @@ function getMentorCategories(mentor) {
 
 function createMentorCard(mentor) {
 
+
     const initials = mentor.name
         .split(" ")
         .map(word => word[0])
         .join("")
-        .slice(0,2)
+        .slice(0, 2)
         .toUpperCase();
+
 
     const tags = mentor.topics
         .map(topic => {
@@ -1838,15 +2336,19 @@ function createMentorCard(mentor) {
         })
         .join("");
 
+
     return `
 
         <article class="mentor-card">
 
+
             <div class="mentor-top">
+
 
                 <div class="mentor-avatar">
                     ${initials}
                 </div>
+
 
                 <div>
 
@@ -1854,29 +2356,36 @@ function createMentorCard(mentor) {
                         ${mentor.name}
                     </h3>
 
+
                     <div class="mentor-role">
                         ${mentor.role}
                     </div>
 
                 </div>
 
+
             </div>
+
 
             <div class="mentor-expertise">
                 ${mentor.expertise}
             </div>
 
+
             <div class="mentor-tags">
                 ${tags}
             </div>
+
 
             <p class="mentor-bio">
                 ${mentor.bio}
             </p>
 
+
         </article>
 
     `;
+
 }
 
 
@@ -1886,17 +2395,23 @@ function createMentorCard(mentor) {
 
 function renderMentors(filter = "All") {
 
+
     const mentorGrid =
         document.getElementById("mentorGrid");
 
+
     let mentors = MENTORS;
+
 
     if (filter !== "All") {
 
+
         mentors = MENTORS.filter(mentor => {
+
 
             const categories =
                 getMentorCategories(mentor);
+
 
             return categories.includes(filter);
 
@@ -1904,19 +2419,21 @@ function renderMentors(filter = "All") {
 
     }
 
+
     if (mentors.length === 0) {
+
 
         mentorGrid.innerHTML = `
 
             <div
                 style="
-                    grid-column:1/-1;
-                    padding:30px;
-                    text-align:center;
-                    color:#667085;
-                    background:white;
-                    border:1px solid #e7eaf0;
-                    border-radius:16px;
+                    grid-column: 1 / -1;
+                    padding: 30px;
+                    text-align: center;
+                    color: #667085;
+                    background: white;
+                    border: 1px solid #e7eaf0;
+                    border-radius: 16px;
                 "
             >
 
@@ -1926,13 +2443,17 @@ function renderMentors(filter = "All") {
 
         `;
 
+
         return;
+
     }
+
 
     mentorGrid.innerHTML =
         mentors
             .map(createMentorCard)
             .join("");
+
 }
 
 
@@ -1942,29 +2463,46 @@ function renderMentors(filter = "All") {
 
 document
     .getElementById("mentorFilters")
-    .addEventListener("click", function(event) {
+    .addEventListener(
+        "click",
+        function(event) {
 
-        const button =
-            event.target.closest(".filter-button");
 
-        if (!button) {
-            return;
+            const button =
+                event.target.closest(
+                    ".filter-button"
+                );
+
+
+            if (!button) {
+                return;
+            }
+
+
+            document
+                .querySelectorAll(
+                    ".filter-button"
+                )
+                .forEach(btn => {
+
+                    btn.classList.remove(
+                        "active"
+                    );
+
+                });
+
+
+            button.classList.add("active");
+
+
+            const filter =
+                button.dataset.filter;
+
+
+            renderMentors(filter);
+
         }
-
-        document
-            .querySelectorAll(".filter-button")
-            .forEach(btn => {
-                btn.classList.remove("active");
-            });
-
-        button.classList.add("active");
-
-        const filter =
-            button.dataset.filter;
-
-        renderMentors(filter);
-
-    });
+    );
 
 
 /* =========================
@@ -1974,38 +2512,58 @@ document
 const menuButton =
     document.getElementById("menuButton");
 
+
 const navLinks =
     document.getElementById("navLinks");
 
-menuButton.addEventListener("click", function() {
 
-    navLinks.classList.toggle("show");
+menuButton.addEventListener(
+    "click",
+    function() {
 
-    const expanded =
-        navLinks.classList.contains("show");
 
-    menuButton.setAttribute(
-        "aria-expanded",
-        expanded
-    );
+        navLinks.classList.toggle(
+            "show"
+        );
 
-});
+
+        const expanded =
+            navLinks.classList.contains(
+                "show"
+            );
+
+
+        menuButton.setAttribute(
+            "aria-expanded",
+            expanded
+        );
+
+    }
+);
 
 
 navLinks
     .querySelectorAll("a")
     .forEach(link => {
 
-        link.addEventListener("click", function() {
 
-            navLinks.classList.remove("show");
+        link.addEventListener(
+            "click",
+            function() {
 
-            menuButton.setAttribute(
-                "aria-expanded",
-                "false"
-            );
 
-        });
+                navLinks.classList.remove(
+                    "show"
+                );
+
+
+                menuButton.setAttribute(
+                    "aria-expanded",
+                    "false"
+                );
+
+            }
+        );
 
     });
 
@@ -2017,8 +2575,12 @@ navLinks
 const steps =
     document.querySelectorAll(".step");
 
+
 const stepDetail =
-    document.getElementById("stepDetail");
+    document.getElementById(
+        "stepDetail"
+    );
+
 
 const stepDescriptions = [
 
@@ -2035,21 +2597,37 @@ const stepDescriptions = [
 
 steps.forEach(step => {
 
-    step.addEventListener("click", function() {
 
-        steps.forEach(item => {
-            item.classList.remove("active");
-        });
+    step.addEventListener(
+        "click",
+        function() {
 
-        step.classList.add("active");
 
-        const index =
-            Number(step.dataset.step);
+            steps.forEach(item => {
 
-        stepDetail.textContent =
-            stepDescriptions[index];
+                item.classList.remove(
+                    "active"
+                );
 
-    });
+            });
+
+
+            step.classList.add(
+                "active"
+            );
+
+
+            const index =
+                Number(
+                    step.dataset.step
+                );
+
+
+            stepDetail.textContent =
+                stepDescriptions[index];
+
+        }
+    );
 
 });
 
@@ -2060,8 +2638,9 @@ steps.forEach(step => {
 
 renderMentors("All");
 
+
 </script>
 
-</body>
 
+</body>
 </html>
