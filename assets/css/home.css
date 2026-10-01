@@ -785,3 +785,11 @@ button:focus-visible {
         rgba(49, 94, 251, 0.25);
     outline-offset: 3px;
 }
+
+/* Mobile navigation dropdown */
+@media (max-width: 760px) {
+  .nav-inner { position: relative; }
+  .menu-button { width: 44px; height: 40px; display: grid; place-items: center; font-size: 22px; line-height: 1; }
+  .nav-links { top: 62px; left: auto; right: 0; width: min(260px, calc(100vw - 28px)); padding: 14px; border-radius: 14px; box-shadow: 0 18px 40px rgba(20, 30, 60, .14); z-index: 20; }
+  .nav-links a { width: 100%; }
+}
