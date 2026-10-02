@@ -75,3 +75,25 @@ function() {
 /* =========================
    INITIAL RENDER
 ========================= */
+
+/* =========================
+   SCROLL REVEAL
+========================= */
+const revealItems = document.querySelectorAll(".section, .feature-card, .review-card, .step");
+revealItems.forEach((item, index) => {
+    item.classList.add("reveal-on-scroll");
+    item.style.transitionDelay = `${Math.min(index % 4, 3) * 70}ms`;
+});
+if ("IntersectionObserver" in window) {
+    const revealObserver = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add("is-visible");
+                revealObserver.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.12 });
+    revealItems.forEach(item => revealObserver.observe(item));
+} else {
+    revealItems.forEach(item => item.classList.add("is-visible"));
+}
